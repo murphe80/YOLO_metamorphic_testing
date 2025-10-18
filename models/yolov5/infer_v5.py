@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-YOLOv5 Metamorphic Testing Script
-Tests object detection robustness using image transformations
+YOLOv5 object detection script 
 """
 
+import random
+import sys
+import os
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from datetime import datetime
 import cv2
 from yolov5.utils.general import check_img_size, non_max_suppression
@@ -12,10 +16,7 @@ import torch.backends.cudnn as cudnn
 import torch
 import argparse
 import numpy as np
-from pathlib import Path
-import sys
-import os
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from metamorphic_test import gen_metamorphic
 
 
 try:
@@ -117,12 +118,14 @@ def main():
     parser.add_argument('--img_size', type=int, default=640,
                         help='inference size (pixels)')
     parser.add_argument('--conf_thres', type=float,
-                        default=0.2, help='object confidence threshold')
+                        default=0.25, help='object confidence threshold')
     parser.add_argument('--iou_thres', type=float,
                         default=0.45, help='IoU threshold for NMS')
     parser.add_argument('--device', type=str,
                         default="cuda:0", help='pytorch device to use')
     parser.add_argument('--image', required=True, type=str, help='image path')
+    parser.add_argument('--rules', nargs='+', default=['imgBlur'],
+                        help='List of metamorphic rules to test')
 
     args = parser.parse_args()
 
@@ -131,25 +134,30 @@ def main():
     if img is None:
         print(f"Error: Could not load image from {args.image}")
         return
+    
+    # Get transformations 
+    transformed_images = gen_metamorphic(img, args.rules)
 
     # Load model
     model, device, half, img_size = load_model(
         args.weights, args.img_size, args.device)
 
-    # Run inference
-    det, ratio, pad = inference(
-        model, device, half, img_size, img, args.conf_thres, args.iou_thres)
+    # Run inference on each transformation
+    for i in range(len(transformed_images)):
+        img = transformed_images[i]
+        det, ratio, pad = inference(
+            model, device, half, img_size, img, args.conf_thres, args.iou_thres)
 
-    # Process detections
-    detections = extract_detections(det, img.shape, ratio, pad)
+        # Process detections
+        detections = extract_detections(det, img.shape, ratio, pad)
 
-    # Print detections
-    print(detections)
+        # Print detections
+        print(detections)
 
-    # Visualise detections
-    from utils.visualise import visualize_detections as visualise
-    visualise(args.image, detections, show_plot=True,
-              output_path=f"result_v5_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg")
+        # Visualise detections
+        from utils.visualise import visualize_detections as visualise
+        visualise(img, detections, show_plot=True,
+                output_path=f"./results/matias'/yolov5/YOLOv5_{os.path.basename(args.image)}_{i}_{datetime.now().strftime('%Y%m%d')}.jpg")
 
 
 if __name__ == '__main__':

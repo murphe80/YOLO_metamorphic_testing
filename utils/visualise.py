@@ -84,7 +84,7 @@ def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]],
     return vis_image
 
 
-def visualize_detections(image_path: str, detections: List[Dict[str, Any]],
+def visualize_detections(image: np.ndarray, detections: List[Dict[str, Any]],
                          output_path: Optional[str] = None,
                          conf_threshold: float = 0.25,
                          show_plot: bool = True) -> None:
@@ -98,10 +98,6 @@ def visualize_detections(image_path: str, detections: List[Dict[str, Any]],
         conf_threshold: Minimum confidence threshold
         show_plot: Whether to display the plot
     """
-    # Load image
-    image = cv2.imread(image_path)
-    if image is None:
-        raise ValueError(f"Could not load image from {image_path}")
 
     # Convert BGR to RGB for matplotlib
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)

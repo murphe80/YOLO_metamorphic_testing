@@ -7,10 +7,9 @@ import re
 import numpy as np
 import cv2
 
-import mediapipe as mp
-from mediapipe.tasks import python
+# import mediapipe as mp
 
-from test_systems.aux_functions import save_modified_image, get_modified_img_path, kp_fo_to_our_format, kp_our_format_to_fo_format
+# from test_systems.aux_functions import save_modified_image, get_modified_img_path, kp_fo_to_our_format, kp_our_format_to_fo_format
 from .metamorphic_rules import MetRule
 
 
@@ -18,6 +17,7 @@ class ImgEdgesRule(MetRule):
     """ Applies an edges filter to the image, intended to test how sensitive the system is to textures, colors, etc.
         while only maintaining the information of the edges of the image
     """
+
     def __init__(self, extra_data, **kwargs):
         """Edges Metamorphic Rule.
 
@@ -53,7 +53,8 @@ class ImgEdgesRule(MetRule):
         lower = int(max(0, (1.0 - self.sigma) * v))
         upper = int(min(255, (1.0 + self.sigma) * v))
 
-        result = cv2.Canny(image, threshold1=lower, threshold2=upper, apertureSize=self.aperture_size)
+        result = cv2.Canny(image, threshold1=lower,
+                           threshold2=upper, apertureSize=self.aperture_size)
         result = cv2.cvtColor(result, code=cv2.COLOR_GRAY2RGB)
         return result
 
@@ -62,6 +63,7 @@ class ImgBlurRule(MetRule):
     """Applies a bilateral filter to blur the image, intended to test how sensitive the system is to textures,
         while maintaining the information of the shapes of the image.
     """
+
     def __init__(self, extra_data, **kwargs):
         """Blur Metamorphic Rule.
 
@@ -102,6 +104,7 @@ class ImgMotionBlurRule(MetRule):
         Motion blur can be simulated with a Point Spread Function, a kernel full of zeroes except for a line of ones,
         in the direction in which we want to simulate the motion blur.
         """
+
     def __init__(self, extra_data, **kwargs):
         """Motion Blur Metamorphic Rule.
 
@@ -142,8 +145,10 @@ class ImgMotionBlurRule(MetRule):
         PSF_kernel /= self.size
 
         # Use a rotation matrix to rotate the above kernel
-        rotation_matrix = cv2.getRotationMatrix2D((self.size / 2, self.size / 2), self.angle, 1)
-        PSF_kernel = cv2.warpAffine(PSF_kernel, rotation_matrix, (self.size, self.size))
+        rotation_matrix = cv2.getRotationMatrix2D(
+            (self.size / 2, self.size / 2), self.angle, 1)
+        PSF_kernel = cv2.warpAffine(
+            PSF_kernel, rotation_matrix, (self.size, self.size))
 
         # Apply the kernel to the image
         # ddepth = -1 means the output image will have the same depth as the input image
@@ -189,15 +194,16 @@ class ImgMirrorRule(MetRule):
         result = cv2.flip(image, flipCode=self.flip_code)
         return result
 
-    def transform_keypoints_for_visualizing(self, keypoints, orig_img, modif_img, image_filepath):
-        """transform the keypoints to be shown in the transformed image.
-        Input keypoints are in fiftyone format"""
-        # When mirroring an image, f(x) = f^-1(x)
-        transformed_kps = kp_fo_to_our_format(keypoints)
-        for subject_idx in range(len(transformed_kps)):
-            transformed_subject_kps = self.resize_keypoints(transformed_kps[subject_idx], orig_img, modif_img, image_filepath)
-            transformed_kps[subject_idx] = transformed_subject_kps
-        return kp_our_format_to_fo_format(transformed_kps)
+    # def transform_keypoints_for_visualizing(self, keypoints, orig_img, modif_img, image_filepath):
+    #     """transform the keypoints to be shown in the transformed image.
+    #     Input keypoints are in fiftyone format"""
+    #     # When mirroring an image, f(x) = f^-1(x)
+    #     transformed_kps = kp_fo_to_our_format(keypoints)
+    #     for subject_idx in range(len(transformed_kps)):
+    #         transformed_subject_kps = self.resize_keypoints(
+    #             transformed_kps[subject_idx], orig_img, modif_img, image_filepath)
+    #         transformed_kps[subject_idx] = transformed_subject_kps
+    #     return kp_our_format_to_fo_format(transformed_kps)
 
     def resize_keypoints(self, keypoints, orig_img, modif_img, image_filepath):
         """The mirror rule needs to mirror also the keypoints according to its flip_code"""
@@ -221,14 +227,16 @@ class ImgMirrorRule(MetRule):
         # flip each keypoint along the same axis that the image was flipped
         keypoints = {
             key: None if val is None else
-            val if key == "extra_data" else np.stack([mirror_point(l) for l in val])
+            val if key == "extra_data" else np.stack(
+                [mirror_point(l) for l in val])
             for key, val in keypoints.items()
         }
 
         # Only if the image was mirrored horizontally, we need to swap keypoints left and right
         # This is not mirroring them in space like we did before, it's switching up which index correspond to each point
         if self.flip_code > 0 or self.flip_code < 0:
-            self.extra_data["estimator"].output_format.mirror_keypoints(keypoints)
+            self.extra_data["estimator"].output_format.mirror_keypoints(
+                keypoints)
 
         return keypoints
 
@@ -262,6 +270,7 @@ class ImgDarkenBrightenRule(MetRule):
     """Make the image darker or brighter in one of 3 ways according to "method" argument. Either add a constant value,
        multiply each pixel by a constant, or use gamma correction.
             """
+
     def __init__(self, extra_data, **kwargs):
         """Image Brightness change Metamorphic Rule.
 
@@ -307,10 +316,12 @@ class ImgDarkenBrightenRule(MetRule):
             case "gamma":
                 lookUpTable = np.empty((1, 256), np.uint8)
                 for i in range(256):
-                    lookUpTable[0, i] = np.clip(pow(i / 255.0, self.gamma) * 255.0, 0, 255)
+                    lookUpTable[0, i] = np.clip(
+                        pow(i / 255.0, self.gamma) * 255.0, 0, 255)
                 result = cv2.LUT(image, lookUpTable)
             case "scale":
-                result = cv2.convertScaleAbs(image, alpha=self.brightness_multiplier, beta=self.brightness_constant)
+                result = cv2.convertScaleAbs(
+                    image, alpha=self.brightness_multiplier, beta=self.brightness_constant)
             case _:
                 raise "please select a method for brightening the image from those provided"
         return result
@@ -319,6 +330,7 @@ class ImgDarkenBrightenRule(MetRule):
 class ImgRotationRule(MetRule):
     """Rotate the image around any point in the image.
     """
+
     def __init__(self, extra_data, **kwargs):
         """Image Rotation Metamorphic Rule.
 
@@ -349,7 +361,8 @@ class ImgRotationRule(MetRule):
                 x, y = map(float, input_string.strip("()").split(','))
                 return x, y
             except:
-                raise argparse.ArgumentTypeError("Input should be in format x,y where x and y are floats")
+                raise argparse.ArgumentTypeError(
+                    "Input should be in format x,y where x and y are floats")
 
         return [('rotation_angle', int, "how much to rotate the image by (in degrees)", 15),
                 ('center', tuple_type,
@@ -368,10 +381,12 @@ class ImgRotationRule(MetRule):
         # extend output image to avoid cropping part of the input information. Based on
         # https://stackoverflow.com/a/37347070
 
-        #(height, width)
-        center = image.shape[1] * self.center[0], image.shape[0] * self.center[1]
+        # (height, width)
+        center = image.shape[1] * \
+            self.center[0], image.shape[0] * self.center[1]
 
-        rotation_matrix = cv2.getRotationMatrix2D(center, self.rotation_angle, 1)
+        rotation_matrix = cv2.getRotationMatrix2D(
+            center, self.rotation_angle, 1)
 
         abs_cos = abs(rotation_matrix[0, 0])
         abs_sin = abs(rotation_matrix[0, 1])
@@ -386,31 +401,33 @@ class ImgRotationRule(MetRule):
 
         return result
 
-
-    def transform_keypoints_for_visualizing(self, keypoints, orig_img, modif_img, image_filepath):
-        """transform the keypoints to be shown in the transformed image."""
-        transformed_kps = kp_fo_to_our_format(keypoints)
-        for subject_idx in range(len(transformed_kps)):
-            transformed_subject_kps = self.resize_keypoints(transformed_kps[subject_idx], orig_img, modif_img,
-                                                            image_filepath, invert_matrix=False)
-            transformed_kps[subject_idx] = transformed_subject_kps
-        return kp_our_format_to_fo_format(transformed_kps)
-
+    # def transform_keypoints_for_visualizing(self, keypoints, orig_img, modif_img, image_filepath):
+    #     """transform the keypoints to be shown in the transformed image."""
+    #     transformed_kps = kp_fo_to_our_format(keypoints)
+    #     for subject_idx in range(len(transformed_kps)):
+    #         transformed_subject_kps = self.resize_keypoints(transformed_kps[subject_idx], orig_img, modif_img,
+    #                                                         image_filepath, invert_matrix=False)
+    #         transformed_kps[subject_idx] = transformed_subject_kps
+    #     return kp_our_format_to_fo_format(transformed_kps)
 
     def resize_keypoints(self, keypoints, orig_img, modif_img, image_filepath, invert_matrix=True):
         """The rotation rule needs to rotate the keypoints back to reverse the modification of the image.
         When invert_matrix is True, transform modified keypoints back to the original image. When it is false,
         it is to visualize the original keypoints in the modified image."""
 
-        center = orig_img.shape[1] * self.center[0], orig_img.shape[0] * self.center[1]
+        center = orig_img.shape[1] * \
+            self.center[0], orig_img.shape[0] * self.center[1]
 
-        rotation_matrix = cv2.getRotationMatrix2D(center, self.rotation_angle, 1)
+        rotation_matrix = cv2.getRotationMatrix2D(
+            center, self.rotation_angle, 1)
 
         abs_cos = abs(rotation_matrix[0, 0])
         abs_sin = abs(rotation_matrix[0, 1])
 
-        bound_w = int(orig_img.shape[0] * abs_sin + orig_img.shape[1] * abs_cos)
-        bound_h = int(orig_img.shape[0] * abs_cos + orig_img.shape[1] * abs_sin)
+        bound_w = int(orig_img.shape[0] * abs_sin +
+                      orig_img.shape[1] * abs_cos)
+        bound_h = int(orig_img.shape[0] * abs_cos +
+                      orig_img.shape[1] * abs_sin)
         assert bound_h == modif_img.shape[0]
         assert bound_w == modif_img.shape[1]
 
@@ -418,7 +435,8 @@ class ImgRotationRule(MetRule):
         rotation_matrix[1, 2] += bound_h / 2 - center[1]
 
         if invert_matrix:
-            rotation_matrix = cv2.invertAffineTransform(rotation_matrix) # np.linalg.pinv(rotation_matrix)
+            rotation_matrix = cv2.invertAffineTransform(
+                rotation_matrix)  # np.linalg.pinv(rotation_matrix)
 
         ans_keypoints = {}
 
@@ -433,8 +451,10 @@ class ImgRotationRule(MetRule):
 
                 # for the rotation matrix, the keypoint coordinates need to be in pixel values, not normalized between 0 and 1.
                 # depending on if we are going from original image to rotated one (invert_matrix=False) or viseversa, we want to multiply the keypoints by a different shape
-                pixel_coords_keypoints[:, 0] *= modif_img.shape[1] if invert_matrix else orig_img.shape[1]
-                pixel_coords_keypoints[:, 1] *= modif_img.shape[0] if invert_matrix else orig_img.shape[0]
+                pixel_coords_keypoints[:,
+                                       0] *= modif_img.shape[1] if invert_matrix else orig_img.shape[1]
+                pixel_coords_keypoints[:,
+                                       1] *= modif_img.shape[0] if invert_matrix else orig_img.shape[0]
 
                 current_ans_coords = cv2.transform(np.array([pixel_coords_keypoints]), rotation_matrix)[
                     0]  # apply the rotationMatrix to points instead of an imgs
@@ -443,7 +463,8 @@ class ImgRotationRule(MetRule):
                 current_ans_coords[:, 0] /= divide_img.shape[1]
                 current_ans_coords[:, 1] /= divide_img.shape[0]
 
-                ans_keypoints[key] = val  # start it as val, so we keep visibility and score values if they were present
+                # start it as val, so we keep visibility and score values if they were present
+                ans_keypoints[key] = val
                 ans_keypoints[key][:, 0:2] = current_ans_coords
                 ans_keypoints[key] = ans_keypoints[key].astype(float)
 
@@ -455,6 +476,7 @@ class ImgResolutionRule(MetRule):
      or a bad quality photo.
      The img resolution rule needs no resizing for keypoints since they are normalized between 0 and 1 and the
     relative position of things inside the image doesn't change when changing the resolution"""
+
     def __init__(self, extra_data, **kwargs):
         """Image Resolution Reduction Metamorphic Rule.
 
@@ -484,12 +506,15 @@ class ImgResolutionRule(MetRule):
         :param image:
         :return:
         """
-        result = cv2.resize(image, (0, 0), fx=self.size_ratio, fy=self.size_ratio, interpolation=cv2.INTER_AREA)
+        result = cv2.resize(image, (0, 0), fx=self.size_ratio,
+                            fy=self.size_ratio, interpolation=cv2.INTER_AREA)
         return result
+
 
 class ImgZoomOutRule(MetRule):
     """Add a padding to the outside of the image and maintain the same resolution, the relevant part of the image will
     be smaller in the image, effectivelly imitatinga a 'zoom out'"""
+
 
 class ImgStretchRule(MetRule):
     """Similar to ImgResolutionRule, but uses a different ratio for height and width, the idea is to change the
@@ -498,6 +523,7 @@ class ImgStretchRule(MetRule):
     The img stretch rule needs no resizing for keypoints since they are normalized between 0 and 1 and the
     relative position of things inside the image doesn't change when stretching the image
     """
+
     def __init__(self, extra_data, **kwargs):
         """Image Stretching Deformation Metamorphic Rule.
 
@@ -526,142 +552,149 @@ class ImgStretchRule(MetRule):
         :param image:
         :return:
         """
-        result = cv2.resize(image, (0, 0), fx=self.width_ratio, fy=self.height_ratio)
+        result = cv2.resize(
+            image, (0, 0), fx=self.width_ratio, fy=self.height_ratio)
         return result
 
 
-class AuxSegmentImageMask:
-    """used to save an intermediate modified version of the images to mask the clothes/skin/background of the images,
-    and allow more advanced metamorphic rules."""
-    def __init__(self):
-        """initialize the mediapipe segmenter only once to optimize runtime"""
-        super().__init__()
+# class AuxSegmentImageMask:
+#     """used to save an intermediate modified version of the images to mask the clothes/skin/background of the images,
+#     and allow more advanced metamorphic rules."""
 
-        model_path = 'Datasets/mediapipe_multiclass_segmenter.tflite'
-        # Create an image segmenter instance with the image mode:
-        options = mp.tasks.vision.ImageSegmenterOptions(
-            base_options=mp.tasks.BaseOptions(model_asset_path=model_path),
-            output_category_mask=True,
-            running_mode=mp.tasks.vision.RunningMode.IMAGE, )
-        self.mediapipe_segmenter = mp.tasks.vision.ImageSegmenter.create_from_options(options)
+#     def __init__(self):
+#         """initialize the mediapipe segmenter only once to optimize runtime"""
+#         super().__init__()
 
-    @staticmethod
-    def kmeans_to_thresholds(image, k_clusters, rounds=1):
-        """use opencv kmeans to segment the image into parts, previous to finding the mask.
-            Unused for now, just as a backup to compare against mediapipe segmentation
+#         model_path = 'Datasets/mediapipe_multiclass_segmenter.tflite'
+#         # Create an image segmenter instance with the image mode:
+#         options = mp.tasks.vision.ImageSegmenterOptions(
+#             base_options=mp.tasks.BaseOptions(model_asset_path=model_path),
+#             output_category_mask=True,
+#             running_mode=mp.tasks.vision.RunningMode.IMAGE, )
+#         self.mediapipe_segmenter = mp.tasks.vision.ImageSegmenter.create_from_options(
+#             options)
 
-            Param k_clusters is the number of sections in which we want to divide the image
-        """
-        # https://stackoverflow.com/questions/60272082/how-to-segment-similar-looking-areas-color-wise-inside-a-image-that-belong-to
-        # https://docs.opencv.org/4.1.1/d5/d38/group__core__cluster.html#ga9a34dc06c6ec9460e90860f15bcd2f88
-        h, w = image.shape[:2]
-        samples = np.zeros([h * w, 3], dtype=np.float32)
-        count = 0
+#     @staticmethod
+#     def kmeans_to_thresholds(image, k_clusters, rounds=1):
+#         """use opencv kmeans to segment the image into parts, previous to finding the mask.
+#             Unused for now, just as a backup to compare against mediapipe segmentation
 
-        for x in range(h):
-            for y in range(w):
-                samples[count] = image[x][y]
-                count += 1
+#             Param k_clusters is the number of sections in which we want to divide the image
+#         """
+#         # https://stackoverflow.com/questions/60272082/how-to-segment-similar-looking-areas-color-wise-inside-a-image-that-belong-to
+#         # https://docs.opencv.org/4.1.1/d5/d38/group__core__cluster.html#ga9a34dc06c6ec9460e90860f15bcd2f88
+#         h, w = image.shape[:2]
+#         samples = np.zeros([h * w, 3], dtype=np.float32)
+#         count = 0
 
-        compactness, labels, centers = cv2.kmeans(samples,
-                                                  k_clusters,
-                                                  None,
-                                                  (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10000, 0.0001),
-                                                  rounds,
-                                                  cv2.KMEANS_RANDOM_CENTERS)
+#         for x in range(h):
+#             for y in range(w):
+#                 samples[count] = image[x][y]
+#                 count += 1
 
-        centers = np.uint8(centers)
-        res = centers[labels.flatten()]
-        return res.reshape(image.shape)
+#         compactness, labels, centers = cv2.kmeans(samples,
+#                                                   k_clusters,
+#                                                   None,
+#                                                   (cv2.TERM_CRITERIA_EPS +
+#                                                    cv2.TERM_CRITERIA_MAX_ITER, 10000, 0.0001),
+#                                                   rounds,
+#                                                   cv2.KMEANS_RANDOM_CENTERS)
 
-    @staticmethod
-    def find_mask(image, kind):
-        """kind is either clothes or skin or background
-        Unused for now, just as a backup to compare against mediapipe segmentation"""
-        # https://medium.com/srm-mic/color-segmentation-using-opencv-93efa7ac93e2
+#         centers = np.uint8(centers)
+#         res = centers[labels.flatten()]
+#         return res.reshape(image.shape)
 
-        # first blur the image?
-        blur = cv2.blur(image, (5, 5))
-        blur0 = cv2.medianBlur(blur, 5)
-        blur1 = cv2.GaussianBlur(blur0, (5, 5), 0)
-        blur2 = cv2.bilateralFilter(blur1, 9, 75, 75)
+#     @staticmethod
+#     def find_mask(image, kind):
+#         """kind is either clothes or skin or background
+#         Unused for now, just as a backup to compare against mediapipe segmentation"""
+#         # https://medium.com/srm-mic/color-segmentation-using-opencv-93efa7ac93e2
 
-        # convert to hsv since it helps with color segmentation
-        hsv = cv2.cvtColor(blur2, cv2.COLOR_BGR2HSV)
+#         # first blur the image?
+#         blur = cv2.blur(image, (5, 5))
+#         blur0 = cv2.medianBlur(blur, 5)
+#         blur1 = cv2.GaussianBlur(blur0, (5, 5), 0)
+#         blur2 = cv2.bilateralFilter(blur1, 9, 75, 75)
 
-        # use the correct color thresholds
-        color_thresholds = {"example_bird": (np.array([55, 0, 0]), np.array([118, 255, 255]))}
-        low_color_thresh, high_color_thresh = color_thresholds[kind]
-        mask = cv2.inRange(hsv, low_color_thresh, high_color_thresh)
+#         # convert to hsv since it helps with color segmentation
+#         hsv = cv2.cvtColor(blur2, cv2.COLOR_BGR2HSV)
 
-        # the mask can be used in this way
-        # res = cv.bitwise_and(img, img, mask=mask)
-        return mask
+#         # use the correct color thresholds
+#         color_thresholds = {"example_bird": (
+#             np.array([55, 0, 0]), np.array([118, 255, 255]))}
+#         low_color_thresh, high_color_thresh = color_thresholds[kind]
+#         mask = cv2.inRange(hsv, low_color_thresh, high_color_thresh)
 
-    def mediapipe_segmentation(self, image):
-        """returns numpy 2D array of the same size as the image, in each pixel position, it has an integer between
-        0 and 5, detailing which class is estimated to be there:
-            0 - background
-            1 - hair
-            2 - body-skin
-            3 - face-skin
-            4 - clothes
-            5 - others (accessories)"""
+#         # the mask can be used in this way
+#         # res = cv.bitwise_and(img, img, mask=mask)
+#         return mask
 
-        # image needs to be adapted to mediapipe format for the uses from mp.tasks, like the segmenter
-        # it is not clear from the docs if the image that goes into mp.Image should be BGR or RGB,
-        # but the results seem similar so for now we use RGB based on this issue
-        # https://github.com/google/mediapipe/issues/5218
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
+#     def mediapipe_segmentation(self, image):
+#         """returns numpy 2D array of the same size as the image, in each pixel position, it has an integer between
+#         0 and 5, detailing which class is estimated to be there:
+#             0 - background
+#             1 - hair
+#             2 - body-skin
+#             3 - face-skin
+#             4 - clothes
+#             5 - others (accessories)"""
 
-        # Perform image segmentation on the provided single image.
-        # The image segmenter must be created with the image mode.
-        segmentation_result = self.mediapipe_segmenter.segment(mp_image)
-        category_mask = segmentation_result.category_mask
+#         # image needs to be adapted to mediapipe format for the uses from mp.tasks, like the segmenter
+#         # it is not clear from the docs if the image that goes into mp.Image should be BGR or RGB,
+#         # but the results seem similar so for now we use RGB based on this issue
+#         # https://github.com/google/mediapipe/issues/5218
+#         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
 
-        categories = category_mask.numpy_view()
+#         # Perform image segmentation on the provided single image.
+#         # The image segmenter must be created with the image mode.
+#         segmentation_result = self.mediapipe_segmenter.segment(mp_image)
+#         category_mask = segmentation_result.category_mask
 
-        # TODO if the mask has few pixels lighted up, we could conclude that it didn't detect the category correctly and change nothing?
+#         categories = category_mask.numpy_view()
 
-        return categories
+#         # TODO if the mask has few pixels lighted up, we could conclude that it didn't detect the category correctly and change nothing?
 
-    def get_mask(self, image, mask_type, kwargs):
-        """for now, we always use mediapipe segmentation, old ad_hoc implementations using kmeans and color thresholding
-        can be used as alternatives to compare in the future
+#         return categories
 
-        :param image:
-        :param mask_type: what mask to create, from "skin", "clothes", "hair", "background"
-        :param kwargs:
-            :param image_filepath: the path to the original image, needed to save the mask in a new filepath
-            :param data_type: what dataset folder is the image in, between dev, test, train, etc.
-        """
-        image_filepath = kwargs['image_filepath']
-        data_type = kwargs['data_type']
-        dataset_name = kwargs['dataset_name']
+#     def get_mask(self, image, mask_type, kwargs):
+#         """for now, we always use mediapipe segmentation, old ad_hoc implementations using kmeans and color thresholding
+#         can be used as alternatives to compare in the future
 
-        mask_filepath = get_modified_img_path(image_filepath, "segment_categories", data_type, dataset_name)
+#         :param image:
+#         :param mask_type: what mask to create, from "skin", "clothes", "hair", "background"
+#         :param kwargs:
+#             :param image_filepath: the path to the original image, needed to save the mask in a new filepath
+#             :param data_type: what dataset folder is the image in, between dev, test, train, etc.
+#         """
+#         image_filepath = kwargs['image_filepath']
+#         data_type = kwargs['data_type']
+#         dataset_name = kwargs['dataset_name']
 
-        # if it has been already saved, don't compute it again
-        if os.path.isfile(mask_filepath):
-            categories = cv2.imread(mask_filepath)
-        else:
-            categories = self.mediapipe_segmentation(image)
-            categories = cv2.merge((categories, categories, categories))  # mask needs to be 3 channels instead of 1
-            # if save_modified_images:  in case we ever want to not save the segment categories
-            save_modified_image(categories, mask_filepath)
+#         mask_filepath = get_modified_img_path(
+#             image_filepath, "segment_categories", data_type, dataset_name)
 
-        relevant_categories = {
-            "skin": [2, 3],
-            "clothes": [4],
-            "hair": [1],
-            "background": [0]
-        }
-        # TODO give option to return more than one category
-        # leave a 1 in the pixels where the desired category was located
-        mask = np.isin(categories, relevant_categories[mask_type])
-        mask = mask.astype(np.uint8)
-        mask *= 255
-        return mask
+#         # if it has been already saved, don't compute it again
+#         if os.path.isfile(mask_filepath):
+#             categories = cv2.imread(mask_filepath)
+#         else:
+#             categories = self.mediapipe_segmentation(image)
+#             # mask needs to be 3 channels instead of 1
+#             categories = cv2.merge((categories, categories, categories))
+#             # if save_modified_images:  in case we ever want to not save the segment categories
+#             save_modified_image(categories, mask_filepath)
+
+#         relevant_categories = {
+#             "skin": [2, 3],
+#             "clothes": [4],
+#             "hair": [1],
+#             "background": [0]
+#         }
+#         # TODO give option to return more than one category
+#         # leave a 1 in the pixels where the desired category was located
+#         mask = np.isin(categories, relevant_categories[mask_type])
+#         mask = mask.astype(np.uint8)
+#         mask *= 255
+#         return mask
 
 
 class ImgCropBorders(MetRule):
@@ -679,9 +712,9 @@ class ImgCropBorders(MetRule):
         """
         super().__init__(extra_data, **kwargs)
         self.crop_proportion = kwargs['crop_proportion']
-        assert 0<=self.crop_proportion<=1, "crop_proportion must be between 0 and 1"
+        assert 0 <= self.crop_proportion <= 1, "crop_proportion must be between 0 and 1"
         self.cropped_images = {}  # for now only used for specific rugbytesting dataset
-        self.original_bboxes_json = None # only used for specific rugbytesting dataset
+        self.original_bboxes_json = None  # only used for specific rugbytesting dataset
         self.expanded_bboxes_json = None  # only used for specific rugbytesting dataset
 
     @staticmethod
@@ -711,9 +744,10 @@ class ImgCropBorders(MetRule):
             image_name = kwargs["image_filepath"].split(os.sep)[-1]
             data_type = kwargs["data_type"]
             video_num = re.search("_(\d+)_object", image_name).group(1)
-            while len(video_num)>0 and video_num[0]=="0": video_num = "" if len(video_num)<=1 else video_num[1:]
-            video_num = "0" if video_num=="" else video_num
-            access_json_name_prefix = f"processed_yolo_files_{data_type.replace('angle_3_','')}/{data_type}/{data_type}_{video_num}"
+            while len(video_num) > 0 and video_num[0] == "0":
+                video_num = "" if len(video_num) <= 1 else video_num[1:]
+            video_num = "0" if video_num == "" else video_num
+            access_json_name_prefix = f"processed_yolo_files_{data_type.replace('angle_3_', '')}/{data_type}/{data_type}_{video_num}"
 
             if self.original_bboxes_json is None:
                 with (open(f"./Datasets/rugbytesting/processed_yolo_files_3_time_periods/original_jsons/{data_type}_metadata.json")
@@ -742,20 +776,25 @@ class ImgCropBorders(MetRule):
             expanded_height = exp_y_max - exp_y_min
             expanded_width = exp_x_max - exp_x_min
             assert h-2 <= expanded_height <= h+2
-            assert w- 2 <= expanded_width <= w+2
+            assert w - 2 <= expanded_width <= w+2
 
             # this is the output bbox by this cropping of the expanded image but without cropping part of the original bbox
-            new_x_min = min(orig_x_min, exp_x_min + int(expanded_width * self.crop_proportion))
-            new_x_max = max(orig_x_max, exp_x_max - int(expanded_width * self.crop_proportion))
-            new_y_min = min(orig_y_min, exp_y_min + int(expanded_height * self.crop_proportion))
-            new_y_max = max(orig_y_max, exp_y_max - int(expanded_height * self.crop_proportion))
+            new_x_min = min(orig_x_min, exp_x_min +
+                            int(expanded_width * self.crop_proportion))
+            new_x_max = max(orig_x_max, exp_x_max -
+                            int(expanded_width * self.crop_proportion))
+            new_y_min = min(orig_y_min, exp_y_min +
+                            int(expanded_height * self.crop_proportion))
+            new_y_max = max(orig_y_max, exp_y_max -
+                            int(expanded_height * self.crop_proportion))
 
             shave_left = int(new_x_min - exp_x_min)
             shave_right = int(exp_x_max - new_x_max)
             shave_top = int(new_y_min - exp_y_min)
             shave_bot = int(exp_y_max - new_y_max)
 
-            result = image[shave_top:h-shave_bot, shave_left:w-shave_right].copy()
+            result = image[shave_top:h-shave_bot,
+                           shave_left:w-shave_right].copy()
             self.cropped_images[image_name] = {"exp_bbox": (exp_x_min, exp_x_max, exp_y_min, exp_y_max),
                                                "modif_bbox": (new_x_min, new_x_max, new_y_min, new_y_max)}
 
@@ -764,17 +803,16 @@ class ImgCropBorders(MetRule):
             height_pixel_crop_size = int(h * self.crop_proportion)
             width_pixel_crop_size = int(w * self.crop_proportion)
             result = image[height_pixel_crop_size:h-height_pixel_crop_size,
-                     width_pixel_crop_size:w-width_pixel_crop_size].copy()
+                           width_pixel_crop_size:w-width_pixel_crop_size].copy()
 
         return result
 
+    # def transform_keypoints_for_visualizing(self, keypoints, orig_img, modif_img, image_filepath):
+    #     """transform the keypoints to be shown in the transformed image."""
+    #     transformed_kps = kp_fo_to_our_format(keypoints)
 
-    def transform_keypoints_for_visualizing(self, keypoints, orig_img, modif_img, image_filepath):
-        """transform the keypoints to be shown in the transformed image."""
-        transformed_kps = kp_fo_to_our_format(keypoints)
-
-        big_h, big_w = orig_img.shape[:2]
-        cropped_h, cropped_w = modif_img.shape[:2]
+    #     big_h, big_w = orig_img.shape[:2]
+    #     cropped_h, cropped_w = modif_img.shape[:2]
 
         def transform_each_kp(point):
             """each point is a nparray with values [x, y, z, visibility?], the visibility is only present
@@ -787,7 +825,8 @@ class ImgCropBorders(MetRule):
                 # This whole if statement can be removed once that experiment dataset is no longer relevant.
 
                 image_name = image_filepath.split(os.sep)[-1]
-                exp_x_min, exp_x_max, exp_y_min, exp_y_max = self.cropped_images[image_name]["exp_bbox"]
+                exp_x_min, exp_x_max, exp_y_min, exp_y_max = self.cropped_images[
+                    image_name]["exp_bbox"]
                 cropped_x_min, cropped_x_max, cropped_y_min, cropped_y_max = self.cropped_images[image_name][
                     "modif_bbox"]
 
@@ -800,14 +839,18 @@ class ImgCropBorders(MetRule):
                 # cropped_x_pos = big_x_pos - left_cropped_size. so that is the computation below.
                 left_cropped_pixels = (cropped_x_min - exp_x_min)
                 top_cropped_pixels = (cropped_y_min - exp_y_min)
-                transformed_kp_x = ((big_kp_x * big_w) - left_cropped_pixels) / cropped_w
-                transformed_kp_y = ((big_kp_y * big_h) - top_cropped_pixels) / cropped_h
+                transformed_kp_x = ((big_kp_x * big_w) -
+                                    left_cropped_pixels) / cropped_w
+                transformed_kp_y = ((big_kp_y * big_h) -
+                                    top_cropped_pixels) / cropped_h
 
             else:
                 left_cropped_pixels = (big_w * self.crop_proportion)
                 top_cropped_pixels = (big_h * self.crop_proportion)
-                transformed_kp_x = ((big_kp_x * big_w) - left_cropped_pixels) / cropped_w
-                transformed_kp_y = ((big_kp_y * big_h) - top_cropped_pixels) / cropped_h
+                transformed_kp_x = ((big_kp_x * big_w) -
+                                    left_cropped_pixels) / cropped_w
+                transformed_kp_y = ((big_kp_y * big_h) -
+                                    top_cropped_pixels) / cropped_h
 
             point[0] = transformed_kp_x
             point[1] = transformed_kp_y
@@ -817,12 +860,12 @@ class ImgCropBorders(MetRule):
         for idx in range(len(transformed_kps)):
             transformed_kps[idx] = {
                 key: None if val is None else
-                val if key == "extra_data" else np.stack([transform_each_kp(l) for l in val])
+                val if key == "extra_data" else np.stack(
+                    [transform_each_kp(l) for l in val])
                 for key, val in transformed_kps[idx].items()
             }
 
         return kp_our_format_to_fo_format(transformed_kps)
-
 
     def resize_keypoints(self, keypoints, orig_img, modif_img, image_filepath):
         """Scale the keypoints back to negate the cropping so they can be correctly shown in the original image"""
@@ -841,8 +884,10 @@ class ImgCropBorders(MetRule):
                 # This whole if statement can be removed once that experiment dataset is no longer relevant.
 
                 image_name = image_filepath.split(os.sep)[-1]
-                exp_x_min, exp_x_max, exp_y_min, exp_y_max = self.cropped_images[image_name]["exp_bbox"]
-                cropped_x_min, cropped_x_max, cropped_y_min, cropped_y_max = self.cropped_images[image_name]["modif_bbox"]
+                exp_x_min, exp_x_max, exp_y_min, exp_y_max = self.cropped_images[
+                    image_name]["exp_bbox"]
+                cropped_x_min, cropped_x_max, cropped_y_min, cropped_y_max = self.cropped_images[
+                    image_name]["modif_bbox"]
 
                 assert exp_x_min <= cropped_x_min
                 assert exp_y_min <= cropped_y_min
@@ -851,12 +896,16 @@ class ImgCropBorders(MetRule):
                 # the same keypoint, we have from the cropped image now we want it in the original bigger image.
                 # if cropped_kp_x = cropped_x_pos / cropped_w. We now want big_kp_x = big_x_pos / big_w
                 # big_x_pos = cropped_x_pos + left_cropped_size. so that is the computation below.
-                resized_kp_x = ((cropped_kp_x * cropped_w)+(cropped_x_min - exp_x_min)) / orig_w
-                resized_kp_y = ((cropped_kp_y * cropped_h)+(cropped_y_min - exp_y_min)) / orig_h
+                resized_kp_x = ((cropped_kp_x * cropped_w) +
+                                (cropped_x_min - exp_x_min)) / orig_w
+                resized_kp_y = ((cropped_kp_y * cropped_h) +
+                                (cropped_y_min - exp_y_min)) / orig_h
 
             else:
-                resized_kp_x = ((cropped_kp_x * cropped_w) + (orig_w * self.crop_proportion)) / orig_w
-                resized_kp_y = ((cropped_kp_y * cropped_h) + (orig_h * self.crop_proportion)) / orig_h
+                resized_kp_x = ((cropped_kp_x * cropped_w) +
+                                (orig_w * self.crop_proportion)) / orig_w
+                resized_kp_y = ((cropped_kp_y * cropped_h) +
+                                (orig_h * self.crop_proportion)) / orig_h
 
             point[0] = resized_kp_x
             point[1] = resized_kp_y
@@ -865,7 +914,8 @@ class ImgCropBorders(MetRule):
         # resize each keypoint to correctly show keypoints from cropped image in the original bigger image
         keypoints = {
             key: None if val is None else
-            val if key == "extra_data" else np.stack([resize_each_kp(l) for l in val])
+            val if key == "extra_data" else np.stack(
+                [resize_each_kp(l) for l in val])
             for key, val in keypoints.items()
         }
         return keypoints
@@ -925,6 +975,7 @@ class ImgSilhouetteRule(MetRule):
     """It should simply leave the silhouette of different segments of the image according to the mask rule, to
     completely remove textures and colors. This is equivalent to just filling in the image with a constant color value,
     which then the maskRule can properly segment."""
+
     def __init__(self, extra_data, **kwargs):
         """Image Silhouette Metamorphic Rule.
 
@@ -948,7 +999,8 @@ class ImgSilhouetteRule(MetRule):
                 x, y, z = map(float, input_string.strip("()").split(','))
                 return x, y, z
             except:
-                raise argparse.ArgumentTypeError("Input should be like (x,y,z) where x, y and z are ints in [0,255]")
+                raise argparse.ArgumentTypeError(
+                    "Input should be like (x,y,z) where x, y and z are ints in [0,255]")
 
         return [('color_constant', color_tuple_type, "color of the plain image to return", (0, 0, 0))]
 
@@ -966,6 +1018,7 @@ class ImgColorWheelRule(MetRule):
         https://docs.opencv.org/3.4/df/d9d/tutorial_py_colorspaces.html explains hsv in opencv, detailing how to find
         the color thresholds in hsv that we care about in case we only want to change some of them.
         """
+
     def __init__(self, extra_data, **kwargs):
         super().__init__(extra_data, **kwargs)
         self.hue_rotation = kwargs['hue_rotation']
@@ -984,7 +1037,8 @@ class ImgColorWheelRule(MetRule):
         hue, saturation, value = cv2.split(result)
 
         # in opencv hue range is [0, 179] instead of [0, 255] like for saturation and value
-        hue = ((hue.astype(np.uint16) + self.hue_rotation) % 180).astype(np.uint8)
+        hue = ((hue.astype(np.uint16) + self.hue_rotation) %
+               180).astype(np.uint8)
 
         result = cv2.merge([hue, saturation, value])
         result = cv2.cvtColor(result, cv2.COLOR_HSV2RGB)
@@ -993,6 +1047,7 @@ class ImgColorWheelRule(MetRule):
 
 class ImgColorChannelsRule(MetRule):
     """"""
+
     def __init__(self, extra_data, **kwargs):
         """Image Color Channels Metamorphic Rule.
 
@@ -1024,7 +1079,8 @@ class ImgColorChannelsRule(MetRule):
                 x, y, z = map(float, input_string.strip("()").split(','))
                 return x, y, z
             except:
-                raise argparse.ArgumentTypeError("Input should be like (x,y,z) where x, y and z are floats")
+                raise argparse.ArgumentTypeError(
+                    "Input should be like (x,y,z) where x, y and z are floats")
 
         return [('color_channels_out', str, "string describing the format of the output image", "RGB"),
                 ('channel_multipliers', color_tuple_type, "how much to multiply each channel by", (1, 1, 1))]
@@ -1034,15 +1090,16 @@ class ImgColorChannelsRule(MetRule):
             output_format = getattr(cv2, "COLOR_RGB2"+self.color_channels_out)
             result = cv2.cvtColor(image, output_format)
             if output_format == cv2.COLOR_RGB2GRAY:
-                result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)  # image needs to have 3 channels again if greyscaled
+                # image needs to have 3 channels again if greyscaled
+                result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
         else:
             result = image.copy()
 
         color_channels = list(cv2.split(result))
         for color in range(0, 3):
             # avoid overflowing by clipping to the downscaled value
-            scaled = color_channels[color].clip(0, 255 // self.channel_multipliers[color]) * self.channel_multipliers[color]
+            scaled = color_channels[color].clip(
+                0, 255 // self.channel_multipliers[color]) * self.channel_multipliers[color]
             color_channels[color] = scaled.astype(np.uint8)
         result = cv2.merge(color_channels)
         return result
-
