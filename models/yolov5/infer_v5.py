@@ -8,7 +8,6 @@ import sys
 import os
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from datetime import datetime
 import cv2
 from yolov5.utils.general import check_img_size, non_max_suppression
 from yolov5.models.experimental import attempt_load
@@ -16,7 +15,6 @@ import torch.backends.cudnn as cudnn
 import torch
 import argparse
 import numpy as np
-from metamorphic_test import gen_metamorphic
 
 
 try:
@@ -124,8 +122,7 @@ def main():
     parser.add_argument('--device', type=str,
                         default="cuda:0", help='pytorch device to use')
     parser.add_argument('--image', required=True, type=str, help='image path')
-    parser.add_argument('--rules', nargs='+', default=['imgBlur'],
-                        help='List of metamorphic rules to test')
+
 
     args = parser.parse_args()
 
@@ -135,29 +132,25 @@ def main():
         print(f"Error: Could not load image from {args.image}")
         return
     
-    # Get transformations 
-    transformed_images = gen_metamorphic(img, args.rules)
-
     # Load model
     model, device, half, img_size = load_model(
         args.weights, args.img_size, args.device)
 
-    # Run inference on each transformation
-    for i in range(len(transformed_images)):
-        img = transformed_images[i]
-        det, ratio, pad = inference(
-            model, device, half, img_size, img, args.conf_thres, args.iou_thres)
+    # Run inference on image
+    det, ratio, pad = inference(
+        model, device, half, img_size, img, args.conf_thres, args.iou_thres)
 
-        # Process detections
-        detections = extract_detections(det, img.shape, ratio, pad)
+    # Process detections
+    detections = extract_detections(det, img.shape, ratio, pad)
 
-        # Print detections
-        print(detections)
+    # Print detections
+    print(detections)
 
-        # Visualise detections
-        from utils.visualise import visualize_detections as visualise
-        visualise(img, detections, show_plot=True,
-                output_path=f"./results/matias'/yolov5/YOLOv5_{os.path.basename(args.image)}_{i}_{datetime.now().strftime('%Y%m%d')}.jpg")
+    # Visualise detections
+    from utils.visualise import visualize_detections as visualise
+    img_path = os.path.splitext(os.path.basename(args.image))
+    visualise(img, detections, show_plot=True,
+            output_path=f"./results/yolov5/{img_path[0]}{img_path[1]}", model="v5")
 
 
 if __name__ == '__main__':

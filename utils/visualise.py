@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Visualization utilities for YOLOv5 detection results
+Visualization utilities for YOLOvX detection results
 """
 
 import cv2
@@ -10,7 +10,7 @@ from typing import List, Dict, Any, Optional
 import argparse
 import os
 
-class_names = [
+class_names_v5 = [
     "Yellow Cone",
     "Orange Cone",
     "Big Orange Cone",
@@ -18,17 +18,35 @@ class_names = [
     "Unknown Cone",
 ]
 
-# Define colours for different cone classes
-colours = [
-    (255, 255, 0),  # Yellow
-    (255, 165, 0),  # Orange
-    (255, 0, 0),  # Big Orange
-    (0, 0, 255),  # Blue
-    (0, 255, 255),  # Unknown Cone
+class_names_v8 = [
+    "Yellow Cone",
+    "Orange Cone",
+    "Big Orange Cone",
+    "Blue Cone",
+    "Unknown Cone",
 ]
 
 
-def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]],
+
+class_names_v12 = [
+    "Blue Cone", 
+    "Orange Cone", 
+    "Big Orange Cone", 
+    "Unknown Cone", 
+    "Yellow Cone"
+]
+
+# Define colours for different cone classes
+colours = {
+    "Yellow Cone": (255, 255, 0),  # Yellow
+    "Orange Cone": (255, 165, 0),  # Orange
+    "Big Orange Cone": (255, 0, 0),  # Big Orange
+    "Blue Cone": (0, 0, 255),  # Blue
+    "Unknown Cone": (0, 255, 255),  # Unknown Cone
+}
+
+
+def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]], class_names,
                     conf_threshold: float = 0.0) -> np.ndarray:
     """
     Draw bounding boxes and labels on image
@@ -58,7 +76,7 @@ def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]],
         # Get class name and colour
         class_name = class_names[cls_id] if cls_id < len(
             class_names) else f'Class {cls_id}'
-        colour = colours[cls_id]
+        colour = colours.get(class_name)
 
         # Draw bounding box
         cv2.rectangle(vis_image, (x1, y1), (x2, y2), colour, 2)
@@ -87,7 +105,7 @@ def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]],
 def visualize_detections(image: np.ndarray, detections: List[Dict[str, Any]],
                          output_path: Optional[str] = None,
                          conf_threshold: float = 0.25,
-                         show_plot: bool = True) -> None:
+                         show_plot: bool = True, model:str="v5") -> None:
     """
     Visualize detections on an image
 
@@ -103,15 +121,25 @@ def visualize_detections(image: np.ndarray, detections: List[Dict[str, Any]],
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     # Draw detections
+    match model:
+        case "v12":
+            class_names = class_names_v12
+        case "v5":
+            class_names = class_names_v5
+        case "v8":
+            class_names = class_names_v8
+        case _:
+            class_names = class_names_v5
+        
     vis_image = draw_detections(
-        image_rgb, detections, conf_threshold)
+        image_rgb, detections,class_names, conf_threshold)
 
     # Display or save
     if show_plot:
         plt.figure(figsize=(12, 8))
         plt.imshow(vis_image)
         plt.axis('off')
-        plt.title(f'YOLOv5 Detections ({len(detections)} objects found)')
+        plt.title(f'YOLO Detections ({len(detections)} objects found)')
         plt.tight_layout()
         plt.show()
 
