@@ -26,15 +26,23 @@ class_names_v8 = [
     "Unknown Cone",
 ]
 
-
-
 class_names_v12 = [
-    "Blue Cone", 
-    "Orange Cone", 
-    "Big Orange Cone", 
-    "Unknown Cone", 
-    "Yellow Cone"
+    "Yellow Cone",
+    "Orange Cone",
+    "Big Orange Cone",
+    "Blue Cone",
+    "Unknown Cone",
 ]
+
+
+
+# class_names_v12 = [
+#     "Blue Cone", 
+#     "Orange Cone", 
+#     "Big Orange Cone", 
+#     "Unknown Cone", 
+#     "Yellow Cone"
+# ]
 
 # Define colours for different cone classes
 colours = {
