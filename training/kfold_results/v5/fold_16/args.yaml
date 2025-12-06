@@ -4,7 +4,7 @@ model: yolov5s.pt
 data: /moredata/emma/meta/YOLO_metamorphic_testing/training/dataset/kfold/fold1/fold1.yml
 epochs: 200
 time: null
-patience: 50
+patience: 20
 batch: 16
 imgsz: 640
 save: true
@@ -13,7 +13,7 @@ cache: false
 device: null
 workers: 8
 project: ~/metamorphic_testing/YOLO_metamorphic_testing/training/kfold_results/v5
-name: fold_14
+name: fold_16
 exist_ok: false
 pretrained: true
 optimizer: auto
@@ -103,4 +103,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: /moredata/emma/meta/YOLO_metamorphic_testing/training/~/metamorphic_testing/YOLO_metamorphic_testing/training/kfold_results/v5/fold_14
+save_dir: /moredata/emma/meta/YOLO_metamorphic_testing/training/~/metamorphic_testing/YOLO_metamorphic_testing/training/kfold_results/v5/fold_16
