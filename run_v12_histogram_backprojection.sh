@@ -1,24 +1,24 @@
 #!/bin/bash
 
-# Full pipeline for YOLO detection followed by histogram backprojection on bounding boxes
+# YOLOv12 detection followed by histogram backprojection pipeline
 
 set -e
 
-echo "=== YOLO Cone Extraction Pipeline ==="
+echo "=== YOLOv12 Histogram Backprojection Pipeline ==="
 echo
 
 # Configuration
-WEIGHTS="models/yolov8/yolov8_parameters_updated.pt"
+WEIGHTS="models/yolov12/yolov12_param_kfold.pt"
 INPUT_IMAGES_DIR="data/base_images/test/images"
-DETECTIONS_OUTPUT_DIR="results/yolov8"
+DETECTIONS_OUTPUT_DIR="results/yolov12"
 HIST_SAMPLES_DIR="utils/hist_backprojection"
-SEGMENTATION_OUTPUT_DIR="data/base_images/test_segmented_yolov8"
+SEGMENTATION_OUTPUT_DIR="data/base_images/test_segmented_yolov12"
 
 # Check if weights file exists
 if [ ! -f "$WEIGHTS" ]; then
-    echo "Error: YOLOv8 weights file not found: $WEIGHTS"
-    echo "Available weights files:"
-    find models/yolov8/ -name "*.pt" 2>/dev/null || echo "No .pt files found"
+    echo "Error: YOLOv12 weights file not found: $WEIGHTS"
+    echo "Available YOLOv12 weights files:"
+    find models/yolov12/ -name "*.pt" 2>/dev/null || echo "No .pt files found"
     exit 1
 fi
 
@@ -34,7 +34,7 @@ fi
 mkdir -p "$DETECTIONS_OUTPUT_DIR"
 mkdir -p "$SEGMENTATION_OUTPUT_DIR"
 
-echo "Step 1: Running YOLO detection on test images..."
+echo "Step 1: Running YOLOv12 detection on test images..."
 echo "Using weights: $WEIGHTS"
 echo "Input directory: $INPUT_IMAGES_DIR"
 echo
@@ -53,7 +53,7 @@ echo
 
 for image in $TEST_IMAGES; do
     echo "Processing: $(basename $image)"
-    python models/yolov8/infer_v8.py \
+    python models/yolov12/infer_v12.py \
         --weights "$WEIGHTS" \
         --image "$image" \
         --conf_thres 0.25 \
@@ -69,7 +69,7 @@ echo
 DETECTION_FILES=$(find "$DETECTIONS_OUTPUT_DIR" -name "*.txt" 2>/dev/null | head -3)
 if [ -z "$DETECTION_FILES" ]; then
     echo "Warning: No detection .txt files found in $DETECTIONS_OUTPUT_DIR"
-    echo "The YOLO detection step may have failed or produced no detections."
+    echo "The YOLOv12 detection step may have failed or produced no detections."
     exit 1
 fi
 
@@ -87,9 +87,9 @@ python utils/extract_cone_regions.py \
 echo
 echo "=== Pipeline Complete ==="
 echo "Detection results: $DETECTIONS_OUTPUT_DIR/*.txt"
-echo "Visualization results: $DETECTIONS_OUTPUT_DIR/*.jpg/*.png" 
-echo "Segmentation results: $SEGMENTATION_OUTPUT_DIR/segmented_*.jpg/*.png"
+echo "Segmented images: $SEGMENTATION_OUTPUT_DIR/segmented_*.jpg/*.png"
+echo
+echo "Output contains only the segmented regions (cones extracted via histogram backprojection)"
 echo
 echo "To view results:"
-echo "  ls -la $DETECTIONS_OUTPUT_DIR/"
 echo "  ls -la $SEGMENTATION_OUTPUT_DIR/"

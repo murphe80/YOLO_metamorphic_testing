@@ -91,6 +91,7 @@ def main():
 
     # Get image filename for output
     img_path = os.path.splitext(os.path.basename(args.image))
+    os.makedirs("./results/yolov8", exist_ok=True)
     
     # Extract detection data and save to results 
     detections = extract_detections(result)
@@ -108,7 +109,7 @@ def main():
         print(det)
 
     # Save visualization
-    visualise(img, detections, show_plot=True,
+    visualise(img, detections, show_plot=False,
             output_path=f"./results/yolov8/{img_path[0]}{img_path[1]}", model="v8")
 
 

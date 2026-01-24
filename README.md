@@ -15,8 +15,8 @@ Metamorphic testing is a software testing technique that validates the behavior 
 
 ### Available Metamorphic Transformations
 
-- **Geometric Transformations**: Rotation, mirroring, cropping, stretching
-- **Visual Quality**: Blur, motion blur, resolution reduction, edge detection
+- **Geometric Transformations**: stretching
+- **Visual Quality**: Motion blur, resolution reduction
 - **Color/Contrast**: Brightness adjustment, grayscale conversion, color channel manipulation
 
 ### Supported Models
@@ -58,14 +58,10 @@ python models/yolov5/infer_v5.py \
 | Rule | Description | Parameters |
 |------|-------------|------------|
 | `imgBlur` | Apply bilateral blur filter | `blur_strength`, `filter_size` |
-| `imgRotation` | Rotate image by specified angle | `rotation_angle` |
 | `imgDarkBright` | Adjust brightness/contrast | `brightness_constant`, `brightness_multiplier`, `method` |
-| `imgMirror` | Flip image horizontally/vertically | `flip_code` |
 | `imgResolution` | Reduce image resolution | `size_ratio` |
 | `imgGrayscale` | Convert to grayscale | None |
-| `imgEdges` | Apply edge detection filter | `aperture_size`, `sigma` |
 | `imgMotionBlur` | Apply motion blur effect | `kernel_size`, `orientation` |
-| `imgCropBorders` | Crop outer edges of image | `crop_proportion` |
 
 ### 4. Output
 

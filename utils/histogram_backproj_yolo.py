@@ -162,17 +162,10 @@ def process_image_with_detections(image_path, detection_file, histograms, output
     # Apply segmentation mask to original image
     segmentation_mask_3ch = cv.merge((segmentation_mask, segmentation_mask, segmentation_mask))
     segmented_image = cv.bitwise_and(image, segmentation_mask_3ch)
-    
-    # Create combined output
-    result_stack = np.vstack((
-        image,           # Original
-        result_image,    # With bounding boxes  
-        segmented_image  # Segmented regions
-    ))
-    
-    # Save result
-    output_filename = os.path.join(output_dir, f"segmented_{os.path.basename(image_path)}")
-    cv.imwrite(output_filename, result_stack)
+    stacked_image = np.vstack((image, segmented_image))
+    # Save the stacked image
+    output_filename = os.path.join(output_dir, f"{os.path.basename(image_path)}")
+    cv.imwrite(output_filename, stacked_image)
     print(f"Saved segmentation result to {output_filename}")
 
 def main():

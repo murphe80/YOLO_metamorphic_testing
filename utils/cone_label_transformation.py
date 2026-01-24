@@ -3,8 +3,9 @@ import os
 import cv2 as cv
 import numpy as np
 
-segmented_path = "/home/murphe80/metamorphic_testing/YOLO_metamorphic_testing/data/base_images/fsoco_test_segmented/filtered_segmented"
-output_path = "/home/murphe80/metamorphic_testing/YOLO_metamorphic_testing/data/transformed_images/fsoco_test_segmented/remove_labels_2"
+segmented_path = "/home/murphe80/metamorphic_testing/YOLO_metamorphic_testing/data/base_images/segmented_fsoco_test_gt"
+bounding_boxes_path = "/home/murphe80/metamorphic_testing/YOLO_metamorphic_testing/data/base_images/test/labels"
+output_path = "/home/murphe80/metamorphic_testing/YOLO_metamorphic_testing/data/transformed_images/fsoco_test_segmented/remove_labels_gt"
 
 os.makedirs(output_path, exist_ok=True)
 

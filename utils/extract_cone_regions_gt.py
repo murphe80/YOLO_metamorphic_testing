@@ -18,7 +18,7 @@ def load_color_histograms(hist_samples_dir):
     
     # Load sample images for each color
     color_samples = {
-        'blue': 'blue_cones_samples2.PNG',
+        'blue': 'blue_cones_samples_mix.PNG',
         'yellow': 'yellow_cones_samples2.png', 
         'orange': 'orange_cones_samples2.PNG'
     }
@@ -211,35 +211,14 @@ def process_image_with_gt_labels(image_path, label_file, histograms, output_dir)
     segmentation_mask_3ch = cv.merge((segmentation_mask, segmentation_mask, segmentation_mask))
     segmented_image = cv.bitwise_and(image, segmentation_mask_3ch)
     
-    # Create combined output with labels
-    font = cv.FONT_HERSHEY_SIMPLEX
-    label_img = np.zeros((60, image.shape[1], 3), dtype=np.uint8)
-    cv.putText(label_img, 'Original', (10, 25), font, 0.7, (255, 255, 255), 2)
+    # Stack original and segmented images vertically
+    stacked_image = np.vstack((image, segmented_image))
     
-    bbox_img = np.zeros((60, image.shape[1], 3), dtype=np.uint8) 
-    cv.putText(bbox_img, f'Ground Truth Bounding Boxes ({len(detections)} cones)', (10, 25), font, 0.7, (255, 255, 255), 2)
-    
-    seg_img = np.zeros((60, image.shape[1], 3), dtype=np.uint8)
-    cv.putText(seg_img, 'Histogram Backprojection Result', (10, 25), font, 0.7, (255, 255, 255), 2)
-    
-    result_stack = np.vstack((
-        label_img,
-        image,           # Original
-        bbox_img,
-        result_image,    # With bounding boxes  
-        seg_img,
-        segmented_image  # Segmented regions
-    ))
-    
-    # Save result
-    output_filename = os.path.join(output_dir, f"gt_segmented_{os.path.basename(image_path)}")
-    cv.imwrite(output_filename, result_stack)
+    # Save the stacked image
+    output_filename = os.path.join(output_dir, f"{os.path.basename(image_path)}")
+    cv.imwrite(output_filename, stacked_image)
+
     print(f"Saved ground truth segmentation result to {output_filename}")
-    
-    # Also save individual components
-    base_name = os.path.splitext(os.path.basename(image_path))[0]
-    cv.imwrite(os.path.join(output_dir, f"gt_bbox_{base_name}.png"), result_image)
-    cv.imwrite(os.path.join(output_dir, f"gt_mask_{base_name}.png"), segmentation_mask)
 
 def main():
     parser = argparse.ArgumentParser(description="Extract cone regions using ground truth labels and histogram backprojection")

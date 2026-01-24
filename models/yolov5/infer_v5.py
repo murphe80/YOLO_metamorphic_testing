@@ -140,15 +140,26 @@ def main():
     det, ratio, pad = inference(
         model, device, half, img_size, img, args.conf_thres, args.iou_thres)
 
+    # Get image filename for output
+    img_path = os.path.splitext(os.path.basename(args.image))
+    
     # Process detections
     detections = extract_detections(det, img.shape, ratio, pad)
-
-    # Print detections
-    print(detections)
+    
+    # Save detections to text file
+    detection_output = f"./results/yolov5/{img_path[0]}.txt"
+    with open(detection_output, 'w') as f:
+        for det in detections:
+            # Save in format: class confidence x1 y1 x2 y2
+            f.write(f"{det['class']} {det['confidence']:.6f} {det['bbox'][0]:.2f} {det['bbox'][1]:.2f} {det['bbox'][2]:.2f} {det['bbox'][3]:.2f}\n")
+    
+    print(f"Saved {len(detections)} detections to {detection_output}")
+    print("Detections:")
+    for det in detections:
+        print(det)
 
     # Visualise detections
     from utils.visualise import visualize_detections as visualise
-    img_path = os.path.splitext(os.path.basename(args.image))
     visualise(img, detections, show_plot=True,
             output_path=f"./results/yolov5/{img_path[0]}{img_path[1]}", model="v5")
 

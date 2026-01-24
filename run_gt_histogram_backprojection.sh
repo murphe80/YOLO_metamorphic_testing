@@ -91,12 +91,4 @@ python utils/extract_cone_regions_gt.py \
     --hist_samples_dir "$HIST_SAMPLES_DIR" \
     --output_dir "$OUTPUT_DIR"
 
-echo
-echo "=== Pipeline Complete ==="
-echo
-echo "Results saved to: $OUTPUT_DIR/"
-echo
-echo "Output files include:"
-echo "  - gt_segmented_*.png: Combined visualization (original + bounding boxes + segmentation)"
-echo "  - gt_bbox_*.png: Images with ground truth bounding boxes"
-echo "  - gt_mask_*.png: Segmentation masks only"
+
