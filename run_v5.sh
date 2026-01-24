@@ -8,24 +8,17 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Generate metamorphic images
-for image in data/base_images/fsoco_sample/images/*; do
-    python models/metamorphic_test.py \
-        --rules imgGrayscale \
-        --base_image "$image" \
-        --output_path ./data/transformed_images/fsoco_sample
-done
 
 # Run original images on YOLOv5
 for image in data/base_images/fsoco_sample/images/*; do
     python models/yolov5/infer_v5.py \
-        --weights ./models/yolov5/yolov5_parameters.pt \
+        --weights ./models/yolov5/yolov5_parameters_Cora.pt \
         --image "$image"
 done
 
 # Run transformed images on YOLOv5
-for image in data/transformed_images/fsoco_sample/*; do
+for image in data/transformed_images/fsoco_test/*; do
     python models/yolov5/infer_v5.py \
-        --weights ./models/yolov5/yolov5_parameters.pt \
+        --weights ./models/yolov5/yolov5_parameters_Cora.pt \
         --image "$image"
 done

@@ -17,14 +17,14 @@ pip install -r requirements.txt
 # done
 
 # Run original images on yolov12
-for image in data/base_images/fsoco_sample/images/*; do
-    python models/yolov12/infer_v12.py \
-        --weights ./models/yolov12/yolov12_parameters.pt \
-        --image "$image"
-done
+# for image in data/base_images/fsoco_sample/images/*; do
+#     python models/yolov12/infer_v12.py \
+#         --weights ./models/yolov12/yolov12_parameters.pt \
+#         --image "$image"
+# done
 
 # Run transformed images on yolov12
-for image in data/transformed_images/fsoco_sample/*; do
+for image in data/transformed_images/*.png; do
     python models/yolov12/infer_v12.py \
         --weights ./models/yolov12/yolov12_parameters.pt \
         --image "$image"

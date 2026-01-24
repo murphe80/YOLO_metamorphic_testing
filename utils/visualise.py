@@ -62,6 +62,7 @@ def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]], class_n
     Args:
         image: Input image as numpy array
         detections: List of detection dictionaries from extract_detections()
+        class_names: List of class names
         conf_threshold: Minimum confidence threshold to display
 
     Returns:

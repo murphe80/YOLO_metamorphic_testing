@@ -19,13 +19,13 @@ pip install -r requirements.txt
 # Run original images on yolov8
 for image in data/base_images/fsoco_sample/images/*; do
     python models/yolov8/infer_v8.py \
-        --weights ./models/yolov8/yolov8_parameters_new.pt \
+        --weights ./models/yolov8/yolov8_param_kfold.pt \
         --image "$image"
 done
 
 # Run transformed images on yolov8
 for image in data/transformed_images/fsoco_sample/*; do
     python models/yolov8/infer_v8.py \
-        --weights ./models/yolov8/yolov8_parameters_new.pt \
+        --weights ./models/yolov8/yolov8_param_kfold.pt \
         --image "$image"
 done
