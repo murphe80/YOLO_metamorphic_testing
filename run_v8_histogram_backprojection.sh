@@ -78,7 +78,7 @@ echo "$DETECTION_FILES"
 echo
 
 # Run histogram backprojection
-python utils/extract_cone_regions.py \
+python utils/histogram_backproj_yolo.py \
     --images_dir "$INPUT_IMAGES_DIR" \
     --detections_dir "$DETECTIONS_OUTPUT_DIR" \
     --hist_samples_dir "$HIST_SAMPLES_DIR" \

@@ -113,37 +113,37 @@ def apply_backprojection_to_bbox(image, bbox, class_name, histograms):
     hsv_roi = cv.cvtColor(roi, cv.COLOR_BGR2HSV)
     
     # Apply backprojection based on cone class
-    cone_color = None
-    if 'blue' in class_name.lower():
-        cone_color = 'blue'
-    elif 'yellow' in class_name.lower():
-        cone_color = 'yellow'  
-    elif 'orange' in class_name.lower():
-        cone_color = 'orange'
+    # cone_color = None
+    # if 'blue' in class_name.lower():
+    #     cone_color = 'blue'
+    # elif 'yellow' in class_name.lower():
+    #     cone_color = 'yellow'  
+    # elif 'orange' in class_name.lower():
+    #     cone_color = 'orange'
     
-    # Apply backprojection for the specific color, or all colors if unknown
-    if cone_color and cone_color in histograms:
-        combined = cv.calcBackProject([hsv_roi], [0, 1], histograms[cone_color], [0, 180, 0, 256], 1)
+    # # Apply backprojection for the specific color, or all colors if unknown
+    # if cone_color and cone_color in histograms:
+    #     combined = cv.calcBackProject([hsv_roi], [0, 1], histograms[cone_color], [0, 180, 0, 256], 1)
+    # else:
+    # If color is unknown or not available, try all colors
+    backproject_results = []
+    for color, hist in histograms.items():
+        dst = cv.calcBackProject([hsv_roi], [0, 1], hist, [0, 180, 0, 256], 1)
+        backproject_results.append(dst)
+    
+    if backproject_results:
+        combined = backproject_results[0]
+        for dst in backproject_results[1:]:
+            combined = cv.max(combined, dst)
     else:
-        # If color is unknown or not available, try all colors
-        backproject_results = []
-        for color, hist in histograms.items():
-            dst = cv.calcBackProject([hsv_roi], [0, 1], hist, [0, 180, 0, 256], 1)
-            backproject_results.append(dst)
-        
-        if backproject_results:
-            combined = backproject_results[0]
-            for dst in backproject_results[1:]:
-                combined = cv.max(combined, dst)
-        else:
-            combined = np.zeros((y2-y1, x2-x1), dtype=np.uint8)
+        combined = np.zeros((y2-y1, x2-x1), dtype=np.uint8)
     
     # Apply morphological operations
     disc = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
     cv.filter2D(combined, -1, disc, combined)
     
     # Threshold
-    ret, thresh = cv.threshold(combined, 5, 255, 0)
+    ret, thresh = cv.threshold(combined, 4, 255, 0)
     
     # Morphological operations to clean up
     kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))

@@ -274,7 +274,8 @@ for idx, image_name in enumerate(image_files):
     filtered_cones = stacked_image[single_height:, :]
     
     # Locate cones in the filtered image
-    cone_data = locate_cones(filtered_cones, 250, 100)
+    filtered_gray = cv.cvtColor(filtered_cones, cv.COLOR_BGR2GRAY)
+    cone_data = locate_cones(filtered_gray, 250, 100)
     #fig = visualize_cone_detection(filtered_cones, cone_data, True)
     #plt.show()
     # Fill cone labels in the original image

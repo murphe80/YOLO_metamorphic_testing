@@ -12,7 +12,7 @@ echo
 INPUT_IMAGES_DIR="data/base_images/test/images"
 LABELS_DIR="data/base_images/test/labels"
 HIST_SAMPLES_DIR="utils/hist_backprojection"
-OUTPUT_DIR="data/base_images/gt_histogram_backprojection"
+OUTPUT_DIR="data/base_images/segmented_fsoco_test_gt"
 
 # Check if input directories exist
 if [ ! -d "$INPUT_IMAGES_DIR" ]; then
