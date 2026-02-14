@@ -74,6 +74,8 @@ def main():
     parser.add_argument("--conf_thres", type=float, default=0.25, help="Confidence threshold")
     parser.add_argument("--iou_thres", type=float, default=0.45, help="IoU threshold")
     parser.add_argument("--device", type=str, default="cuda:0", help="Torch device")
+    parser.add_argument("--output-subdir", type=str, default="original", help="Subdirectory under results/yolov12/ (e.g. original, imgColorWheel)")
+    parser.add_argument("--save-viz", action="store_true", help="Save detection visualization image (skip by default to save time)")
 
     args = parser.parse_args()
     
@@ -89,29 +91,26 @@ def main():
     # Run inference
     result = run_inference(model, args.image, args.conf_thres, args.iou_thres, device)
 
-    # Get image filename for output
+    # Get image filename for output (per-transform directory)
     img_path = os.path.splitext(os.path.basename(args.image))
-    
-    # Extract detection data
+    results_dir = os.path.join("./results/yolov12", args.output_subdir)
+    os.makedirs(results_dir, exist_ok=True)
+
     detections = extract_detections(result)
-    os.makedirs("./results/yolov12", exist_ok=True)
-    
-    
-    # Save detections to text file
-    detection_output = f"./results/yolov12/{img_path[0]}.txt"
+    detection_output = os.path.join(results_dir, f"{img_path[0]}.txt")
+
     with open(detection_output, 'w') as f:
         for det in detections:
-            # Save in format: class confidence x1 y1 x2 y2
             f.write(f"{det['class']} {det['confidence']:.6f} {det['bbox'][0]:.2f} {det['bbox'][1]:.2f} {det['bbox'][2]:.2f} {det['bbox'][3]:.2f}\n")
-    
+
     print(f"Saved {len(detections)} detections to {detection_output}")
     print("Detections:")
     for det in detections:
         print(det)
 
-    # Save visualization
-    visualise(img, detections, show_plot=False,
-            output_path=f"./results/yolov12/{img_path[0]}{img_path[1]}", model="v12")
+    if args.save_viz:
+        visualise(img, detections, show_plot=False,
+                  output_path=os.path.join(results_dir, f"{img_path[0]}{img_path[1]}"), model="v12")
 
 
 if __name__ == "__main__":

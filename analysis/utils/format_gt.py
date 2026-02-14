@@ -73,10 +73,20 @@ def convert_to_coco_format(input_dir, output_file, image_dir=None):
     json_files = sorted(input_path.glob("*.json"))
     
     for image_id, json_file in enumerate(json_files, start=1):
+        # Skip if this is already a COCO format file
+        if 'coco' in json_file.name.lower() or json_file.name == 'annotations.json':
+            print(f"Skipping COCO format file: {json_file.name}")
+            continue
+            
         print(f"Processing: {json_file.name}")
         
         with open(json_file, 'r') as f:
             data = json.load(f)
+        
+        # Skip if this looks like a COCO format file (has 'images' and 'annotations' keys)
+        if 'images' in data and 'annotations' in data:
+            print(f"Skipping COCO format file: {json_file.name}")
+            continue
         
         # Extract image filename from JSON filename
         # e.g., "amz_00016.jpg.json" -> "amz_00016.jpg"
