@@ -9,6 +9,12 @@ Optionally uses segmentation masks to apply transformations only to
 cone pixels (non-black pixels in the bottom half of segmented images),
 avoiding transformation of background pixels within bounding boxes.
 
+Supported label formats:
+1. TXT format: class_id x1 y1 x2 y2 (space-separated, one detection per line)
+   - File naming: image_name.txt (matches image_name.jpg/png)
+2. JSON format: Supervisely-style annotation
+   - File naming: image_name.ext.json (e.g., image.png.json)
+
 Class mapping:
 - 0: blue_cone
 - 1: yellow_cone
@@ -26,7 +32,49 @@ import argparse
 # Ground truth reader
 # ------------------------------------------------------------
 
-def read_ground_truth_labels(label_file):
+def read_ground_truth_labels_txt(label_file):
+    """Read bounding box labels from TXT file.
+    
+    Format: class_id x1 y1 x2 y2 (space-separated, one detection per line)
+    """
+    detections = []
+    
+    class_names = {
+        0: 'blue_cone',
+        1: 'yellow_cone',
+        2: 'orange_cone',
+        3: 'unknown_cone'
+    }
+    
+    try:
+        with open(label_file, 'r') as f:
+            for line_num, line in enumerate(f, 1):
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                
+                parts = line.split()
+                if len(parts) < 5:
+                    continue
+                
+                try:
+                    class_id = int(parts[0])
+                    x1, y1, x2, y2 = float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4])
+                    
+                    detections.append({
+                        "class": class_id,
+                        "class_name": class_names.get(class_id, 'unknown_cone'),
+                        "bbox": [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)]
+                    })
+                except (ValueError, IndexError):
+                    continue
+    except Exception as e:
+        print(f"Error reading {label_file}: {e}")
+    
+    return detections
+
+
+def read_ground_truth_labels_json(label_file):
     """Read bounding box labels from JSON file."""
     detections = []
     with open(label_file, "r") as f:
@@ -51,6 +99,17 @@ def read_ground_truth_labels(label_file):
             "bbox": [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)]
         })
     return detections
+
+
+def read_ground_truth_labels(label_file):
+    """Read bounding box labels from either TXT or JSON format."""
+    if label_file.endswith('.txt'):
+        return read_ground_truth_labels_txt(label_file)
+    elif label_file.endswith('.json'):
+        return read_ground_truth_labels_json(label_file)
+    else:
+        print(f"Warning: Unknown label file format: {label_file}")
+        return []
 
 # ------------------------------------------------------------
 # Color transformation functions
@@ -250,20 +309,45 @@ def main():
     if args.segmented_dir:
         print(f"Using segmentation masks from: {args.segmented_dir}")
     
-    # Process all label files
-    for label_file in os.listdir(args.labels_dir):
-        if not label_file.endswith(".json"):
-            continue
+    # Process all label files (both .txt and .json)
+    label_files = [f for f in os.listdir(args.labels_dir) if f.endswith('.txt') or f.endswith('.json')]
+    
+    if not label_files:
+        print(f"Warning: No label files (.txt or .json) found in {args.labels_dir}")
+        return
+    
+    print(f"Found {len(label_files)} label files to process")
+    
+    for label_file in label_files:
+        label_path = os.path.join(args.labels_dir, label_file)
         
         # Find corresponding image
-        image_name = label_file.replace(".json", "")
+        if label_file.endswith('.json'):
+            # JSON format: image_name.ext.json -> image_name.ext
+            image_name = label_file.replace(".json", "")
+        elif label_file.endswith('.txt'):
+            # TXT format: image_name.txt -> find image_name.* (any extension)
+            base_name = os.path.splitext(label_file)[0]
+            # Look for matching image file
+            image_name = None
+            for ext in ['.jpg', '.jpeg', '.png', '.JPG', '.JPEG', '.PNG']:
+                candidate = base_name + ext
+                if os.path.exists(os.path.join(args.images_dir, candidate)):
+                    image_name = candidate
+                    break
+            
+            if not image_name:
+                print(f"Warning: No image found for {label_file}")
+                continue
+        else:
+            continue
+        
         image_path = os.path.join(args.images_dir, image_name)
         
         if not os.path.exists(image_path):
-            print(f"Warning: Image not found for {label_file}")
+            print(f"Warning: Image not found for {label_file}: {image_path}")
             continue
         
-        label_path = os.path.join(args.labels_dir, label_file)
         print(f"\nProcessing {image_name}...")
         process_image(image_path, label_path, args.output_dir, transformation_map, args.segmented_dir)
 
