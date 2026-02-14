@@ -7,6 +7,9 @@ Usage:
     # Basic comparison table (console output)
     python3 analysis/visualisation/visualise_ap.py
     
+    # With custom transformed images directory (for config files)
+    python3 analysis/visualisation/visualise_ap.py --transformed_images_dir data/transformed_images/matias_metamorphic
+    
     # With detailed metrics for each transformation
     python3 analysis/visualisation/visualise_ap.py --detailed
     
@@ -17,10 +20,11 @@ Usage:
     python3 analysis/visualisation/visualise_ap.py --export_png --png_output results.png
     
     # All options combined
-    python3 analysis/visualisation/visualise_ap.py --detailed --export_png
+    python3 analysis/visualisation/visualise_ap.py --detailed --export_png --transformed_images_dir data/transformed_images/matias_metamorphic
 
 Output includes:
     - Summary comparison table showing AP50 scores for each model/transformation
+    - Configuration parameters used for each transformation (from config.json files)
     - Robustness ranking (which transformations are most challenging)
     - Regression analysis (where older models outperform newer ones)
     - Optional: Detailed metrics (AP50, AP75, AR@100)
@@ -28,10 +32,45 @@ Output includes:
 """
 
 import json
-import os
 import argparse
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
+
+
+def load_configs(transformed_images_dir: str = None) -> Dict:
+    """Load config.json or configs.json files from transformation directories."""
+    configs = {}
+    
+    if not transformed_images_dir or not Path(transformed_images_dir).exists():
+        return configs
+    
+    transform_base_dir = Path(transformed_images_dir)
+    
+    # Find all transformation directories
+    for transform_dir in transform_base_dir.iterdir():
+        if not transform_dir.is_dir():
+            continue
+        
+        transform_name = transform_dir.name
+        
+        # Try both config.json and configs.json
+        for config_name in ['config.json', 'configs.json']:
+            config_file = transform_dir / config_name
+            if config_file.exists():
+                try:
+                    with open(config_file) as f:
+                        config_data = json.load(f)
+                        # If configs.json contains a dict with transform name as key, extract it
+                        if isinstance(config_data, dict) and transform_name in config_data:
+                            configs[transform_name] = config_data[transform_name]
+                        else:
+                            configs[transform_name] = config_data
+                    break  # Found a config file, no need to check the other
+                except json.JSONDecodeError:
+                    print(f"Warning: Could not parse {config_file}")
+                    continue
+    
+    return configs
 
 
 def load_stats(results_dir: str = "analysis/results") -> Dict:
@@ -59,11 +98,32 @@ def load_stats(results_dir: str = "analysis/results") -> Dict:
     return data
 
 
-def print_summary_table(data: Dict):
+def format_config_params(config: Dict) -> str:
+    """Format configuration parameters as a compact string."""
+    if not config:
+        return "N/A"
+    
+    # Format each parameter
+    parts = []
+    for key, value in config.items():
+        if isinstance(value, float):
+            parts.append(f"{key}={value:.2f}")
+        elif isinstance(value, (int, str)):
+            parts.append(f"{key}={value}")
+    
+    if not parts:
+        return "default"
+    
+    return ", ".join(parts)
+
+
+def print_summary_table(data: Dict, configs: Dict = None):
     """Print a summary comparison table."""
-    print("\n" + "=" * 120)
+    configs = configs or {}
+    
+    print("\n" + "=" * 140)
     print("YOLO MODEL COMPARISON: Original vs Transformed Detection Consistency")
-    print("=" * 120)
+    print("=" * 140)
     print("\nMetamorphic Testing Results - How well does each model maintain detection accuracy after transformations?")
     print("Higher AP50 = Better robustness (1.0 = perfect consistency, 0.0 = complete failure)")
     print("AP50 = Average Precision at IoU threshold of 0.5 (most commonly used metric)\n")
@@ -76,8 +136,8 @@ def print_summary_table(data: Dict):
     transformations = sorted(all_transforms)
     
     # Header
-    print(f"{'Transformation':<20} │ {'YOLOv5':<25} │ {'YOLOv8':<25} │ {'YOLOv12':<25} │ {'Winner':<10}")
-    print("─" * 120)
+    print(f"{'Transformation':<20} │ {'YOLOv5':<25} │ {'YOLOv8':<25} │ {'YOLOv12':<25} │ {'Winner':<10} │ {'Config':<30}")
+    print("─" * 140)
     
     # Data rows
     for transform in transformations:
@@ -108,10 +168,40 @@ def print_summary_table(data: Dict):
         
         winner_full = {'v5': 'YOLOv5', 'v8': 'YOLOv8', 'v12': 'YOLOv12'}[winner]
         
-        print(f"{transform:<20} │ {v5_str:<25} │ {v8_str:<25} │ {v12_str:<25} │ {winner_full:<10}")
+        # Get config info
+        config_str = format_config_params(configs.get(transform, {}))
+        if len(config_str) > 28:
+            config_str = config_str[:25] + "..."
+        
+        print(f"{transform:<20} │ {v5_str:<25} │ {v8_str:<25} │ {v12_str:<25} │ {winner_full:<10} │ {config_str:<30}")
     
-    print("─" * 120)
+    print("─" * 140)
     print("★ = Best performer for this transformation\n")
+
+
+def print_config_details(configs: Dict):
+    """Print detailed configuration parameters for each transformation."""
+    if not configs:
+        return
+    
+    print("\n" + "=" * 120)
+    print("TRANSFORMATION CONFIGURATION PARAMETERS")
+    print("=" * 120)
+    print("\nParameters used for each transformation:\n")
+    
+    for transform in sorted(configs.keys()):
+        config = configs[transform]
+        print(f"📋 {transform}:")
+        
+        if not config:
+            print("   (No parameters / default settings)")
+        else:
+            for key, value in config.items():
+                if isinstance(value, float):
+                    print(f"   • {key}: {value:.4f}")
+                else:
+                    print(f"   • {key}: {value}")
+        print()
 
 
 def print_detailed_metrics(data: Dict):
@@ -277,8 +367,9 @@ def print_robustness_ranking(data: Dict):
               f"{category:<20} │ {detail:<30}")
 
 
-def export_table_as_png(data: Dict, output_file: str = "analysis/results/comparison_table.png"):
+def export_table_as_png(data: Dict, configs: Dict = None, output_file: str = "analysis/results/comparison_table.png"):
     """Export comparison data to a formatted table file."""
+    configs = configs or {}
     all_transforms = set()
     for model_data in data.values():
         all_transforms.update(model_data.keys())
@@ -295,8 +386,8 @@ def export_table_as_png(data: Dict, output_file: str = "analysis/results/compari
             
             # Summary table
             f.write("## Summary Table (AP50 Scores)\n\n")
-            f.write("| Transformation | YOLOv5 | YOLOv8 | YOLOv12 | Winner | Avg AP50 |\n")
-            f.write("|---|---|---|---|---|---|\n")
+            f.write("| Transformation | YOLOv5 | YOLOv8 | YOLOv12 | Winner | Avg AP50 | Configuration |\n")
+            f.write("|---|---|---|---|---|---|---|\n")
             
             for transform in transformations:
                 v5_stats = data.get('yolov5', {}).get(transform, {})
@@ -324,7 +415,21 @@ def export_table_as_png(data: Dict, output_file: str = "analysis/results/compari
                 else:
                     v12_str = f"**{v12_str}**"
                 
-                f.write(f"| {transform} | {v5_str} | {v8_str} | {v12_str} | {winner_full} | {avg_ap:.4f} ({avg_ap*100:.1f}%) |\n")
+                config_str = format_config_params(configs.get(transform, {}))
+                
+                f.write(f"| {transform} | {v5_str} | {v8_str} | {v12_str} | {winner_full} | {avg_ap:.4f} ({avg_ap*100:.1f}%) | {config_str} |\n")
+            
+            # Configuration details
+            if configs:
+                f.write("\n## Transformation Configurations\n\n")
+                for transform in sorted(configs.keys()):
+                    config = configs[transform]
+                    f.write(f"\n### {transform}\n\n")
+                    if not config:
+                        f.write("No parameters (default settings)\n")
+                    else:
+                        for key, value in config.items():
+                            f.write(f"- **{key}**: {value}\n")
             
             # Detailed metrics
             f.write("\n## Detailed Metrics\n\n")
@@ -446,9 +551,9 @@ def export_table_as_png(data: Dict, output_file: str = "analysis/results/compari
             f.write("\n" + "=" * 100 + "\n")
     
     print(f"\n✓ Table exported to: {output_file}")
-    print(f"   Format: {format.upper()}")
+    print("   Format: {0}".format(format.upper()))
     if format == "markdown":
-        print(f"   View in GitHub, VSCode, or any Markdown viewer for best rendering")
+        print("   View in GitHub, VSCode, or any Markdown viewer for best rendering")
 
 
 def main():
@@ -460,6 +565,12 @@ def main():
         type=str,
         default='analysis/results',
         help='Directory containing analysis results'
+    )
+    parser.add_argument(
+        '--transformed_images_dir',
+        type=str,
+        default='data/transformed_images/fsoco_test',
+        help='Directory containing transformed images with config files'
     )
     parser.add_argument(
         '--export_png',
@@ -488,8 +599,17 @@ def main():
         print("❌ No results found. Run the analysis first with run_all_analysis_matias_meta.sh")
         return
     
+    # Load configs
+    print("Loading transformation configurations...")
+    configs = load_configs(args.transformed_images_dir)
+    if configs:
+        print(f"✓ Loaded configurations for {len(configs)} transformations")
+    else:
+        print("⚠ No configuration files found")
+    
     # Print tables
-    print_summary_table(data)
+    print_summary_table(data, configs)
+    print_config_details(configs)
     print_robustness_ranking(data)
     print_regression_analysis(data)
     
@@ -498,7 +618,7 @@ def main():
     
     # Export PNG if requested
     if args.export_png:
-        export_table_as_png(data, args.png_output)
+        export_table_as_png(data, configs, args.png_output)
     
     print("\n" + "=" * 120)
     print("Analysis complete!")
