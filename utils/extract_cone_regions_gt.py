@@ -5,14 +5,24 @@ Reads JSON or TXT annotation files and applies histogram backprojection to each 
 This bypasses YOLO inference entirely and uses ground truth annotations.
 
 Supported label formats:
-1. TXT format: class_id x1 y1 x2 y2 (space-separated, one detection per line)
-   - File naming: image_name.txt (e.g., amz_03812.txt for amz_03812.png)
-   - Class IDs: 0=blue_cone, 1=yellow_cone, 2=orange_cone, 3=unknown_cone
-   - Coordinates: absolute pixel values (x1,y1 = top-left, x2,y2 = bottom-right)
+1. TXT format (auto-detects between two sub-formats):
+   a) YOLO normalized format: class_id center_x center_y width height (all values 0-1)
+      - File naming: image_name.txt (e.g., amz_03812.txt for amz_03812.png)
+      - Class IDs: 0=yellow_cone, 1=orange_cone, 2=unknown_cone, 3=blue_cone
+      - Coordinates: normalized 0-1 relative to image dimensions
+      - Example: 0 0.786038 0.238587 0.005919 0.020652
+   
+   b) Absolute pixel format: class_id x1 y1 x2 y2 (space-separated)
+      - File naming: image_name.txt
+      - Class IDs: 0=yellow_cone, 1=orange_cone, 2=unknown_cone, 3=blue_cone
+      - Coordinates: absolute pixel values (x1,y1 = top-left, x2,y2 = bottom-right)
+      - Example: 0 520 375 565 445
 
 2. JSON format: Supervisely-style annotation
    - File naming: image_name.ext.json (e.g., amz_03812.png.json)
-   - Structure: {"objects": [{"classTitle": "blue_cone", "points": {"exterior": [[x1,y1], [x2,y2]]}}]}
+   - Structure: {"objects": [{"classTitle": "yellow_cone", "points": {"exterior": [[x1,y1], [x2,y2]]}}]}
+
+Format detection: TXT files with all coordinate values <= 1.0 are treated as YOLO normalized format.
 """
 
 import numpy as np
@@ -20,7 +30,6 @@ import cv2 as cv
 import os 
 import json
 import argparse
-from pathlib import Path
 
 def load_color_histograms(hist_samples_dir):
     """Load and compute histograms for different cone colors."""
@@ -53,11 +62,19 @@ def load_color_histograms(hist_samples_dir):
         
     return histograms
 
-def read_ground_truth_labels_txt(label_file):
+def read_ground_truth_labels_txt(label_file, image_shape=None):
     """Read ground truth TXT annotation file and return list of cone detections.
     
-    Format: class_id x1 y1 x2 y2 (space-separated)
-    where class_id: 0=blue, 1=yellow, 2=orange, 3=unknown
+    Supports two TXT formats:
+    1. Absolute pixel format: class_id x1 y1 x2 y2
+    2. YOLO normalized format: class_id center_x center_y width height (values 0-1)
+    
+    Auto-detects format based on coordinate values. If values are all < 2.0, assumes
+    normalized YOLO format and converts to absolute pixels using image_shape.
+    
+    Args:
+        label_file: Path to label file
+        image_shape: Tuple of (height, width) needed for YOLO format conversion
     """
     detections = []
     
@@ -66,10 +83,10 @@ def read_ground_truth_labels_txt(label_file):
     
     # Map class IDs to names
     class_names = {
-        0: 'blue_cone',
-        1: 'yellow_cone',
-        2: 'orange_cone',
-        3: 'unknown_cone'
+        0: 'yellow_cone',
+        1: 'orange_cone',
+        2: 'unknown_cone',
+        3: 'blue_cone'
     }
     
     try:
@@ -86,7 +103,32 @@ def read_ground_truth_labels_txt(label_file):
                 
                 try:
                     class_id = int(parts[0])
-                    x1, y1, x2, y2 = float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4])
+                    val1, val2, val3, val4 = float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4])
+                    
+                    # Auto-detect format: if all values < 2.0, assume YOLO normalized format
+                    if val1 <= 1.0 and val2 <= 1.0 and val3 <= 1.0 and val4 <= 1.0:
+                        # YOLO format: class_id center_x center_y width height (normalized 0-1)
+                        if image_shape is None:
+                            print(f"Warning: YOLO format detected but image dimensions not provided for {label_file}")
+                            continue
+                        
+                        img_height, img_width = image_shape
+                        center_x, center_y, width, height = val1, val2, val3, val4
+                        
+                        # Convert to absolute pixel coordinates
+                        center_x_abs = center_x * img_width
+                        center_y_abs = center_y * img_height
+                        width_abs = width * img_width
+                        height_abs = height * img_height
+                        
+                        # Convert from center/width/height to x1,y1,x2,y2
+                        x1 = center_x_abs - width_abs / 2
+                        y1 = center_y_abs - height_abs / 2
+                        x2 = center_x_abs + width_abs / 2
+                        y2 = center_y_abs + height_abs / 2
+                    else:
+                        # Absolute pixel format: class_id x1 y1 x2 y2
+                        x1, y1, x2, y2 = val1, val2, val3, val4
                     
                     # Ensure proper bounding box format (x1,y1 = top-left, x2,y2 = bottom-right)
                     bbox = [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)]
@@ -139,14 +181,14 @@ def read_ground_truth_labels_json(label_file):
                         
                         # Map class titles to indices
                         class_map = {
-                            'blue_cone': 0,
-                            'yellow_cone': 1, 
-                            'orange_cone': 2,
-                            'big_orange_cone': 2,  # Treat big orange same as orange
-                            'unknown_cone': 3
+                            'blue_cone': 3,
+                            'yellow_cone': 0, 
+                            'orange_cone': 1,
+                            'big_orange_cone': 1,  # Treat big orange same as orange
+                            'unknown_cone': 2
                         }
                         
-                        class_id = class_map.get(class_title, 3)  # Default to unknown
+                        class_id = class_map.get(class_title, 2)  # Default to unknown
                         
                         detection = {
                             'class': class_id,
@@ -163,10 +205,15 @@ def read_ground_truth_labels_json(label_file):
     return detections
 
 
-def read_ground_truth_labels(label_file):
-    """Read ground truth labels from either TXT or JSON format."""
+def read_ground_truth_labels(label_file, image_shape=None):
+    """Read ground truth labels from either TXT or JSON format.
+    
+    Args:
+        label_file: Path to label file
+        image_shape: Tuple of (height, width) needed for YOLO format TXT files
+    """
     if label_file.endswith('.txt'):
-        return read_ground_truth_labels_txt(label_file)
+        return read_ground_truth_labels_txt(label_file, image_shape)
     elif label_file.endswith('.json'):
         return read_ground_truth_labels_json(label_file)
     else:
@@ -239,9 +286,12 @@ def process_image_with_gt_labels(image_path, label_file, histograms, output_dir)
     if image is None:
         print(f"Could not load image: {image_path}")
         return
+    
+    # Get image dimensions for YOLO format conversion
+    image_shape = image.shape[:2]  # (height, width)
         
-    # Read ground truth labels
-    detections = read_ground_truth_labels(label_file)
+    # Read ground truth labels (pass image shape for YOLO format support)
+    detections = read_ground_truth_labels(label_file, image_shape)
     if not detections:
         print(f"No ground truth labels found for {image_path}")
         return
@@ -254,10 +304,10 @@ def process_image_with_gt_labels(image_path, label_file, histograms, output_dir)
     
     # Color map for visualization
     color_map = {
-        0: (255, 0, 0),    # Blue cone -> Blue
-        1: (0, 255, 255),  # Yellow cone -> Yellow  
-        2: (0, 165, 255),  # Orange cone -> Orange
-        3: (128, 128, 128) # Unknown -> Gray
+        0: (0, 255, 255),  # Yellow cone -> Yellow  
+        1: (0, 165, 255),  # Orange cone -> Orange
+        2: (128, 128, 128), # Unknown -> Gray
+        3: (255, 0, 0)     # Blue cone -> Blue
     }
     
     # Process each detection
@@ -321,8 +371,6 @@ def main():
     print(f"Loaded histograms for colors: {list(histograms.keys())}")
     
     # Process all images that have corresponding labels
-    image_extensions = ('.jpg', '.jpeg', '.png')
-    
     # Find all label files (both .txt and .json)
     all_files = os.listdir(args.labels_dir)
     label_files_json = [f for f in all_files if f.endswith('.json')]

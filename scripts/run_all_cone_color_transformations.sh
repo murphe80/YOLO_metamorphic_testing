@@ -7,10 +7,10 @@
 cd "$(dirname "$0")/.." || exit 1
 
 # Configuration
-FSOCO_DIR="data/base_images/fsoco_test"
+FSOCO_DIR="data/base_images/test"
 IMAGES_DIR="$FSOCO_DIR/images"
 LABELS_DIR="$FSOCO_DIR/labels"
-SEGMENTED_DIR="$FSOCO_DIR/segmented_images"
+SEGMENTED_DIR="$FSOCO_DIR/segmented_images/segmented_images_good"
 OUTPUT_BASE_DIR="data/transformed_images/cone_color_transformations"
 
 # Histogram backprojection configuration

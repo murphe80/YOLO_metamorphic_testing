@@ -10,16 +10,25 @@ cone pixels (non-black pixels in the bottom half of segmented images),
 avoiding transformation of background pixels within bounding boxes.
 
 Supported label formats:
-1. TXT format: class_id x1 y1 x2 y2 (space-separated, one detection per line)
-   - File naming: image_name.txt (matches image_name.jpg/png)
+1. TXT format (auto-detects between two sub-formats):
+   a) YOLO normalized: class_id center_x center_y width height (values 0-1)
+      - File naming: image_name.txt (matches image_name.jpg/png)
+      - Example: 0 0.786038 0.238587 0.005919 0.020652 (yellow cone)
+   
+   b) Absolute pixel: class_id x1 y1 x2 y2
+      - File naming: image_name.txt
+      - Example: 0 520 375 565 445 (yellow cone)
+
 2. JSON format: Supervisely-style annotation
    - File naming: image_name.ext.json (e.g., image.png.json)
 
 Class mapping:
-- 0: blue_cone
-- 1: yellow_cone
-- 2: orange_cone / big_orange_cone
-- 3: unknown_cone
+- 0: yellow_cone
+- 1: orange_cone
+- 2: unknown_cone
+- 3: blue_cone
+
+Format detection: TXT files with all coordinate values <= 1.0 are treated as YOLO normalized format.
 """
 
 import os
@@ -27,23 +36,28 @@ import cv2 as cv
 import json
 import numpy as np
 import argparse
+from metamorphic_rules.instantiate_rules import instantiate_rule
 
 # ------------------------------------------------------------
 # Ground truth reader
 # ------------------------------------------------------------
 
-def read_ground_truth_labels_txt(label_file):
+def read_ground_truth_labels_txt(label_file, image_shape=None):
     """Read bounding box labels from TXT file.
     
-    Format: class_id x1 y1 x2 y2 (space-separated, one detection per line)
+    Supports two TXT formats:
+    1. Absolute pixel format: class_id x1 y1 x2 y2
+    2. YOLO normalized format: class_id center_x center_y width height (values 0-1)
+    
+    Auto-detects format based on coordinate values.
     """
     detections = []
     
     class_names = {
-        0: 'blue_cone',
-        1: 'yellow_cone',
-        2: 'orange_cone',
-        3: 'unknown_cone'
+        0: 'yellow_cone',
+        1: 'orange_cone',
+        2: 'unknown_cone',
+        3: 'blue_cone'
     }
     
     try:
@@ -59,7 +73,32 @@ def read_ground_truth_labels_txt(label_file):
                 
                 try:
                     class_id = int(parts[0])
-                    x1, y1, x2, y2 = float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4])
+                    val1, val2, val3, val4 = float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4])
+                    
+                    # Auto-detect format: if all values <= 1.0, assume YOLO normalized format
+                    if val1 <= 1.0 and val2 <= 1.0 and val3 <= 1.0 and val4 <= 1.0:
+                        # YOLO format: class_id center_x center_y width height (normalized)
+                        if image_shape is None:
+                            print("Warning: YOLO format detected but image dimensions not provided")
+                            continue
+                        
+                        img_height, img_width = image_shape
+                        center_x, center_y, width, height = val1, val2, val3, val4
+                        
+                        # Convert to absolute pixels
+                        center_x_abs = center_x * img_width
+                        center_y_abs = center_y * img_height
+                        width_abs = width * img_width
+                        height_abs = height * img_height
+                        
+                        # Convert to x1,y1,x2,y2
+                        x1 = center_x_abs - width_abs / 2
+                        y1 = center_y_abs - height_abs / 2
+                        x2 = center_x_abs + width_abs / 2
+                        y2 = center_y_abs + height_abs / 2
+                    else:
+                        # Absolute pixel format
+                        x1, y1, x2, y2 = val1, val2, val3, val4
                     
                     detections.append({
                         "class": class_id,
@@ -81,11 +120,11 @@ def read_ground_truth_labels_json(label_file):
         data = json.load(f)
 
     class_map = {
-        'blue_cone': 0,
-        'yellow_cone': 1,
-        'orange_cone': 2,
-        'big_orange_cone': 2,
-        'unknown_cone': 3
+        'blue_cone': 3,
+        'yellow_cone': 0,
+        'orange_cone': 1,
+        'big_orange_cone': 1,
+        'unknown_cone': 2
     }
 
     for obj in data.get("objects", []):
@@ -94,17 +133,22 @@ def read_ground_truth_labels_json(label_file):
             continue
         (x1, y1), (x2, y2) = ext
         detections.append({
-            "class": class_map.get(obj["classTitle"], 3),
+            "class": class_map.get(obj["classTitle"], 2),
             "class_name": obj["classTitle"],
             "bbox": [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)]
         })
     return detections
 
 
-def read_ground_truth_labels(label_file):
-    """Read bounding box labels from either TXT or JSON format."""
+def read_ground_truth_labels(label_file, image_shape=None):
+    """Read bounding box labels from either TXT or JSON format.
+    
+    Args:
+        label_file: Path to label file
+        image_shape: Tuple of (height, width) needed for YOLO format TXT files
+    """
     if label_file.endswith('.txt'):
-        return read_ground_truth_labels_txt(label_file)
+        return read_ground_truth_labels_txt(label_file, image_shape)
     elif label_file.endswith('.json'):
         return read_ground_truth_labels_json(label_file)
     else:
@@ -115,54 +159,64 @@ def read_ground_truth_labels(label_file):
 # Color transformation functions
 # ------------------------------------------------------------
 
-def hsv_shift_color(roi, hue_shift, saturation_scale=1.0, value_scale=1.0):
+def apply_color_channel_rule(roi, channel_multipliers):
     """
-    Shift the hue of a ROI to change cone color.
+    Apply color channel transformation rule to a ROI.
     
     Args:
         roi: BGR image region
-        hue_shift: Amount to shift hue (0-180 in OpenCV HSV)
-        saturation_scale: Multiplier for saturation
-        value_scale: Multiplier for value/brightness
+        channel_multipliers: Tuple of (R, G, B) multipliers
+    
+    Returns:
+        Transformed BGR image
     """
-    hsv = cv.cvtColor(roi, cv.COLOR_BGR2HSV).astype(np.float32)
+    # Convert BGR to RGB for the rule
+    roi_rgb = cv.cvtColor(roi, cv.COLOR_BGR2RGB)
     
-    # Shift hue
-    hsv[:, :, 0] = (hsv[:, :, 0] + hue_shift) % 180
+    # Apply color channel rule
+    rule_kwargs = {
+        'color_channels_out': 'RGB',
+        'channel_multipliers': channel_multipliers
+    }
+    rule = instantiate_rule('imgColorChannels', {}, **rule_kwargs)
+    transformed_rgb = rule.apply(roi_rgb, {})
     
-    # Scale saturation and value
-    hsv[:, :, 1] = np.clip(hsv[:, :, 1] * saturation_scale, 0, 255)
-    hsv[:, :, 2] = np.clip(hsv[:, :, 2] * value_scale, 0, 255)
-    
-    hsv = hsv.astype(np.uint8)
-    return cv.cvtColor(hsv, cv.COLOR_HSV2BGR)
+    # Convert back to BGR
+    return cv.cvtColor(transformed_rgb, cv.COLOR_RGB2BGR)
+
 
 def get_color_transformation(from_class, to_class):
     """
-    Get HSV transformation parameters to convert from one cone class to another.
+    Get RGB channel multipliers to convert from one cone class to another.
     
-    Returns: (hue_shift, saturation_scale, value_scale)
+    Args:
+        from_class: Source cone class (0=yellow, 1=orange, 2=unknown, 3=blue)
+        to_class: Target cone class
+    
+    Returns:
+        Tuple of (R, G, B) channel multipliers OR 'direct_color' flag with BGR values
+    
+    Color characteristics:
+    - Yellow: High R & G, Low B
+    - Blue: Low R & G, High B
+    - Orange: High R, Medium G, Low B
     """
-    # Approximate hue values in OpenCV HSV (0-180):
-    # Yellow: ~15-30
-    # Blue: ~100-120
-    # Orange: ~5-15
-    
     transformations = {
-        # From yellow (class 1)
-        (1, 0): (90, 1.0, 1.0),    # yellow -> blue: shift hue by ~90
-        (1, 2): (-10, 1.0, 1.0),   # yellow -> orange: shift hue by -10
+        # From yellow (class 0)
+        (0, 3): (0.3, 0.5, 2.5),    # yellow -> blue: moderate decrease R&G, moderate increase B (lighter blue)
+        (0, 1): (1.3, 0.7, 0.3),    # yellow -> orange: boost R, reduce G&B
         
-        # From blue (class 0)
-        (0, 1): (-90, 1.0, 1.0),   # blue -> yellow: shift hue by -90
-        (0, 2): (-100, 1.0, 1.0),  # blue -> orange: shift hue by -100
+        # From blue (class 3)
+        (3, 0): 'direct_yellow',    # blue -> yellow: direct color replacement
+        (3, 1): (2.8, 0.7, 0.15),   # blue -> orange: very strong R, very low G, kill B (less green)
         
-        # From orange (class 2)
-        (2, 0): (100, 1.0, 1.0),   # orange -> blue: shift hue by 100
-        (2, 1): (10, 1.0, 1.0),    # orange -> yellow: shift hue by 10
+        # From orange (class 1)
+        (1, 3): (0.3, 0.5, 2.5),    # orange -> blue: decrease R&G, increase B
+        (1, 0): (0.8, 1.5, 0.3),    # orange -> yellow: balance R, increase G, decrease B
     }
     
-    return transformations.get((from_class, to_class), (0, 1.0, 1.0))
+    # Default: no transformation
+    return transformations.get((from_class, to_class), (1.0, 1.0, 1.0))
 
 # ------------------------------------------------------------
 # Apply transformations to image
@@ -177,8 +231,14 @@ def transform_cone_colors(image, detections, transformation_map, segmentation_ma
         detections: List of cone detections with class and bbox
         transformation_map: Dict mapping from_class -> to_class
         segmentation_mask: Optional segmentation mask to identify cone pixels (BGR image)
+    
+    Returns:
+        tuple: (result_image, transformations_applied)
+            - result_image: Transformed image
+            - transformations_applied: Number of cones that were transformed
     """
     result = image.copy()
+    transformations_applied = 0
     
     for det in detections:
         from_class = det["class"]
@@ -207,29 +267,85 @@ def transform_cone_colors(image, detections, transformation_map, segmentation_ma
             continue
         
         # Get transformation parameters
-        hue_shift, sat_scale, val_scale = get_color_transformation(from_class, to_class)
+        transformation = get_color_transformation(from_class, to_class)
         
-        # Apply transformation
-        transformed_roi = hsv_shift_color(roi, hue_shift, sat_scale, val_scale)
+        # Check if this is a direct color replacement
+        if transformation == 'direct_yellow':
+            # Direct replacement with yellow color (BGR format: B, G, R)
+            # Yellow: high R & G, low B → BGR = (0, 255, 255)
+            yellow_color = np.array([37, 227, 245], dtype=np.uint8)
+            transformed_roi = np.full_like(roi, yellow_color)
+        else:
+            # Apply color channel transformation with multipliers
+            channel_multipliers = transformation
+            transformed_roi = apply_color_channel_rule(roi, channel_multipliers)
         
         # If segmentation mask is provided, only apply to non-black pixels
         if segmentation_mask is not None:
-            mask_roi = segmentation_mask[y1:y2, x1:x2]
+            # Check if bbox is within mask bounds
+            mask_h, mask_w = segmentation_mask.shape[:2]
+            if y1 >= mask_h or x1 >= mask_w:
+                print(f"  ⚠ Bbox [{x1},{y1},{x2},{y2}] outside mask bounds ({mask_w}x{mask_h}) - skipping")
+                continue
             
-            # Create mask for non-black pixels (all channels > 0)
+            # Clip bbox to mask bounds
+            mask_y2 = min(y2, mask_h)
+            mask_x2 = min(x2, mask_w)
+            
+            if mask_y2 <= y1 or mask_x2 <= x1:
+                print(f"  ⚠ Bbox [{x1},{y1},{x2},{y2}] invalid after clipping - skipping")
+                continue
+            
+            # Extract the mask region corresponding to the ROI
+            mask_roi = segmentation_mask[y1:mask_y2, x1:mask_x2]
+            
+            # Adjust transformed_roi size if clipped
+            if mask_y2 < y2 or mask_x2 < x2:
+                transformed_roi = transformed_roi[:mask_y2-y1, :mask_x2-x1]
+            
+            # Create mask for non-black pixels (cone pixels)
+            # Check each pixel: True if ANY channel is non-zero
             non_black_mask = np.any(mask_roi != 0, axis=2)
             
-            # Only apply transformation where mask is non-black
-            result[y1:y2, x1:x2][non_black_mask] = transformed_roi[non_black_mask]
+            # Only apply transformation if there are non-black pixels
+            non_black_count = np.sum(non_black_mask)
+            if non_black_count == 0:
+                print(f"  ⚠ No cone pixels in mask at bbox [{x1},{y1},{x2},{y2}] - skipping")
+                continue
             
-            pixels_transformed = np.sum(non_black_mask)
-            print(f"  Transformed cone from class {from_class} to {to_class} at bbox [{x1},{y1},{x2},{y2}] ({pixels_transformed} pixels)")
+            # CRITICAL: Directly replace pixels where mask is non-black
+            # This ensures transformed pixels completely override original
+            # Use numpy's advanced indexing for direct assignment (no blending)
+            result_roi = result[y1:mask_y2, x1:mask_x2]
+            result_roi[non_black_mask] = transformed_roi[non_black_mask]
+            
+            # Apply morphological closing to reduce noise
+            # Closing = dilation followed by erosion (fills small holes)
+            kernel_size = 3
+            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
+            
+            # Create 3-channel mask for processing
+            mask_3ch = np.stack([non_black_mask, non_black_mask, non_black_mask], axis=2).astype(np.uint8) * 255
+            
+            # Apply closing to the mask
+            closed_mask = cv.morphologyEx(mask_3ch[:, :, 0], cv.MORPH_CLOSE, kernel)
+            closed_mask_bool = closed_mask > 0
+            
+            # Reapply with closed mask to reduce noise
+            result_roi[closed_mask_bool] = transformed_roi[closed_mask_bool]
+            
+            result[y1:mask_y2, x1:mask_x2] = result_roi
+            
+            total_pixels = (mask_y2 - y1) * (mask_x2 - x1)
+            print(f"  ✓ Transformed cone from class {from_class} to {to_class} at bbox [{x1},{y1},{x2},{y2}] ({non_black_count}/{total_pixels} pixels)")
         else:
-            # Apply to entire ROI if no mask
+            # No segmentation mask, transform entire ROI
             result[y1:y2, x1:x2] = transformed_roi
-            print(f"  Transformed cone from class {from_class} to {to_class} at bbox [{x1},{y1},{x2},{y2}]")
+            print(f"  ⚠ Transformed entire bbox from class {from_class} to {to_class} at [{x1},{y1},{x2},{y2}] (no mask)")
+        
+        transformations_applied += 1
     
-    return result
+    return result, transformations_applied
 
 # ------------------------------------------------------------
 # Process images
@@ -242,7 +358,10 @@ def process_image(image_path, label_file, output_dir, transformation_map, segmen
         print(f"Could not read {image_path}")
         return
     
-    detections = read_ground_truth_labels(label_file)
+    # Get image dimensions for YOLO format support
+    image_shape = image.shape[:2]  # (height, width)
+    
+    detections = read_ground_truth_labels(label_file, image_shape)
     if not detections:
         print(f"No GT labels for {image_path}")
         return
@@ -257,17 +376,24 @@ def process_image(image_path, label_file, output_dir, transformation_map, segmen
                 # Extract bottom half of segmented image as mask
                 height = seg_image.shape[0]
                 segmentation_mask = seg_image[height//2:, :]
-                print(f"  Using segmentation mask from {seg_path}")
+                print(f"  ✓ Using segmentation mask from {os.path.basename(seg_path)} (bottom half: {segmentation_mask.shape})")
             else:
-                print(f"  Warning: Could not read segmentation image {seg_path}")
+                print(f"  ✗ Warning: Could not read segmentation image {seg_path}")
         else:
-            print(f"  Warning: Segmentation image not found at {seg_path}")
+            print(f"  ✗ Warning: Segmentation image not found at {seg_path}")
+    else:
+        print("  ⚠ Warning: No segmentation directory provided - will transform entire bounding boxes")
     
-    result = transform_cone_colors(image, detections, transformation_map, segmentation_mask)
+    result, transformations_applied = transform_cone_colors(image, detections, transformation_map, segmentation_mask)
+    
+    # Skip saving if no transformations were applied
+    if transformations_applied == 0:
+        print("  No transformations applied - skipping image")
+        return
     
     out_path = os.path.join(output_dir, os.path.basename(image_path))
     cv.imwrite(out_path, result)
-    print(f"Saved: {out_path}")
+    print(f"Saved: {out_path} ({transformations_applied} cones transformed)")
 
 # ------------------------------------------------------------
 # CLI
@@ -277,10 +403,10 @@ def main():
     parser = argparse.ArgumentParser(
         description="Transform cone colors based on bounding box class labels"
     )
-    parser.add_argument("--images_dir", required=True, help="Directory with input images")
-    parser.add_argument("--labels_dir", required=True, help="Directory with bounding box JSON labels")
-    parser.add_argument("--output_dir", required=True, help="Output directory")
-    parser.add_argument("--segmented_dir", help="Optional directory with segmented images (for masking)")
+    parser.add_argument("--images_dir", required=True, help="Directory with original input images")
+    parser.add_argument("--labels_dir", required=True, help="Directory with bounding box labels (TXT or JSON)")
+    parser.add_argument("--output_dir", required=True, help="Output directory for transformed images")
+    parser.add_argument("--segmented_dir", required=True, help="Directory with segmented images (used to determine which images to process)")
     parser.add_argument(
         "--transformation",
         choices=["yellow_to_blue", "blue_to_yellow", "yellow_to_orange", 
@@ -293,62 +419,65 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     
     # Define transformation map based on chosen transformation
+    # Class mapping: 0=yellow, 1=orange, 2=unknown, 3=blue
     transformation_maps = {
-        "yellow_to_blue": {1: 0},      # Transform yellow (1) to blue (0)
-        "blue_to_yellow": {0: 1},      # Transform blue (0) to yellow (1)
-        "yellow_to_orange": {1: 2},    # Transform yellow (1) to orange (2)
-        "orange_to_blue": {2: 0},      # Transform orange (2) to blue (0)
-        "blue_to_orange": {0: 2},      # Transform blue (0) to orange (2)
-        "orange_to_yellow": {2: 1},    # Transform orange (2) to yellow (1)
+        "yellow_to_blue": {0: 3},      # Transform yellow (0) to blue (3)
+        "blue_to_yellow": {3: 0},      # Transform blue (3) to yellow (0)
+        "yellow_to_orange": {0: 1},    # Transform yellow (0) to orange (1)
+        "orange_to_blue": {1: 3},      # Transform orange (1) to blue (3)
+        "blue_to_orange": {3: 1},      # Transform blue (3) to orange (1)
+        "orange_to_yellow": {1: 0},    # Transform orange (1) to yellow (0)
     }
     
     transformation_map = transformation_maps[args.transformation]
     
     print(f"Applying transformation: {args.transformation}")
     print(f"Transformation map: {transformation_map}")
-    if args.segmented_dir:
-        print(f"Using segmentation masks from: {args.segmented_dir}")
     
-    # Process all label files (both .txt and .json)
-    label_files = [f for f in os.listdir(args.labels_dir) if f.endswith('.txt') or f.endswith('.json')]
-    
-    if not label_files:
-        print(f"Warning: No label files (.txt or .json) found in {args.labels_dir}")
+    if not args.segmented_dir:
+        print("Error: --segmented_dir is required for processing")
         return
     
-    print(f"Found {len(label_files)} label files to process")
+    print(f"Using segmentation masks from: {args.segmented_dir}")
     
-    for label_file in label_files:
-        label_path = os.path.join(args.labels_dir, label_file)
+    # Process all segmented images
+    segmented_files = [f for f in os.listdir(args.segmented_dir) 
+                      if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+    
+    if not segmented_files:
+        print(f"Warning: No image files found in {args.segmented_dir}")
+        return
+    
+    print(f"Found {len(segmented_files)} segmented images to process")
+    
+    for segmented_file in segmented_files:
+        # Get base name without extension
+        base_name = os.path.splitext(segmented_file)[0]
         
-        # Find corresponding image
-        if label_file.endswith('.json'):
-            # JSON format: image_name.ext.json -> image_name.ext
-            image_name = label_file.replace(".json", "")
-        elif label_file.endswith('.txt'):
-            # TXT format: image_name.txt -> find image_name.* (any extension)
-            base_name = os.path.splitext(label_file)[0]
-            # Look for matching image file
-            image_name = None
-            for ext in ['.jpg', '.jpeg', '.png', '.JPG', '.JPEG', '.PNG']:
-                candidate = base_name + ext
-                if os.path.exists(os.path.join(args.images_dir, candidate)):
-                    image_name = candidate
-                    break
-            
-            if not image_name:
-                print(f"Warning: No image found for {label_file}")
-                continue
+        # Find corresponding label file (could be .txt or .json)
+        label_path = None
+        # Try .txt first
+        txt_label = os.path.join(args.labels_dir, base_name + '.txt')
+        if os.path.exists(txt_label):
+            label_path = txt_label
         else:
+            # Try .json (format: base_name.ext.json)
+            json_label = os.path.join(args.labels_dir, segmented_file + '.json')
+            if os.path.exists(json_label):
+                label_path = json_label
+        
+        if not label_path:
+            print(f"Warning: No label file found for {segmented_file}")
             continue
         
-        image_path = os.path.join(args.images_dir, image_name)
+        # Find corresponding original image in images_dir
+        image_path = os.path.join(args.images_dir, segmented_file)
         
         if not os.path.exists(image_path):
-            print(f"Warning: Image not found for {label_file}: {image_path}")
+            print(f"Warning: Original image not found for {segmented_file}: {image_path}")
             continue
         
-        print(f"\nProcessing {image_name}...")
+        print(f"\nProcessing {segmented_file}...")
         process_image(image_path, label_path, args.output_dir, transformation_map, args.segmented_dir)
 
 if __name__ == "__main__":

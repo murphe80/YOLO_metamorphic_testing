@@ -11,7 +11,7 @@ NUM_VIZ=20
 
 # Input directories
 BASE_IMAGES_DIR="data/base_images/test/images"
-TRANSFORMED_IMAGES_DIR="data/transformed_images/fsoco_test"
+TRANSFORMED_IMAGES_DIR="data/transformed_images/cone_color_transformations"
 
 # Model weights
 YOLOV5_WEIGHTS="./models/yolov5/yolov5_param_kfold.pt"
