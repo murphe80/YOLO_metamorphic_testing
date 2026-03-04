@@ -9,22 +9,24 @@ import os
 import json
 import cv2 as cv
 import numpy as np
-from utils.matias_metamorphic import gen_metamorphic
+import sys 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from matias_metamorphic import gen_metamorphic
 from analysis.utils.format_detections import format_detections
 from analysis.coco_eval_per_class import evaluate_coco_per_class
-
+from models.yolov5.infer_v5 import run_inference
 BRIGHTNESS_MULTIPLIER_LOW = 0.1
 BRIGHTNESS_MULTIPLIER_HIGH = 0.9
 BRIGHTNESS_CONSTANT = 0
 GAMMA = 1
 METHOD = "gamma"
-TARGET_AP = 0.6
 THRESHOLD_AP = 0.01
 MAX_ITERATIONS = 20
 BLUE_CLASS_ID = 3
 YELLOW_CLASS_ID = 0
 
-RESULTS_DIR = "/utils/imgDarkBright_tuning/search_results/"
+RESULTS_DIR = "search_results/"
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 def save_results(results):
@@ -54,13 +56,20 @@ def find_starting_range(image, image_path, target_accuracy, gt_detections_filepa
     }
 
     # find setting below threshold accuracy
-    output_dir = os.path.join(RESULTS_DIR, "low_brightness")
+    output_dir = os.path.join(RESULTS_DIR, f'{image_path}_low_brightness')
     os.makedirs(output_dir, exist_ok=True)
     found_low_brightness = False
     low_brightness_accuracy = 0
+
+    image_path = tuple(image_path.split("."))
+    image_path = (image_path[0], f".{image_path[1]}")
     while not found_low_brightness:
         success, output_filepath = gen_metamorphic(image, "imgDarkBright", low_brightness_config, image_path, output_dir)
         if success:
+            # Run inference and get accuracy
+            print(f"Running yolov5 inference for low brightness level")
+            run_inference("models/yolov5/yolov5_param_kfold.pt", output_filepath)
+
             low_brightness_accuracy = get_accuracy(output_filepath, gt_detections_filepath)
             if low_brightness_accuracy < target_accuracy:
                 found_low_brightness = True
@@ -72,13 +81,17 @@ def find_starting_range(image, image_path, target_accuracy, gt_detections_filepa
             raise Exception("Failed to run inference for low brightness level")
 
     # find setting above threshold accuracy
-    output_dir = os.path.join(RESULTS_DIR, "high_brightness")
+    output_dir = os.path.join(RESULTS_DIR, f'{image_path}_high_brightness')
     os.makedirs(output_dir, exist_ok=True)
     found_high_brightness = False
     high_brightness_accuracy = 0
     while not found_high_brightness:
         success, output_filepath = gen_metamorphic(image, "imgDarkBright", high_brightness_config, image_path, output_dir)
         if success:
+            # Run inference and get accuracy
+            print(f"Running yolov5 inference for high brightness level")
+            run_inference("models/yolov5/yolov5_param_kfold.pt", output_filepath)
+
             high_brightness_accuracy = get_accuracy(output_filepath, gt_detections_filepath)
             if high_brightness_accuracy >= target_accuracy:  # this was already correct
                 found_high_brightness = True
@@ -98,9 +111,10 @@ def get_accuracy(transformed_detections_filepath, gt_detections_filepath):
     Get accuracy for the image
     Return the accuracy
     """
-    # format detections to coco format
+    # format detections to coco format (give absolute path to the detections)
     transformed_det_path = os.path.join(RESULTS_DIR, "coco_transf_detections.json")
     gt_det_path = os.path.join(RESULTS_DIR, "coco_gt_detections.json")
+    print(f"Transformed detections filepath: {transformed_det_path}")
     format_detections(transformed_detections_filepath, transformed_det_path)
     format_detections(gt_detections_filepath, gt_det_path)
 
@@ -111,14 +125,14 @@ def get_accuracy(transformed_detections_filepath, gt_detections_filepath):
     return accuracy_blue, accuracy_yellow
 
 
-def get_next_brightness_config(low_config, high_config, low_ap, high_ap, target_ap=TARGET_AP):
-    """Next brightness config via regula falsi: interpolate multiplier so AP → target_ap."""
+def get_next_brightness_config(low_config, high_config, low_ap, high_ap, target_accuracy):
+    """Next brightness config via regula falsi: interpolate multiplier so AP → target_accuracy."""
     lo, hi = low_config["brightness_multiplier"], high_config["brightness_multiplier"]
     denom = high_ap - low_ap
     if abs(denom) < 1e-9:
         mult = (lo + hi) / 2
     else:
-        mult = lo + (hi - lo) * (target_ap - low_ap) / denom
+        mult = lo + (hi - lo) * (target_accuracy - low_ap) / denom
         mult = np.clip(mult, min(lo, hi), max(lo, hi))
     return {**low_config, "brightness_multiplier": float(mult)}
 
@@ -148,7 +162,7 @@ def search_brightness(image, image_path, target_accuracy, gt_detections_filepath
         image_bgr, image_path, target_accuracy, gt_detections_filepath
     )
 
-    curr_ap_diff = min(abs(low_ap - TARGET_AP), abs(high_ap - TARGET_AP))
+    curr_ap_diff = min(abs(low_ap - target_accuracy), abs(high_ap - target_accuracy))
     iterations = 0
     next_config = None
     next_ap = None
@@ -160,16 +174,16 @@ def search_brightness(image, image_path, target_accuracy, gt_detections_filepath
         next_ap = max(next_ap_blue, next_ap_yellow)
 
         # update bracket
-        if next_ap < TARGET_AP:
+        if next_ap < target_accuracy:
             low_param, low_ap = next_config, next_ap   # new floor
         else:
             high_param, high_ap = next_config, next_ap  # new ceiling
 
-        curr_ap_diff = abs(next_ap - TARGET_AP)
+        curr_ap_diff = abs(next_ap - target_accuracy)
         iterations += 1
 
     if next_config is None or next_ap is None:
-        if abs(low_ap - TARGET_AP) < abs(high_ap - TARGET_AP):
+        if abs(low_ap - target_accuracy) < abs(high_ap - target_accuracy):
             return low_param, low_ap
         else:
             return high_param, high_ap
