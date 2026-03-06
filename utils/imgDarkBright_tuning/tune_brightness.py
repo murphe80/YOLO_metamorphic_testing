@@ -13,9 +13,9 @@ import numpy as np
 import argparse
 from search_brightness import search_brightness 
 # Define directories
-DATASET_DIR = "../../data/base_images/fsoco_test_segmented/all_images"
+DATASET_DIR = "../../data/base_images/test/images"
 OUTPUT_DIR = "../../data/transformed_images/tuned_brightness"
-
+GT_DETECTIONS_FILEPATH = "../../data/base_images/test/labels"
 
 import numpy as np
 
@@ -34,9 +34,11 @@ def tune_brightness(images_path, target_ap, gt_detections_filepath):
     """
     Tune the brightness of the image
     """
-    # iterate over all images in the images_path
+    # iterate over all images in the images_path directory
     results = []
+    print(f"Images found in {images_path}: {os.listdir(images_path)}")
     for image_path in os.listdir(images_path):
+        print(f"Tuning brightness of {image_path}")
         image = cv.imread(os.path.join(images_path, image_path))
         image_original_brightness = luminosity(image)
         optimal_config, final_ap, next_image_filepath = search_brightness(image, image_path, target_ap, gt_detections_filepath)
@@ -53,9 +55,12 @@ def main():
     """
     # cli arguments
     parser = argparse.ArgumentParser(description="Tune the brightness of the images")
-    parser.add_argument("--images_path", type=str, required=True, help="Path to the images")
-    parser.add_argument("--target_ap", type=float, required=True, help="Target AP")
-    parser.add_argument("--gt_detections_filepath", type=str, required=True, help="Path to the ground truth detections")
+    parser.add_argument("--images_path", type=str, default=DATASET_DIR, help="Path to the images")
+    parser.add_argument("--target_ap", type=float, default=0.8, help="Target AP")
+    parser.add_argument("--gt_detections_filepath", type=str, default=GT_DETECTIONS_FILEPATH, help="Path to the ground truth detections")
     args = parser.parse_args()
     
     tune_brightness(args.images_path, args.target_ap, args.gt_detections_filepath)
+
+if __name__ == "__main__":
+    main()
