@@ -159,13 +159,13 @@ def read_ground_truth_labels(label_file, image_shape=None):
 # Color transformation functions
 # ------------------------------------------------------------
 
-def apply_color_channel_rule(roi, channel_multipliers):
+def apply_hue_transformation(roi, hue_value):
     """
     Apply color channel transformation rule to a ROI.
     
     Args:
         roi: BGR image region
-        channel_multipliers: Tuple of (R, G, B) multipliers
+        hue_value: Hue value to apply to the image
     
     Returns:
         Transformed BGR image
@@ -173,50 +173,46 @@ def apply_color_channel_rule(roi, channel_multipliers):
     # Convert BGR to RGB for the rule
     roi_rgb = cv.cvtColor(roi, cv.COLOR_BGR2RGB)
     
-    # Apply color channel rule
-    rule_kwargs = {
-        'color_channels_out': 'RGB',
-        'channel_multipliers': channel_multipliers
-    }
-    rule = instantiate_rule('imgColorChannels', {}, **rule_kwargs)
-    transformed_rgb = rule.apply(roi_rgb, {})
+    # Change hue of the image
+    transformed_hsv = cv.cvtColor(roi_rgb, cv.COLOR_RGB2HSV)
+    transformed_hsv[:, :, 0] = hue_value
     
     # Convert back to BGR
-    return cv.cvtColor(transformed_rgb, cv.COLOR_RGB2BGR)
+    return cv.cvtColor(transformed_hsv, cv.COLOR_HSV2BGR)
 
 
-def get_color_transformation(from_class, to_class):
+def get_hue_transformation(from_class, to_class):
     """
-    Get RGB channel multipliers to convert from one cone class to another.
+    Get hue value to convert from one cone class to another.
     
     Args:
         from_class: Source cone class (0=yellow, 1=orange, 2=unknown, 3=blue)
         to_class: Target cone class
     
     Returns:
-        Tuple of (R, G, B) channel multipliers OR 'direct_color' flag with BGR values
+        Hue value
     
     Color characteristics:
-    - Yellow: High R & G, Low B
-    - Blue: Low R & G, High B
-    - Orange: High R, Medium G, Low B
+    - Yellow: Hue value 27
+    - Blue: Hue value 112
+    - Orange: Hue value 14
     """
     transformations = {
         # From yellow (class 0)
-        (0, 3): (0.3, 0.5, 2.5),    # yellow -> blue: moderate decrease R&G, moderate increase B (lighter blue)
-        (0, 1): (1.3, 0.7, 0.3),    # yellow -> orange: boost R, reduce G&B
+        (0, 3): 112,    # yellow -> blue
+        (0, 1): 14,    # yellow -> orange
         
         # From blue (class 3)
-        (3, 0): 'direct_yellow',    # blue -> yellow: direct color replacement
-        (3, 1): (2.8, 0.7, 0.15),   # blue -> orange: very strong R, very low G, kill B (less green)
+        (3, 0): 27,    # blue -> yellow
+        (3, 1): 14,   # blue -> orange
         
         # From orange (class 1)
-        (1, 3): (0.3, 0.5, 2.5),    # orange -> blue: decrease R&G, increase B
-        (1, 0): (0.8, 1.5, 0.3),    # orange -> yellow: balance R, increase G, decrease B
+        (1, 3): 112,    # orange -> blue
+        (1, 0): 27,    # orange -> yellow
     }
     
     # Default: no transformation
-    return transformations.get((from_class, to_class), (1.0, 1.0, 1.0))
+    return transformations.get((from_class, to_class), 0.0)
 
 # ------------------------------------------------------------
 # Apply transformations to image
@@ -266,19 +262,14 @@ def transform_cone_colors(image, detections, transformation_map, segmentation_ma
         if roi.size == 0:
             continue
         
+        # apply median blur to reduce noise
+        roi = cv.medianBlur(roi, 15)
+        
         # Get transformation parameters
-        transformation = get_color_transformation(from_class, to_class)
+        transformation = get_hue_transformation(from_class, to_class)
         
         # Check if this is a direct color replacement
-        if transformation == 'direct_yellow':
-            # Direct replacement with yellow color (BGR format: B, G, R)
-            # Yellow: high R & G, low B → BGR = (0, 255, 255)
-            yellow_color = np.array([37, 227, 245], dtype=np.uint8)
-            transformed_roi = np.full_like(roi, yellow_color)
-        else:
-            # Apply color channel transformation with multipliers
-            channel_multipliers = transformation
-            transformed_roi = apply_color_channel_rule(roi, channel_multipliers)
+        transformed_roi = apply_hue_transformation(roi, transformation)
         
         # If segmentation mask is provided, only apply to non-black pixels
         if segmentation_mask is not None:
@@ -312,16 +303,13 @@ def transform_cone_colors(image, detections, transformation_map, segmentation_ma
             if non_black_count == 0:
                 print(f"  ⚠ No cone pixels in mask at bbox [{x1},{y1},{x2},{y2}] - skipping")
                 continue
-            
-            # CRITICAL: Directly replace pixels where mask is non-black
-            # This ensures transformed pixels completely override original
-            # Use numpy's advanced indexing for direct assignment (no blending)
+
             result_roi = result[y1:mask_y2, x1:mask_x2]
             result_roi[non_black_mask] = transformed_roi[non_black_mask]
             
             # Apply morphological closing to reduce noise
             # Closing = dilation followed by erosion (fills small holes)
-            kernel_size = 3
+            kernel_size = 5
             kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
             
             # Create 3-channel mask for processing

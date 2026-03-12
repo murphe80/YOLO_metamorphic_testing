@@ -70,9 +70,7 @@ TRANSFORMATIONS=(
     "yellow_to_blue"
     "blue_to_yellow"
     "yellow_to_orange"
-    "orange_to_blue"
     "blue_to_orange"
-    "orange_to_yellow"
 )
 
 echo "======================================"

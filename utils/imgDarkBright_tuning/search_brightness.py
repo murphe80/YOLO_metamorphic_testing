@@ -1,191 +1,345 @@
-# Search algorithm to find the optimal brightness transformation for the image
-# use regula falsi method to search for the optimal brightness transformation
-
-# 1. Get brightness level for which accuracy is above and below x% (save results to json in /utils/imgDarkBright_tuning/results/)
-# 2. Iteratively narrow down the range until the range is less than 0.1%
-# 3. Return the brightness level for which accuracy is x%
+# Search algorithm to find the optimal brightness transformation for the image.
+# Uses golden-section search, which is correct for the unimodal (inverted-U)
+# relationship between brightness and accuracy: both very-dark and very-bright
+# images yield poor detections, with a peak somewhere in between.
 
 import os
 import json
 import cv2 as cv
 import numpy as np
-import sys 
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from matias_metamorphic import gen_metamorphic
 from analysis.utils.format_detections import format_detections
 from analysis.coco_eval_per_class import evaluate_coco_per_class
 from models.yolov5.infer_v5 import run_inference
-BRIGHTNESS_MULTIPLIER_LOW = 0.1
-BRIGHTNESS_MULTIPLIER_HIGH = 0.9
-BRIGHTNESS_CONSTANT = 0
-GAMMA = 1
-METHOD = "gamma"
-THRESHOLD_AP = 0.01
-MAX_ITERATIONS = 20
+
+BRIGHTNESS_MULTIPLIER_LOW= 0.1
+BRIGHTNESS_MULTIPLIER_HIGH= 0.9
+BRIGHTNESS_CONSTANT= 0
+GAMMA= 1
+METHOD= "gamma"
+THRESHOLD_AP= 0.01
+MAX_ITERATIONS= 30
 BLUE_CLASS_ID = 3
-YELLOW_CLASS_ID = 0
+YELLOW_CLASS_ID= 0
 
 RESULTS_DIR = "search_results/"
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-def save_results(results):
-    """
-    Save results to json in RESULTS_DIR
-    """
+# Golden-section ratio
+_GSR = (np.sqrt(5) - 1) / 2   # ≈ 0.618
+
+
+def save_results(results: dict) -> None:
+    """Persist results dict to JSON in RESULTS_DIR."""
     with open(os.path.join(RESULTS_DIR, "results.json"), "w") as f:
         json.dump(results, f)
 
-def find_starting_range(image, image_path, target_accuracy, gt_detections_filepath):
-    """
-    Find starting brightness levels for which accuracy is above and below target accuracy.
-    low_config  → accuracy BELOW target  (the bracket floor)
-    high_config → accuracy ABOVE target  (the bracket ceiling)
-    """
-    low_brightness_config = {
-        "brightness_constant": BRIGHTNESS_CONSTANT,
-        "brightness_multiplier": BRIGHTNESS_MULTIPLIER_LOW,
-        "gamma": GAMMA,
-        "method": METHOD
-    }
-    high_brightness_config = {
-        "brightness_constant": BRIGHTNESS_CONSTANT,
-        "brightness_multiplier": BRIGHTNESS_MULTIPLIER_HIGH,
-        "gamma": GAMMA,
-        "method": METHOD
+
+def _make_config(multiplier: float) -> dict:
+    """Build a brightness config dict from a multiplier value."""
+    return {
+        "brightness_constant":   BRIGHTNESS_CONSTANT,
+        "brightness_multiplier": float(multiplier),
+        "gamma":                 GAMMA,
+        "method":                METHOD,
     }
 
-    # find setting below threshold accuracy
-    output_dir = os.path.join(RESULTS_DIR, f'{image_path}_low_brightness')
-    os.makedirs(output_dir, exist_ok=True)
-    found_low_brightness = False
-    low_brightness_accuracy = 0
 
-    image_path = tuple(image_path.split("."))
-    image_path = (image_path[0], f".{image_path[1]}")
-    while not found_low_brightness:
-        success, output_filepath = gen_metamorphic(image, "imgDarkBright", low_brightness_config, image_path, output_dir)
-        if success:
-            # Run inference and get accuracy
-            print(f"Running yolov5 inference for low brightness level")
-            run_inference("models/yolov5/yolov5_param_kfold.pt", output_filepath)
-
-            low_brightness_accuracy = get_accuracy(output_filepath, gt_detections_filepath)
-            if low_brightness_accuracy < target_accuracy:
-                found_low_brightness = True
-            else:
-                low_brightness_config["brightness_multiplier"] -= 0.1
-                if low_brightness_config["brightness_multiplier"] <= 0:
-                    raise Exception("Failed to find a brightness level with accuracy below target")
-        else:
-            raise Exception("Failed to run inference for low brightness level")
-
-    # find setting above threshold accuracy
-    output_dir = os.path.join(RESULTS_DIR, f'{image_path}_high_brightness')
-    os.makedirs(output_dir, exist_ok=True)
-    found_high_brightness = False
-    high_brightness_accuracy = 0
-    while not found_high_brightness:
-        success, output_filepath = gen_metamorphic(image, "imgDarkBright", high_brightness_config, image_path, output_dir)
-        if success:
-            # Run inference and get accuracy
-            print(f"Running yolov5 inference for high brightness level")
-            run_inference("models/yolov5/yolov5_param_kfold.pt", output_filepath)
-
-            high_brightness_accuracy = get_accuracy(output_filepath, gt_detections_filepath)
-            if high_brightness_accuracy >= target_accuracy:  # this was already correct
-                found_high_brightness = True
-            else:
-                if high_brightness_config["brightness_multiplier"] >= 1.0:
-                    raise Exception("Failed to find high brightness level")
-                high_brightness_config["brightness_multiplier"] += 0.1
-        else:
-            raise Exception("Failed to run inference for high brightness level")
-
-    return low_brightness_config, high_brightness_config, low_brightness_accuracy, high_brightness_accuracy
+def _split_image_path(image_path: str) -> tuple[str, str]:
+    """Return (stem, '.ext') from 'stem.ext'."""
+    parts = image_path.split(".")
+    return (parts[0], f".{parts[1]}")
 
 
-def get_accuracy(transformed_detections_filepath, gt_detections_filepath): 
+def get_accuracy(
+    transformed_detections_filepath: str,
+    gt_detections_filepath: str,
+) -> tuple[float, float]:
     """
-    Load the image from the output filepath
-    Get accuracy for the image
-    Return the accuracy
+    Format both detection files to COCO JSON and return (AP_blue, AP_yellow).
     """
-    # format detections to coco format (give absolute path to the detections)
     transformed_det_path = os.path.join(RESULTS_DIR, "coco_transf_detections.json")
-    gt_det_path = os.path.join(RESULTS_DIR, "coco_gt_detections.json")
-    print(f"Transformed detections filepath: {transformed_det_path}")
+    gt_det_path          = os.path.join(RESULTS_DIR, "coco_gt_detections.json")
+
     format_detections(transformed_detections_filepath, transformed_det_path)
-    format_detections(gt_detections_filepath, gt_det_path)
+    format_detections(gt_detections_filepath,          gt_det_path)
 
-    # get accuracy from coco detections
     _, per_class_stats = evaluate_coco_per_class(gt_det_path, transformed_det_path)
-    accuracy_blue = per_class_stats[BLUE_CLASS_ID]["AP"]    # BLUE_CLASS_ID must be int
-    accuracy_yellow = per_class_stats[YELLOW_CLASS_ID]["AP"]
-    return accuracy_blue, accuracy_yellow
+    ap_blue   = per_class_stats[BLUE_CLASS_ID]["AP"]
+    ap_yellow = per_class_stats[YELLOW_CLASS_ID]["AP"]
+    return ap_blue, ap_yellow
 
 
-def get_next_brightness_config(low_config, high_config, low_ap, high_ap, target_accuracy):
-    """Next brightness config via regula falsi: interpolate multiplier so AP → target_accuracy."""
-    lo, hi = low_config["brightness_multiplier"], high_config["brightness_multiplier"]
-    denom = high_ap - low_ap
-    if abs(denom) < 1e-9:
-        mult = (lo + hi) / 2
-    else:
-        mult = lo + (hi - lo) * (target_accuracy - low_ap) / denom
-        mult = np.clip(mult, min(lo, hi), max(lo, hi))
-    return {**low_config, "brightness_multiplier": float(mult)}
-
-
-def run_iteration(brightness_config, image, image_path, gt_detections_filepath, iteration_number): 
+def _evaluate_multiplier(
+    multiplier:              float,
+    image_bgr:               np.ndarray,
+    image_path_tuple:        tuple[str, str],
+    gt_detections_filepath:  str,
+    label:                   str,
+) -> tuple[str, float, float]:
     """
-    Run inference for the brightness configuration
+    Apply the brightness transform, run YOLOv5 inference, and return
+    (output_filepath, ap_blue, ap_yellow).
+    `label` is used only to name the output sub-directory.
     """
-    output_dir = os.path.join(RESULTS_DIR, f"iteration_{iteration_number}")
+    config     = _make_config(multiplier)
+    output_dir = os.path.join(RESULTS_DIR, label)
     os.makedirs(output_dir, exist_ok=True)
-    success, output_filepath = gen_metamorphic(image, "imgDarkBright", brightness_config, image_path, output_dir)
-    if success:
-        accuracy_blue, accuracy_yellow = get_accuracy(output_filepath, gt_detections_filepath)  # FIX: pass gt path
-        return output_filepath, accuracy_blue, accuracy_yellow
-    else:
-        raise Exception("Failed to run inference for brightness configuration")
 
-
-def search_brightness(image, image_path, target_accuracy, gt_detections_filepath):
-    """
-    Search for the optimal brightness transformation for the image
-    """
-    # convert to bgr
-    image_bgr = cv.cvtColor(image, cv.COLOR_RGB2BGR)
-
-    low_param, high_param, low_ap, high_ap = find_starting_range(
-        image_bgr, image_path, target_accuracy, gt_detections_filepath
+    success, output_filepath = gen_metamorphic(
+        image_bgr, "imgDarkBright", config, image_path_tuple, output_dir
     )
+    if not success:
+        raise RuntimeError(f"gen_metamorphic failed for label='{label}'")
 
-    curr_ap_diff = min(abs(low_ap - target_accuracy), abs(high_ap - target_accuracy))
-    iterations = 0
-    next_config = None
-    next_ap = None
+    print(f"[{label}] Running YOLOv5 inference (multiplier={multiplier:.4f})")
+    run_inference("models/yolov5/yolov5_param_kfold.pt", output_filepath)
 
-    while curr_ap_diff > THRESHOLD_AP and iterations < MAX_ITERATIONS:
-        next_config = get_next_brightness_config(low_param, high_param, low_ap, high_ap)
-        next_image_filepath, next_ap_blue, next_ap_yellow = run_iteration(next_config, image, image_path, gt_detections_filepath, iterations)  # FIX: pass gt path
-        # take the max of the two accuracies
-        next_ap = max(next_ap_blue, next_ap_yellow)
+    ap_blue, ap_yellow = get_accuracy(output_filepath, gt_detections_filepath)
+    print(f"[{label}] AP_blue={ap_blue:.4f}  AP_yellow={ap_yellow:.4f}")
+    return output_filepath, ap_blue, ap_yellow
 
-        # update bracket
-        if next_ap < target_accuracy:
-            low_param, low_ap = next_config, next_ap   # new floor
+
+def _combined_ap(ap_blue: float, ap_yellow: float) -> float:
+    """
+    Aggregate per-class APs into a single scalar for the search.
+    Using the mean keeps both classes equally weighted.
+    """
+    return (ap_blue + ap_yellow) / 2.0
+
+def find_peak_multiplier(
+    image_bgr:              np.ndarray,
+    image_path_tuple:       tuple[str, str],
+    gt_detections_filepath: str,
+) -> tuple[float, float, str]:
+    """
+    Locate the brightness multiplier that **maximises** combined AP using
+    golden-section search on [BRIGHTNESS_MULTIPLIER_LOW, BRIGHTNESS_MULTIPLIER_HIGH].
+
+    Golden-section search is used here because the accuracy curve is
+    n shaped: accuracy is poor at both extremes and peaks
+    somewhere in the middle.
+
+    Returns (best_multiplier, best_combined_ap, best_output_filepath).
+    """
+    a = BRIGHTNESS_MULTIPLIER_LOW
+    b = BRIGHTNESS_MULTIPLIER_HIGH
+
+    # Initial interior probes
+    m1 = b - _GSR * (b - a)
+    m2 = a + _GSR * (b - a)
+
+    _, ap_b1, ap_y1 = _evaluate_multiplier(image_bgr, image_path_tuple, gt_detections_filepath,
+                                           m1, f"peak_m1_init", image_bgr)
+    # BUG FIX: positional args were wrong above – use keyword call below
+    _, ap_b1, ap_y1 = _evaluate_multiplier(
+        multiplier=m1, image_bgr=image_bgr,
+        image_path_tuple=image_path_tuple,
+        gt_detections_filepath=gt_detections_filepath,
+        label="peak_m1_init",
+    )
+    f1 = _combined_ap(ap_b1, ap_y1)
+
+    _, ap_b2, ap_y2 = _evaluate_multiplier(
+        multiplier=m2, image_bgr=image_bgr,
+        image_path_tuple=image_path_tuple,
+        gt_detections_filepath=gt_detections_filepath,
+        label="peak_m2_init",
+    )
+    f2 = _combined_ap(ap_b2, ap_y2)
+
+    best_filepath = ""
+    iteration = 0
+
+    while (b - a) > THRESHOLD_AP and iteration < MAX_ITERATIONS:
+        iteration += 1
+        if f1 < f2:
+            # Peak is in [m1, b]; discard [a, m1)
+            a, m1, f1 = m1, m2, f2
+            m2 = a + _GSR * (b - a)
+            out, ap_b2, ap_y2 = _evaluate_multiplier(
+                multiplier=m2, image_bgr=image_bgr,
+                image_path_tuple=image_path_tuple,
+                gt_detections_filepath=gt_detections_filepath,
+                label=f"peak_iter{iteration}_m2",
+            )
+            f2           = _combined_ap(ap_b2, ap_y2)
+            best_filepath = out
         else:
-            high_param, high_ap = next_config, next_ap  # new ceiling
+            # Peak is in [a, m2]; discard (m2, b]
+            b, m2, f2 = m2, m1, f1
+            m1 = b - _GSR * (b - a)
+            out, ap_b1, ap_y1 = _evaluate_multiplier(
+                multiplier=m1, image_bgr=image_bgr,
+                image_path_tuple=image_path_tuple,
+                gt_detections_filepath=gt_detections_filepath,
+                label=f"peak_iter{iteration}_m1",
+            )
+            f1            = _combined_ap(ap_b1, ap_y1)
+            best_filepath = out
 
-        curr_ap_diff = abs(next_ap - target_accuracy)
-        iterations += 1
+    best_multiplier = (a + b) / 2.0
+    best_ap         = (f1 + f2) / 2.0
+    return best_multiplier, best_ap, best_filepath
 
-    if next_config is None or next_ap is None:
-        if abs(low_ap - target_accuracy) < abs(high_ap - target_accuracy):
-            return low_param, low_ap
+
+
+def search_brightness(
+    image:                  np.ndarray,
+    image_path:             str,
+    target_accuracy:        float,
+    gt_detections_filepath: str,
+) -> tuple[dict, float, float, str]:
+    """
+    Find the brightness multiplier whose combined AP is closest to
+    `target_accuracy`.
+
+    Strategy
+    --------
+    1. Use golden-section search to find the peak multiplier (maximum AP).
+    2. If peak AP < target_accuracy the target is unreachable; return the peak.
+    3. Otherwise the target is crossed on both sides of the peak.  Apply
+       regula-falsi independently on [low, peak] and [peak, high] to find
+       both crossing points, then return the one with the higher multiplier
+       (brighter image) as the preferred operating point.
+
+    Returns (best_config, ap_blue, ap_yellow, output_filepath).
+    """
+    image_bgr        = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+    image_path_tuple = _split_image_path(image_path)
+
+    # find peak multiplier
+    peak_mult, peak_ap, peak_filepath = find_peak_multiplier(
+        image_bgr, image_path_tuple, gt_detections_filepath
+    )
+    print(f"[search] Peak  multiplier={peak_mult:.4f}  combined_AP={peak_ap:.4f}")
+
+    if peak_ap < target_accuracy:
+        print("[search] Target accuracy is unachievable; returning peak.")
+        _, ap_b, ap_y = _evaluate_multiplier(
+            multiplier=peak_mult, image_bgr=image_bgr,
+            image_path_tuple=image_path_tuple,
+            gt_detections_filepath=gt_detections_filepath,
+            label="final_peak",
+        )
+        return _make_config(peak_mult), ap_b, ap_y, peak_filepath
+
+    # regula-falsi on the right slope [peak_mult, HIGH]
+    def _rf_search(lo_mult, hi_mult, lo_ap, hi_ap, side_label):
+        """
+        Regula-falsi to find multiplier where combined_AP == target_accuracy.
+        Assumes lo_ap and hi_ap bracket the target (one above, one below).
+        Returns (best_mult, best_ap, best_filepath).
+        """
+        best_mult     = lo_mult
+        best_ap       = lo_ap
+        best_filepath = ""
+
+        for i in range(MAX_ITERATIONS):
+            denom = hi_ap - lo_ap
+            if abs(denom) < 1e-9:
+                mid = (lo_mult + hi_mult) / 2.0
+            else:
+                # Regula falsi interpolation
+                mid = lo_mult + (hi_mult - lo_mult) * (target_accuracy - lo_ap) / denom
+                mid = float(np.clip(mid, min(lo_mult, hi_mult), max(lo_mult, hi_mult)))
+
+            out, ap_b, ap_y = _evaluate_multiplier(
+                multiplier=mid, image_bgr=image_bgr,
+                image_path_tuple=image_path_tuple,
+                gt_detections_filepath=gt_detections_filepath,
+                label=f"rf_{side_label}_iter{i}",
+            )
+            mid_ap        = _combined_ap(ap_b, ap_y)
+            best_mult     = mid
+            best_ap       = mid_ap
+            best_filepath = out
+
+            print(
+                f"[rf/{side_label}] iter={i}  mult={mid:.4f} "
+                f"AP={mid_ap:.4f}  bracket=[{lo_mult:.4f},{hi_mult:.4f}]"
+            )
+
+            if abs(mid_ap - target_accuracy) <= THRESHOLD_AP:
+                break
+
+            # Tighten bracket (monotone on this side)
+            if mid_ap < target_accuracy:
+                hi_mult, hi_ap = mid, mid_ap
+            else:
+                lo_mult, lo_ap = mid, mid_ap
+
+        return best_mult, best_ap, best_filepath
+
+    # Evaluate endpoints of the right slope
+    _, ap_b_low, ap_y_low = _evaluate_multiplier(
+        multiplier=BRIGHTNESS_MULTIPLIER_LOW, image_bgr=image_bgr,
+        image_path_tuple=image_path_tuple,
+        gt_detections_filepath=gt_detections_filepath,
+        label="endpoint_low",
+    )
+    _, ap_b_high, ap_y_high = _evaluate_multiplier(
+        multiplier=BRIGHTNESS_MULTIPLIER_HIGH, image_bgr=image_bgr,
+        image_path_tuple=image_path_tuple,
+        gt_detections_filepath=gt_detections_filepath,
+        label="endpoint_high",
+    )
+    ap_low  = _combined_ap(ap_b_low,  ap_y_low)
+    ap_high = _combined_ap(ap_b_high, ap_y_high)
+
+    results = []
+
+    # Right slope: [peak_mult → HIGH]  (AP decreases)
+    if ap_high < target_accuracy <= peak_ap:
+        mult_r, ap_r, fp_r = _rf_search(
+            peak_mult, BRIGHTNESS_MULTIPLIER_HIGH,
+            peak_ap,   ap_high,
+            side_label="right",
+        )
+        results.append((mult_r, ap_r, fp_r))
+    else:
+        print("[search] Target not bracketed on right slope; skipping.")
+
+    # Left slope: [LOW → peak_mult]  (AP increases)
+    if ap_low < target_accuracy <= peak_ap:
+        mult_l, ap_l, fp_l = _rf_search(
+            BRIGHTNESS_MULTIPLIER_LOW, peak_mult,
+            ap_low,                    peak_ap,
+            side_label="left",
+        )
+        results.append((mult_l, ap_l, fp_l))
+    else:
+        print("[search] Target not bracketed on left slope; skipping.")
+
+    if not results:
+        # Fallback: return the endpoint closest to the target
+        if abs(ap_low - target_accuracy) < abs(ap_high - target_accuracy):
+            best_mult, best_ap = BRIGHTNESS_MULTIPLIER_LOW, ap_low
         else:
-            return high_param, high_ap
+            best_mult, best_ap = BRIGHTNESS_MULTIPLIER_HIGH, ap_high
+        _, ap_b, ap_y = _evaluate_multiplier(
+            multiplier=best_mult, image_bgr=image_bgr,
+            image_path_tuple=image_path_tuple,
+            gt_detections_filepath=gt_detections_filepath,
+            label="fallback_endpoint",
+        )
+        return _make_config(best_mult), ap_b, ap_y, ""
 
-    return next_config, next_ap, next_image_filepath
+    # Prefer the solution with the lower multiplier (darker image)
+    results.sort(key=lambda x: x[0])
+    best_mult, _, best_fp = results[0]
+
+    _, ap_b_final, ap_y_final = _evaluate_multiplier(
+        multiplier=best_mult, image_bgr=image_bgr,
+        image_path_tuple=image_path_tuple,
+        gt_detections_filepath=gt_detections_filepath,
+        label="final_best",
+    )
+    print(
+        f"[search] Final  multiplier={best_mult:.4f}  "
+        f"AP_blue={ap_b_final:.4f}  AP_yellow={ap_y_final:.4f}"
+    )
+    return _make_config(best_mult), ap_b_final, ap_y_final, best_fp
