@@ -129,6 +129,7 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
     
     # Process all .txt files in the detection directory
     coco_detections = []
+    image_id_to_stem = {}
     txt_files = sorted(detection_path.glob("*.txt"))
     
     if not txt_files:
@@ -161,7 +162,9 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
             continue
         
         image_id = image_map[matched_basename]
-        
+        if image_id not in image_id_to_stem:
+            image_id_to_stem[image_id] = basename
+
         # Parse detections from txt file
         detections = parse_detection_txt(txt_file)
         
@@ -193,9 +196,10 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
         # Add image entries for all unique image_ids
         image_ids = set(det['image_id'] for det in coco_detections)
         for img_id in sorted(image_ids):
+            stem = image_id_to_stem.get(img_id, f"image_{img_id}")
             coco_output['images'].append({
                 "id": img_id,
-                "file_name": f"image_{img_id}.jpg",  # Placeholder filename
+                "file_name": f"{stem}.jpg",
                 "height": 1080,  # Placeholder dimensions
                 "width": 1920
             })
@@ -207,7 +211,7 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
                 "name": f"category_{cat_id}",
                 "supercategory": "cone"
             })
-        
+
         with open(output_path, 'w') as f:
             json.dump(coco_output, f, indent=2)
     else:

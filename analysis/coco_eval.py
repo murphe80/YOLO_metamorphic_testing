@@ -5,10 +5,54 @@ Output is AP (Average Precision) and AR (Average Recall) metrics using COCO eval
 
 import argparse
 import json
+import tempfile
 from pathlib import Path
 
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
+
+
+def _allowed_filenames_from_dt(dt_data, gt_id_to_file_name):
+    """
+    Collect file names for images covered by the detection file.
+    Uses `images[].file_name` when present, and maps `image_id` from detection
+    annotations through gt_id_to_file_name for list-only result files.
+    """
+    allowed = set()
+    if isinstance(dt_data, dict):
+        for img in dt_data.get("images") or []:
+            fn = img.get("file_name")
+            if fn:
+                allowed.add(fn)
+        anns = dt_data.get("annotations") or []
+    elif isinstance(dt_data, list):
+        anns = dt_data
+    else:
+        anns = []
+
+    for ann in anns:
+        if not isinstance(ann, dict):
+            continue
+        iid = ann.get("image_id")
+        if iid is not None and iid in gt_id_to_file_name:
+            allowed.add(gt_id_to_file_name[iid])
+    return allowed
+
+
+def _filter_gt_by_filenames(gt_data, allowed_file_names):
+    """Keep only images (and their annotations) whose file_name is in allowed_file_names."""
+    kept_images = [im for im in gt_data["images"] if im["file_name"] in allowed_file_names]
+    kept_ids = {im["id"] for im in kept_images}
+    kept_ann = [a for a in gt_data["annotations"] if a["image_id"] in kept_ids]
+    out = {
+        k: v
+        for k, v in gt_data.items()
+        if k not in ("images", "annotations", "categories")
+    }
+    out["images"] = kept_images
+    out["annotations"] = kept_ann
+    out["categories"] = gt_data.get("categories", [])
+    return out
 
 
 def evaluate_coco(gt_file, dt_file, iou_type='bbox'):
@@ -24,8 +68,37 @@ def evaluate_coco(gt_file, dt_file, iou_type='bbox'):
         stats: Array of evaluation metrics
     """
     print(f"Loading ground truth from: {gt_file}")
-    cocoGt = COCO(gt_file)
-    
+    with open(gt_file) as f:
+        gt_data = json.load(f)
+
+    with open(dt_file) as f:
+        dt_data = json.load(f)
+
+    gt_id_to_fn = {img["id"]: img["file_name"] for img in gt_data["images"]}
+    allowed = _allowed_filenames_from_dt(dt_data, gt_id_to_fn)
+
+    if allowed:
+        n_before = len(gt_data["images"])
+        gt_data = _filter_gt_by_filenames(gt_data, allowed)
+        print(
+            f"Filtered ground truth to {len(gt_data['images'])}/{n_before} images "
+            "present in detection file (by file name)."
+        )
+    else:
+        print(
+            "Warning: No image file names inferred from detection file; "
+            "using full ground truth."
+        )
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
+        json.dump(gt_data, tmp)
+        tmp_gt_path = tmp.name
+
+    try:
+        cocoGt = COCO(tmp_gt_path)
+    finally:
+        Path(tmp_gt_path).unlink(missing_ok=True)
+
     print(f"Loading detection results from: {dt_file}")
     cocoDt = cocoGt.loadRes(dt_file)
     

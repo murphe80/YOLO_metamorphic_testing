@@ -34,6 +34,22 @@ def luminosity_bt_709(image: np.ndarray) -> np.ndarray:
     weights = np.array([0.2126, 0.7152, 0.0722])  # BT.709
     return image @ weights # matrix multiplication (dot product)
 
+def extract_value_HSV(image_bgr: np.ndarray) -> np.ndarray:
+    """
+    Extract the value channel from the HSV image
+    """
+    hsv = cv.cvtColor(image_bgr, cv.COLOR_BGR2HSV)
+    v = hsv[:, :, 2].astype(np.float32) / 255.0  # normalise to [0, 1]
+    return v
+
+def low_high_regions_ratio(image_bgr: np.ndarray) -> float:
+    """
+    Calculate the ratio of pixels that are 0 or 255 vs total pixels in the value channel of the HSV image
+    """
+    v = extract_value_HSV(image_bgr)
+    low_region = v == 0
+    high_region = v == 255
+    return (np.sum(low_region) + np.sum(high_region)) / v.size
 
 def calculate_rms(image_bgr: np.ndarray) -> float:
     """
@@ -51,8 +67,36 @@ def calculate_rms(image_bgr: np.ndarray) -> float:
 
     return rms
 
+def calculate_brightness_scores(image_bgr: np.ndarray) -> tuple[float, float, float, float]:
+    """
+    Calculate the brightness scores of the image
+    Returns json object with the brightness scores
+    """
+    rms = calculate_rms(image_bgr)
+    lh_ratio = low_high_regions_ratio(image_bgr)
+    mean_shift_variance = mean_shift_clustering_variance(image_bgr)
+    luminosity_709 = luminosity_bt_709(image_bgr)
+    return {
+        "rms": rms,
+        "low_high_regions_ratio": lh_ratio,
+        "mean_shift_variance": mean_shift_variance,
+        "luminosity_709": luminosity_709
+    }
 
-def tune_brightness(images_path, target_ap, gt_detections_filepath):
+def get_confidence_level(image, detections_path):
+    """
+    Get the confidence level of the detections in the image
+    Returns the average confidence level of the detections in the image
+    """
+    # Find .txt detections file for the target input image
+    detections_file = os.path.join(detections_path, image.replace(".jpg", ".txt"))
+    with open(detections_file, "r") as f:
+        detections = f.readlines()
+    # Get the confidence level of the detections (second number on each line)
+    confidence_levels = [float(detection.split(" ")[1]) for detection in detections]
+    return np.mean(confidence_levels)
+
+def tune_brightness(images_path, original_detections_path, target_ap, gt_detections_filepath):
     """
     Tune the brightness of the image
     """
@@ -62,13 +106,13 @@ def tune_brightness(images_path, target_ap, gt_detections_filepath):
     for image_path in os.listdir(images_path):
         print(f"Tuning brightness of {image_path}")
         image = cv.imread(os.path.join(images_path, image_path))
-        rms = calculate_rms(image)
-        image_mean_shift_variance = mean_shift_clustering_variance(image)
-        optimal_config, final_ap, next_image_filepath = search_brightness(image, image_path, target_ap, gt_detections_filepath)
-        output_image = cv.imread(next_image_filepath)
-        image_tuned_mean_shift_variance = mean_shift_clustering_variance(output_image)
-        rms_tuned = calculate_rms(output_image)
-        results.append({"image_path": image_path, "rms": rms, "rms_tuned": rms_tuned, "image_mean_shift_variance": image_mean_shift_variance, "optimal_config": optimal_config, "final_ap": final_ap, "image_tuned_mean_shift_variance": image_tuned_mean_shift_variance})
+        brightness_scores = calculate_brightness_scores(image)
+        original_confidence_level = get_confidence_level(image,original_detections_path)
+        optimal_config, ap_b, ap_y, updated_image_filepath, updated_detections_path = search_brightness(image, image_path, target_ap, gt_detections_filepath)
+        output_image = cv.imread(updated_image_filepath)
+        updated_confidence_level = get_confidence_level(output_image, updated_detections_path)
+        tuned_brightness_scores = calculate_brightness_scores(output_image) 
+        results.append({"image_path": image_path, "brightness_scores": brightness_scores, "tuned_brightness_scores": tuned_brightness_scores, "optimal_config": optimal_config, "ap_blue": ap_b, "ap_yellow": ap_y, "original_confidence_level": original_confidence_level, "updated_confidence_level": updated_confidence_level})
     with open(os.path.join(OUTPUT_DIR, "results.json"), "w") as f:
         json.dump(results, f)
 
@@ -79,11 +123,12 @@ def main():
     # cli arguments
     parser = argparse.ArgumentParser(description="Tune the brightness of the images")
     parser.add_argument("--images_path", type=str, default=DATASET_DIR, help="Path to the images")
+    parser.add_argument("--original_detections_path", type=str, required=True, help="Path to the original model detections")
     parser.add_argument("--target_ap", type=float, default=0.8, help="Target AP")
     parser.add_argument("--gt_detections_filepath", type=str, default=GT_DETECTIONS_FILEPATH, help="Path to the ground truth detections")
     args = parser.parse_args()
-    
-    tune_brightness(args.images_path, args.target_ap, args.gt_detections_filepath)
+
+    tune_brightness(args.images_path, args.original_detections_path, args.target_ap, args.gt_detections_filepath)
 
 if __name__ == "__main__":
     main()

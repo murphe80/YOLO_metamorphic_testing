@@ -34,7 +34,7 @@ Output includes:
 import json
 import argparse
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 
 def load_configs(transformed_images_dir: str = None) -> Dict:
@@ -367,193 +367,93 @@ def print_robustness_ranking(data: Dict):
               f"{category:<20} │ {detail:<30}")
 
 
-def export_table_as_png(data: Dict, configs: Dict = None, output_file: str = "analysis/results/comparison_table.png"):
-    """Export comparison data to a formatted table file."""
-    configs = configs or {}
+def export_table_as_png(data: Dict, configs: Dict = None, output_file: str = "analysis/results/visualisation/comparison_table.png", metric: str = "AP50"):
+    """Export comparison table as a raster PNG (not plain text)."""
+    _ = configs or {}  # reserved for future columns (e.g. configuration summary)
     all_transforms = set()
     for model_data in data.values():
         all_transforms.update(model_data.keys())
-    
+
     transformations = sorted(all_transforms)
-    
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-    
-    with open(output_file, 'w') as f:
-        if format == "markdown":
-            # Markdown table
-            f.write("# YOLO Model Comparison: Metamorphic Testing Results\n\n")
-            f.write("Comparison of detection consistency across transformations (Original vs Transformed)\n\n")
-            
-            # Summary table
-            f.write("## Summary Table (AP50 Scores)\n\n")
-            f.write("| Transformation | YOLOv5 | YOLOv8 | YOLOv12 | Winner | Avg AP50 | Configuration |\n")
-            f.write("|---|---|---|---|---|---|---|\n")
-            
-            for transform in transformations:
-                v5_stats = data.get('yolov5', {}).get(transform, {})
-                v8_stats = data.get('yolov8', {}).get(transform, {})
-                v12_stats = data.get('yolov12', {}).get(transform, {})
-                
-                v5_ap = v5_stats.get('AP50', 0)
-                v8_ap = v8_stats.get('AP50', 0)
-                v12_ap = v12_stats.get('AP50', 0)
-                
-                winner = max([('v5', v5_ap), ('v8', v8_ap), ('v12', v12_ap)], key=lambda x: x[1])[0]
-                avg_ap = (v5_ap + v8_ap + v12_ap) / 3 if v5_ap > 0 and v8_ap > 0 and v12_ap > 0 else 0
-                
-                winner_full = {'v5': 'YOLOv5', 'v8': 'YOLOv8', 'v12': 'YOLOv12'}[winner]
-                
-                v5_str = f"{v5_ap:.4f} ({v5_ap*100:.1f}%)"
-                v8_str = f"{v8_ap:.4f} ({v8_ap*100:.1f}%)"
-                v12_str = f"{v12_ap:.4f} ({v12_ap*100:.1f}%)"
-                
-                # Bold the winner
-                if winner == 'v5':
-                    v5_str = f"**{v5_str}**"
-                elif winner == 'v8':
-                    v8_str = f"**{v8_str}**"
-                else:
-                    v12_str = f"**{v12_str}**"
-                
-                config_str = format_config_params(configs.get(transform, {}))
-                
-                f.write(f"| {transform} | {v5_str} | {v8_str} | {v12_str} | {winner_full} | {avg_ap:.4f} ({avg_ap*100:.1f}%) | {config_str} |\n")
-            
-            # Configuration details
-            if configs:
-                f.write("\n## Transformation Configurations\n\n")
-                for transform in sorted(configs.keys()):
-                    config = configs[transform]
-                    f.write(f"\n### {transform}\n\n")
-                    if not config:
-                        f.write("No parameters (default settings)\n")
-                    else:
-                        for key, value in config.items():
-                            f.write(f"- **{key}**: {value}\n")
-            
-            # Detailed metrics
-            f.write("\n## Detailed Metrics\n\n")
-            
-            for transform in transformations:
-                f.write(f"\n### {transform}\n\n")
-                f.write("| Model | AP50 | AP75 | AR@100 |\n")
-                f.write("|---|---|---|---|\n")
-                
-                for model in ['yolov5', 'yolov8', 'yolov12']:
-                    stats = data.get(model, {}).get(transform, {})
-                    
-                    if not stats:
-                        f.write(f"| {model.upper()} | N/A | N/A | N/A |\n")
-                        continue
-                    
-                    ap50 = stats.get('AP50', 0)
-                    ap75 = stats.get('AP75', 0)
-                    ar100 = stats.get('AR100', 0)
-                    
-                    f.write(f"| {model.upper()} | "
-                           f"{ap50:.4f} ({ap50*100:.1f}%) | "
-                           f"{ap75:.4f} ({ap75*100:.1f}%) | "
-                           f"{ar100:.4f} ({ar100*100:.1f}%) |\n")
-            
-            # Robustness ranking
-            f.write("\n## Transformation Robustness Ranking\n\n")
-            f.write("| Rank | Transformation | Avg AP50 | Category |\n")
-            f.write("|---|---|---|---|\n")
-            
-            rankings = []
-            for transform in transformations:
-                v5_ap = data.get('yolov5', {}).get(transform, {}).get('AP50', 0)
-                v8_ap = data.get('yolov8', {}).get(transform, {}).get('AP50', 0)
-                v12_ap = data.get('yolov12', {}).get(transform, {}).get('AP50', 0)
-                
-                valid_aps = [ap for ap in [v5_ap, v8_ap, v12_ap] if ap > 0]
-                if valid_aps:
-                    avg_ap = sum(valid_aps) / len(valid_aps)
-                    rankings.append({'transform': transform, 'avg_ap': avg_ap})
-            
-            rankings.sort(key=lambda x: x['avg_ap'], reverse=True)
-            
-            for i, rank in enumerate(rankings, 1):
-                avg_ap = rank['avg_ap']
-                if avg_ap >= 0.9:
-                    category = "🟢 Highly Robust"
-                elif avg_ap >= 0.7:
-                    category = "🟡 Moderately Robust"
-                elif avg_ap >= 0.5:
-                    category = "🟠 Low Robustness"
-                else:
-                    category = "🔴 Very Low Robustness"
-                
-                f.write(f"| {i} | {rank['transform']} | {avg_ap:.4f} ({avg_ap*100:.1f}%) | {category} |\n")
-            
-            # Key findings
-            f.write("\n## Key Findings\n\n")
-            
-            # Count regressions
-            regression_count = 0
-            improvement_count = 0
-            for transform in transformations:
-                v5_ap = data.get('yolov5', {}).get(transform, {}).get('AP50', 0)
-                v8_ap = data.get('yolov8', {}).get(transform, {}).get('AP50', 0)
-                v12_ap = data.get('yolov12', {}).get(transform, {}).get('AP50', 0)
-                
-                if v5_ap > 0 and v8_ap > 0 and v12_ap > 0:
-                    if v5_ap > v8_ap or v5_ap > v12_ap:
-                        regression_count += 1
-                    if v12_ap > v5_ap and v12_ap > v8_ap:
-                        improvement_count += 1
-            
-            f.write(f"- **Regressions**: YOLOv5 outperforms newer models in {regression_count}/{len(transformations)} transformations\n")
-            f.write(f"- **Improvements**: YOLOv12 outperforms older models in {improvement_count}/{len(transformations)} transformations\n")
-            
-            # Most challenging transformation
-            if rankings:
-                worst = rankings[-1]
-                f.write(f"- **Most Challenging**: {worst['transform']} (Avg AP: {worst['avg_ap']*100:.1f}%)\n")
-                best = rankings[0]
-                f.write(f"- **Most Robust**: {best['transform']} (Avg AP: {best['avg_ap']*100:.1f}%)\n")
-        
-        else:  # ASCII format
-            # ASCII table format
-            f.write("=" * 100 + "\n")
-            f.write("YOLO MODEL COMPARISON: METAMORPHIC TESTING RESULTS\n")
-            f.write("=" * 100 + "\n\n")
-            
-            f.write(f"{'Transformation':<20} | {'YOLOv5':<20} | {'YOLOv8':<20} | {'YOLOv12':<20} | {'Winner':<10}\n")
-            f.write("-" * 100 + "\n")
-            
-            for transform in transformations:
-                v5_stats = data.get('yolov5', {}).get(transform, {})
-                v8_stats = data.get('yolov8', {}).get(transform, {})
-                v12_stats = data.get('yolov12', {}).get(transform, {})
-                
-                v5_ap = v5_stats.get('AP50', 0)
-                v8_ap = v8_stats.get('AP50', 0)
-                v12_ap = v12_stats.get('AP50', 0)
-                
-                winner = max([('v5', v5_ap), ('v8', v8_ap), ('v12', v12_ap)], key=lambda x: x[1])[0]
-                winner_full = {'v5': 'YOLOv5', 'v8': 'YOLOv8', 'v12': 'YOLOv12'}[winner]
-                
-                v5_str = f"{v5_ap:.4f} ({v5_ap*100:>5.1f}%)"
-                v8_str = f"{v8_ap:.4f} ({v8_ap*100:>5.1f}%)"
-                v12_str = f"{v12_ap:.4f} ({v12_ap*100:>5.1f}%)"
-                
-                # Add star for winner
-                if winner == 'v5':
-                    v5_str = "★ " + v5_str
-                elif winner == 'v8':
-                    v8_str = "★ " + v8_str
-                else:
-                    v12_str = "★ " + v12_str
-                
-                f.write(f"{transform:<20} | {v5_str:<20} | {v8_str:<20} | {v12_str:<20} | {winner_full:<10}\n")
-            
-            f.write("\n" + "=" * 100 + "\n")
-    
+
+    col_labels = ["Transformation", "YOLOv5", "YOLOv8", "YOLOv12", "Winner"]
+    cell_text: List[List[str]] = []
+
+    for transform in transformations:
+        v5_metric = data.get("yolov5", {}).get(transform, {}).get(metric, 0)
+        v8_metric = data.get("yolov8", {}).get(transform, {}).get(metric, 0)
+        v12_metric = data.get("yolov12", {}).get(transform, {}).get(metric, 0)
+
+        winner = max(
+            [("v5", v5_metric), ("v8", v8_metric), ("v12", v12_metric)], key=lambda x: x[1]
+        )[0]
+        winner_full = {"v5": "YOLOv5", "v8": "YOLOv8", "v12": "YOLOv12"}[winner]
+
+        v5_str = f"{v5_metric:.4f} ({v5_metric * 100:.1f}%)"
+        v8_str = f"{v8_metric:.4f} ({v8_metric * 100:.1f}%)"
+        v12_str = f"{v12_metric:.4f} ({v12_metric * 100:.1f}%)"
+
+        if winner == "v5":
+            v5_str = "★ " + v5_str
+        elif winner == "v8":
+            v8_str = "★ " + v8_str
+        else:
+            v12_str = "★ " + v12_str
+
+        cell_text.append([transform, v5_str, v8_str, v12_str, winner_full])
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    nrows = len(cell_text)
+    ncols = len(col_labels)
+    fig_h = max(4.0, 0.55 * (nrows + 1) + 1.8)
+    fig_w = max(12.0, 2.2 * ncols)
+
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    ax.axis("off")
+    table = ax.table(
+        cellText=cell_text,
+        colLabels=col_labels,
+        loc="center",
+        cellLoc="center",
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+    table.scale(1.0, 2.0)
+
+    for j in range(ncols):
+        cell = table[(0, j)]
+        cell.set_facecolor("#2F5597")
+        cell.get_text().set_color("white")
+        cell.get_text().set_fontweight("bold")
+
+    for i in range(1, nrows + 1):
+        for j in range(ncols):
+            table[(i, j)].set_edgecolor("#CCCCCC")
+        if i % 2 == 0:
+            for j in range(ncols):
+                table[(i, j)].set_facecolor("#F2F2F2")
+
+    fig.suptitle(
+        f"YOLO model comparison — metamorphic testing ({metric.upper()})",
+        fontsize=13,
+        fontweight="bold",
+        y=0.98,
+    )
+    fig.savefig(
+        output_file,
+        dpi=200,
+        bbox_inches="tight",
+        facecolor="white",
+        pad_inches=0.35,
+    )
+    plt.close(fig)
+
     print(f"\n✓ Table exported to: {output_file}")
-    print("   Format: {0}".format(format.upper()))
-    if format == "markdown":
-        print("   View in GitHub, VSCode, or any Markdown viewer for best rendering")
 
 
 def main():
@@ -580,8 +480,14 @@ def main():
     parser.add_argument(
         '--png_output',
         type=str,
-        default='analysis/results/comparison_table.png',
+        default='analysis/results/visualisation/comparison_table.png',
         help='Output PNG file path'
+    )
+    parser.add_argument(
+        '--metric',
+        type=str,
+        default='AP75',
+        help='Metric to compare (AP50, AP75, AR1, AR10, AR100)'
     )
     parser.add_argument(
         '--detailed',
@@ -618,7 +524,7 @@ def main():
     
     # Export PNG if requested
     if args.export_png:
-        export_table_as_png(data, configs, args.png_output)
+        export_table_as_png(data, configs, args.png_output, metric=args.metric)
     
     print("\n" + "=" * 120)
     print("Analysis complete!")

@@ -18,6 +18,22 @@ run_model_analysis() {
         --output_file "$base_det" \
         --as_ground_truth
 
+    # Original detections vs Ground Truth (if GT available)
+    if [ -f "$GT_COCO" ]; then
+        echo "Comparing original vs ground truth..."
+        # Generate detections with GT image IDs (strips transformation suffixes)
+        python3 analysis/utils/format_detections.py \
+            --detection_dir "${model_results}/original" \
+            --output_file "${model_results}/original/detections_for_gt.json" \
+            --gt_coco "$GT_COCO"
+            
+        stats_dir_base="${RESULTS_BASE}/${model_name}"
+        python3 analysis/coco_eval.py \
+            --gt "$GT_COCO" \
+            --dt "${model_results}/original/detections_for_gt.json" \
+            --stats-out "${stats_dir_base}/original_vs_gt/stats.json" 2>&1 | grep -v "Warning: No matching image" || true
+    fi
+
     for rule_path in "${model_results}"/*; do
         [ ! -d "$rule_path" ] && continue
         
@@ -31,7 +47,6 @@ run_model_analysis() {
         # Create comparison type subdirectories
         stats_dir_base="${RESULTS_BASE}/${model_name}/${rule_name}"
         mkdir -p "${stats_dir_base}/original_vs_transformed"
-        mkdir -p "${stats_dir_base}/original_vs_gt"
         mkdir -p "${stats_dir_base}/transformed_vs_gt"
 
         # Format transformed detections
@@ -62,22 +77,7 @@ run_model_analysis() {
             --gt "$base_det" \
             --dt "$DT_FILE" \
             --stats-out "${stats_dir_base}/original_vs_transformed/stats.json"
-        
-        # Comparison 2: Original detections vs Ground Truth (if GT available)
-        # Only run once per model (not per transformation)
-        if [ -f "$GT_COCO" ] && [ ! -f "${stats_dir_base}/original_vs_gt/stats.json" ]; then
-            echo "Comparing original vs ground truth..."
-            # Generate detections with GT image IDs (strips transformation suffixes)
-            python3 analysis/utils/format_detections.py \
-                --detection_dir "${model_results}/original" \
-                --output_file "${model_results}/original/detections_for_gt.json" \
-                --gt_coco "$GT_COCO"
-            
-            python3 analysis/coco_eval.py \
-                --gt "$GT_COCO" \
-                --dt "${model_results}/original/detections_for_gt.json" \
-                --stats-out "${stats_dir_base}/original_vs_gt/stats.json" 2>&1 | grep -v "Warning: No matching image" || true
-        fi
+    
         
         # Comparison 3: Transformed detections vs Ground Truth (if GT available)
         if [ -f "$GT_COCO" ]; then

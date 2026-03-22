@@ -1,148 +1,165 @@
-# YOLO Metamorphic Testing Framework
+# YOLO Metamorphic Testing
 
-A framework for testing YOLO object detection models using metamorphic testing. This repository allows for an evaluation of model robustness through various image transformations, specifically designed for the context of Formula Trinity's autonomous team.
+A metamorphic testing framework for evaluating the robustness of YOLO-based cone detectors. It systematically applies image transformations (blur, brightness, resolution changes, colour shifts, etc.) and checks whether the model's detections remain consistent.
 
-## Overview
+**Supported models:** YOLOv5 · YOLOv8 · YOLOv12
 
-Metamorphic testing is a software testing technique that validates the behavior of machine learning models by applying transformations to input data and checking if the model's outputs follow expected relationships. This framework applies this concept to object detection models by:
+---
 
-- **Transforming images** using various metamorphic rules (blur, rotation, brightness changes, etc.)
-- **Running inference** on both original and transformed images
-- **Comparing results** to identify robustness issues and performance degradation
-- **Generating visualizations** to analyze detection quality across transformations
-
-## Features
-
-### Available Metamorphic Transformations
-
-- **Geometric Transformations**: stretching
-- **Visual Quality**: Motion blur, resolution reduction
-- **Color/Contrast**: Brightness adjustment, grayscale conversion, color channel manipulation
-
-### Supported Models
-
-- YOLOv5 
-- YOLOv8
-- YOLOv12 
-
-## Quick Start
-
-### 1. Setup Environment
+## Quick start
 
 ```bash
-# Clone the repository
-git clone https://github.com/murphe80/YOLO_metamorphic_testing.git
-cd YOLO_metamorphic_testing
+git clone https://github.com/murphe80/YOLO_metamorphic_testing_sample.git
+cd YOLO_metamorphic_testing_sample
 
-# Create and activate virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+
+# Run the full pipeline on the bundled sample images (10 images, all 3 models)
+bash scripts/run_sample_pipeline.sh
 ```
 
-### 2. Basic Usage
+Results land in `analysis/results/<model>/<rule>/original_vs_transformed/stats.json`.
 
-#### Single Image Testing
+---
+
+## How it works
+
+```
+data/base_images/fsoco_sample/          ← sample images (bundled)
+          │
+          ▼  Stage 1: generate transforms
+data/transformed_images/fsoco_sample/
+          │
+          ▼  Stage 2: run YOLO inference
+results/<model>/original/               ← detections on original images
+results/<model>/<rule>/                 ← detections on transformed images
+          │
+          ▼  Stage 3: COCO-style evaluation
+analysis/results/<model>/<rule>/
+    original_vs_transformed/stats.json  ← metamorphic comparison (AP, AR)
+    transformed_vs_gt/stats.json        ← vs ground truth (if annotations available)
+```
+
+The key metamorphic relation is: a robust detector should produce the same detections on an image regardless of perceptually minor transformations. AP drop between original and transformed detections quantifies robustness.
+
+---
+
+## Running the pipeline
+
+### Full sample pipeline (one command)
+
 ```bash
-# Test a single image with default transformations
-python models/yolov5/infer_v5.py \
-    --weights models/yolov5/yolov5_parameters.pt \
-    --image data/base_images/fsoco_sample/images/amz_00016.jpg \
-    --rules imgBlur imgRotation imgDarkBright
+bash scripts/run_sample_pipeline.sh
 ```
 
-### 3. Available Transformation Rules
+Options:
 
-| Rule | Description | Parameters |
-|------|-------------|------------|
-| `imgBlur` | Apply bilateral blur filter | `blur_strength`, `filter_size` |
-| `imgDarkBright` | Adjust brightness/contrast | `brightness_constant`, `brightness_multiplier`, `method` |
-| `imgResolution` | Reduce image resolution | `size_ratio` |
-| `imgGrayscale` | Convert to grayscale | None |
-| `imgMotionBlur` | Apply motion blur effect | `kernel_size`, `orientation` |
+| Flag | Description |
+|------|-------------|
+| `--model v5\|v8\|v12\|all` | Run inference for one model only (default: `all`) |
+| `--skip-transform` | Skip Stage 1 (re-use existing transformed images) |
 
-### 4. Output
+### Running stages individually
 
-The framework generates:
-- **Detection results** printed to console
-- **Visualization images** saved to `results/` directory
+**Stage 1 — Generate transformed images**
 
+```bash
+bash scripts/run_all_matias_transformations.sh
+```
 
-## Project Structure
+Or apply a single rule to a single image:
+
+```bash
+python utils/matias_metamorphic.py \
+    --rule imgDarkBright \
+    --config '{"brightness_multiplier": 0.2, "gamma": 1, "method": "gamma"}' \
+    --base_image data/base_images/fsoco_sample/segmented_images/amz_00016.jpg \
+    --output_path data/transformed_images/fsoco_sample/imgDarkBright
+```
+
+**Stage 2 — Run inference**
+
+```bash
+# YOLOv5
+python models/yolov5/infer_v5_kfold.py \
+    --weights models/yolov5/yolov5_param_kfold.pt \
+    --image <path/to/image.jpg> \
+    --output-subdir original
+
+# YOLOv8
+python models/yolov8/infer_v8.py \
+    --weights models/yolov8/yolov8_param_kfold.pt \
+    --image <path/to/image.jpg> \
+    --output-subdir original
+
+# YOLOv12
+python models/yolov12/infer_v12.py \
+    --weights models/yolov12/yolov12_param_kfold.pt \
+    --image <path/to/image.jpg> \
+    --output-subdir original
+```
+
+**Stage 3 — Evaluate**
+
+```bash
+bash analysis/scripts/run_all_analysis_matias_meta.sh
+```
+
+Output `stats.json` files contain COCO-standard AP and AR metrics at multiple IoU thresholds.
+
+---
+
+## Transformation rules
+
+| Rule | What it does | Key parameters |
+|------|-------------|----------------|
+| `imgDarkBright` | Adjusts brightness via gamma correction | `brightness_multiplier`, `gamma`, `method` |
+| `imgResolution` | Downscales then upscales (simulates low-res camera) | `size_ratio` (0–1) |
+| `imgMotionBlur` | Applies directional motion blur | `kernel_size`, `orientation` (degrees) |
+| `imgStretch` | Scales image dimensions | `height_ratio`, `width_ratio` |
+| `imgGrayscale` | Converts to greyscale | — |
+| `imgColorWheel` | Rotates hues uniformly | `hue_rotation` (degrees) |
+
+Default configurations used by the sample pipeline are defined at the top of `scripts/run_sample_pipeline.sh`.
+
+---
+
+## Project structure
 
 ```
-YOLO_metamorphic_testing/
-├── models/
-│   └── yolov5/
-│       ├── infer_v5.py          # Basic inference script
-│       ├── metamorphic_test.py  # Metamorphic testing script
-│       └── yolov5_parameters.pt # Model weights
-├── utils/
-│   ├── metamorphic_rules/       # Transformation rules
-│   │   ├── image_rules.py       # Image transformation implementations
-│   │   ├── instantiate_rules.py # Rule factory functions
-│   │   └── metamorphic_rules.py # Base rule classes
-│   └── visualise.py             # Visualization utilities
 ├── data/
-│   └── fsoco_sample/            # Sample dataset
-├── results/                     # Output directory
-└── requirements.txt             # Dependencies
+│   └── base_images/fsoco_sample/   ← bundled sample images
+├── models/
+│   ├── yolov5/                     ← infer_v5_kfold.py + weights
+│   ├── yolov8/                     ← infer_v8.py + weights
+│   └── yolov12/                    ← infer_v12.py + weights
+├── utils/
+│   ├── matias_metamorphic.py       ← transformation entry point
+│   └── metamorphic_rules/          ← rule implementations
+├── analysis/
+│   ├── coco_eval.py                ← COCO metric evaluation
+│   ├── utils/format_detections.py  ← formats raw .txt detections to COCO JSON
+│   └── scripts/
+│       └── run_all_analysis_matias_meta.sh
+└── scripts/
+    ├── run_sample_pipeline.sh      ← end-to-end sample pipeline (start here)
+    └── run_all_matias_transformations.sh
 ```
 
+---
 
+## Requirements
 
-## Troubleshooting
+- Python 3.9+
+- CUDA-capable GPU recommended (CPU inference works but is slow)
+- See `requirements.txt` for full dependency list
 
-### NumPy Compatibility Issues
+Notable dependencies: `torch`, `ultralytics`, `yolov5`, `opencv-python`, `pycocotools`
 
-If you encounter the error:
-```
-A module that was compiled using NumPy 1.x cannot be run in NumPy 2.2.6 as it may crash.
-```
+---
 
-**Solution:**
-1. Activate your virtual environment:
-   ```bash
-   source venv/bin/activate
-   ```
+## Using your own images
 
-2. Downgrade NumPy to a compatible version:
-   ```bash
-   pip install "numpy<2.0" --force-reinstall
-   ```
-
-3. Reinstall OpenCV to ensure compatibility:
-   ```bash
-   pip uninstall opencv-python opencv-python-headless opencv-contrib-python-headless -y
-   pip install opencv-python==4.8.1.78
-   ```
-
-### PyTorch Model Loading Issues
-
-If you encounter the error:
-```
-WeightsUnpickler error: Unsupported global: GLOBAL models.yolo.DetectionModel was not an allowed global by default.
-```
-
-**Solution:**
-This is due to PyTorch 2.6+ security changes. You need to modify the YOLOv5 experimental.py file:
-
-1. Navigate to the YOLOv5 installation in your virtual environment:
-   ```bash
-   find venv -name "experimental.py" -path "*/yolov5/models/*"
-   ```
-
-2. Edit the file and find the `torch.load` call (around line 82):
-   ```python
-   # Change this line:
-   ckpt = torch.load(attempt_download(w), map_location='cpu')  # load
-   
-   # To this:
-   ckpt = torch.load(attempt_download(w), map_location='cpu', weights_only=False)  # load
-   ```
-
-3. Save the file and try running your script again.
-
-```
+Point any stage at a different image directory by editing the `IMAGES_DIR` variable at the top of the relevant script, or by passing `--base_image` / `--image` arguments directly to the Python scripts.

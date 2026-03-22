@@ -32,12 +32,6 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 _GSR = (np.sqrt(5) - 1) / 2   # ≈ 0.618
 
 
-def save_results(results: dict) -> None:
-    """Persist results dict to JSON in RESULTS_DIR."""
-    with open(os.path.join(RESULTS_DIR, "results.json"), "w") as f:
-        json.dump(results, f)
-
-
 def _make_config(multiplier: float) -> dict:
     """Build a brightness config dict from a multiplier value."""
     return {
@@ -79,7 +73,7 @@ def _evaluate_multiplier(
     image_path_tuple:        tuple[str, str],
     gt_detections_filepath:  str,
     label:                   str,
-) -> tuple[str, float, float]:
+) -> tuple[str, float, float, str]:
     """
     Apply the brightness transform, run YOLOv5 inference, and return
     (output_filepath, ap_blue, ap_yellow).
@@ -95,12 +89,17 @@ def _evaluate_multiplier(
     if not success:
         raise RuntimeError(f"gen_metamorphic failed for label='{label}'")
 
+    updated_detections_filepath = os.path.join(output_dir, "detections.txt")
+
     print(f"[{label}] Running YOLOv5 inference (multiplier={multiplier:.4f})")
-    run_inference("models/yolov5/yolov5_param_kfold.pt", output_filepath)
+    detections = run_inference("models/yolov5/yolov5_param_kfold.pt", output_filepath)
+    with open(updated_detections_filepath, "w") as f:
+        for detection in detections:
+            f.write(detection)
 
     ap_blue, ap_yellow = get_accuracy(output_filepath, gt_detections_filepath)
     print(f"[{label}] AP_blue={ap_blue:.4f}  AP_yellow={ap_yellow:.4f}")
-    return output_filepath, ap_blue, ap_yellow
+    return output_filepath, ap_blue, ap_yellow, updated_detections_filepath
 
 
 def _combined_ap(ap_blue: float, ap_yellow: float) -> float:
@@ -132,10 +131,7 @@ def find_peak_multiplier(
     m1 = b - _GSR * (b - a)
     m2 = a + _GSR * (b - a)
 
-    _, ap_b1, ap_y1 = _evaluate_multiplier(image_bgr, image_path_tuple, gt_detections_filepath,
-                                           m1, f"peak_m1_init", image_bgr)
-    # BUG FIX: positional args were wrong above – use keyword call below
-    _, ap_b1, ap_y1 = _evaluate_multiplier(
+    _, ap_b1, ap_y1, _ = _evaluate_multiplier(
         multiplier=m1, image_bgr=image_bgr,
         image_path_tuple=image_path_tuple,
         gt_detections_filepath=gt_detections_filepath,
@@ -143,7 +139,7 @@ def find_peak_multiplier(
     )
     f1 = _combined_ap(ap_b1, ap_y1)
 
-    _, ap_b2, ap_y2 = _evaluate_multiplier(
+    _, ap_b2, ap_y2, _ = _evaluate_multiplier(
         multiplier=m2, image_bgr=image_bgr,
         image_path_tuple=image_path_tuple,
         gt_detections_filepath=gt_detections_filepath,
@@ -160,7 +156,7 @@ def find_peak_multiplier(
             # Peak is in [m1, b]; discard [a, m1)
             a, m1, f1 = m1, m2, f2
             m2 = a + _GSR * (b - a)
-            out, ap_b2, ap_y2 = _evaluate_multiplier(
+            out, ap_b2, ap_y2, _ = _evaluate_multiplier(
                 multiplier=m2, image_bgr=image_bgr,
                 image_path_tuple=image_path_tuple,
                 gt_detections_filepath=gt_detections_filepath,
@@ -172,7 +168,7 @@ def find_peak_multiplier(
             # Peak is in [a, m2]; discard (m2, b]
             b, m2, f2 = m2, m1, f1
             m1 = b - _GSR * (b - a)
-            out, ap_b1, ap_y1 = _evaluate_multiplier(
+            out, ap_b1, ap_y1, _ = _evaluate_multiplier(
                 multiplier=m1, image_bgr=image_bgr,
                 image_path_tuple=image_path_tuple,
                 gt_detections_filepath=gt_detections_filepath,
@@ -206,7 +202,7 @@ def search_brightness(
        both crossing points, then return the one with the higher multiplier
        (brighter image) as the preferred operating point.
 
-    Returns (best_config, ap_blue, ap_yellow, output_filepath).
+    Returns (best_config, ap_blue, ap_yellow, output_filepath, updated_detections_filepath).
     """
     image_bgr        = cv.cvtColor(image, cv.COLOR_RGB2BGR)
     image_path_tuple = _split_image_path(image_path)
@@ -219,13 +215,13 @@ def search_brightness(
 
     if peak_ap < target_accuracy:
         print("[search] Target accuracy is unachievable; returning peak.")
-        _, ap_b, ap_y = _evaluate_multiplier(
+        _, ap_b, ap_y, det_path = _evaluate_multiplier(
             multiplier=peak_mult, image_bgr=image_bgr,
             image_path_tuple=image_path_tuple,
             gt_detections_filepath=gt_detections_filepath,
             label="final_peak",
         )
-        return _make_config(peak_mult), ap_b, ap_y, peak_filepath
+        return _make_config(peak_mult), ap_b, ap_y, peak_filepath, det_path
 
     # regula-falsi on the right slope [peak_mult, HIGH]
     def _rf_search(lo_mult, hi_mult, lo_ap, hi_ap, side_label):
@@ -247,7 +243,7 @@ def search_brightness(
                 mid = lo_mult + (hi_mult - lo_mult) * (target_accuracy - lo_ap) / denom
                 mid = float(np.clip(mid, min(lo_mult, hi_mult), max(lo_mult, hi_mult)))
 
-            out, ap_b, ap_y = _evaluate_multiplier(
+            out, ap_b, ap_y, _ = _evaluate_multiplier(
                 multiplier=mid, image_bgr=image_bgr,
                 image_path_tuple=image_path_tuple,
                 gt_detections_filepath=gt_detections_filepath,
@@ -266,22 +262,24 @@ def search_brightness(
             if abs(mid_ap - target_accuracy) <= THRESHOLD_AP:
                 break
 
-            # Tighten bracket (monotone on this side)
-            if mid_ap < target_accuracy:
-                hi_mult, hi_ap = mid, mid_ap
-            else:
+            # Tighten bracket: mid replaces whichever endpoint is on the same
+            # side of the target as mid. This is correct for both increasing
+            # (left) and decreasing (right) slopes.
+            if (mid_ap - target_accuracy) * (lo_ap - target_accuracy) > 0:
                 lo_mult, lo_ap = mid, mid_ap
+            else:
+                hi_mult, hi_ap = mid, mid_ap
 
         return best_mult, best_ap, best_filepath
 
     # Evaluate endpoints of the right slope
-    _, ap_b_low, ap_y_low = _evaluate_multiplier(
+    _, ap_b_low, ap_y_low, _ = _evaluate_multiplier(
         multiplier=BRIGHTNESS_MULTIPLIER_LOW, image_bgr=image_bgr,
         image_path_tuple=image_path_tuple,
         gt_detections_filepath=gt_detections_filepath,
         label="endpoint_low",
     )
-    _, ap_b_high, ap_y_high = _evaluate_multiplier(
+    _, ap_b_high, ap_y_high, _ = _evaluate_multiplier(
         multiplier=BRIGHTNESS_MULTIPLIER_HIGH, image_bgr=image_bgr,
         image_path_tuple=image_path_tuple,
         gt_detections_filepath=gt_detections_filepath,
@@ -320,19 +318,19 @@ def search_brightness(
             best_mult, best_ap = BRIGHTNESS_MULTIPLIER_LOW, ap_low
         else:
             best_mult, best_ap = BRIGHTNESS_MULTIPLIER_HIGH, ap_high
-        _, ap_b, ap_y = _evaluate_multiplier(
+        _, ap_b, ap_y, det_path = _evaluate_multiplier(
             multiplier=best_mult, image_bgr=image_bgr,
             image_path_tuple=image_path_tuple,
             gt_detections_filepath=gt_detections_filepath,
             label="fallback_endpoint",
         )
-        return _make_config(best_mult), ap_b, ap_y, ""
+        return _make_config(best_mult), ap_b, ap_y, "", det_path
 
     # Prefer the solution with the lower multiplier (darker image)
     results.sort(key=lambda x: x[0])
     best_mult, _, best_fp = results[0]
 
-    _, ap_b_final, ap_y_final = _evaluate_multiplier(
+    _, ap_b_final, ap_y_final, updated_detections_filepath = _evaluate_multiplier(
         multiplier=best_mult, image_bgr=image_bgr,
         image_path_tuple=image_path_tuple,
         gt_detections_filepath=gt_detections_filepath,
@@ -342,4 +340,4 @@ def search_brightness(
         f"[search] Final  multiplier={best_mult:.4f}  "
         f"AP_blue={ap_b_final:.4f}  AP_yellow={ap_y_final:.4f}"
     )
-    return _make_config(best_mult), ap_b_final, ap_y_final, best_fp
+    return _make_config(best_mult), ap_b_final, ap_y_final, best_fp, updated_detections_filepath
