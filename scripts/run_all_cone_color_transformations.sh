@@ -113,5 +113,28 @@ for transformation in "${TRANSFORMATIONS[@]}"; do
     NUM_FILES=$(find "$OUTPUT_DIR" -type f \( -name "*.jpg" -o -name "*.png" \) 2>/dev/null | wc -l)
     echo "  - $transformation: $NUM_FILES files in $OUTPUT_DIR"
 done
+echo ""
+
+# COCO eval: run analysis on cone color detection results if any exist
+RESULTS_BASE="results"
+CONE_COLOR_RESULTS=()
+for model in yolov5 yolov8 yolov12; do
+    if [ -d "$RESULTS_BASE/$model/cone_color" ] && [ -d "$RESULTS_BASE/$model/cone_color/original" ]; then
+        CONE_COLOR_RESULTS+=("$RESULTS_BASE/$model/cone_color")
+    fi
+done
+if [ ${#CONE_COLOR_RESULTS[@]} -gt 0 ]; then
+    echo "======================================"
+    echo "Running COCO evaluation on cone color results"
+    echo "======================================"
+    source "$(dirname "$0")/../analysis/scripts/run_analysis_cone_color.sh"
+    echo ""
+    echo "COCO metrics saved under analysis/results/<model>/cone_color/"
+else
+    echo "No cone color detection results found under $RESULTS_BASE/<yolov5|yolov8|yolov12>/cone_color."
+    echo "Run YOLO inference on the transformed images, then run COCO eval with:"
+    echo "  bash analysis/scripts/run_analysis_cone_color.sh"
+    echo ""
+fi
 
 

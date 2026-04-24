@@ -2,6 +2,7 @@
 """
 Extract cone regions using YOLO detections and histogram backprojection.
 Reads YOLO detection files and applies histogram backprojection to each bounding box region.
+This will be used for the team's competition data 
 """
 
 import numpy as np
