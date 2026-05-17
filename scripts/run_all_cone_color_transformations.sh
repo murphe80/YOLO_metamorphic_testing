@@ -1,17 +1,55 @@
 #!/bin/bash
-
-# Run all combinations of cone color transformations with segmentation masks
-# This script transforms cone colors based on bounding box labels and segmentation masks
+# ============================================
+# run_all_cone_color_transformations.sh
+#
+# Apply cone color metamorphic transformations (yellow↔blue, etc.)
+# Requires ground truth labels and segmentation masks.
+#
+# Usage:
+#   bash scripts/run_all_cone_color_transformations.sh [--dataset fsoco_sample|test]
+#
+# Outputs: data/transformed_images/<dataset>_cone_color/<transformation>/
+# ============================================
 
 # Change to project root directory
 cd "$(dirname "$0")/.." || exit 1
 
+# ============================================
+# Parse arguments
+# ============================================
+DATASET="fsoco_sample"  # Default to sample dataset
+
+for arg in "$@"; do
+    case $arg in
+        --dataset) DATASET="${2:-fsoco_sample}"; shift ;;
+        --dataset=*) DATASET="${arg#*=}" ;;
+    esac
+done
+
+# ============================================
 # Configuration
-FSOCO_DIR="data/base_images/test"
-IMAGES_DIR="$FSOCO_DIR/images"
-LABELS_DIR="$FSOCO_DIR/labels"
-SEGMENTED_DIR="$FSOCO_DIR/segmented_images/segmented_images_good"
-OUTPUT_BASE_DIR="data/transformed_images/cone_color_transformations"
+# ============================================
+
+# Set paths based on dataset
+if [ "$DATASET" = "fsoco_sample" ]; then
+    FSOCO_DIR="data/base_images/fsoco_sample"
+    IMAGES_DIR="$FSOCO_DIR/segmented_images"  # Already segmented for sample
+    LABELS_DIR="$FSOCO_DIR/bounding_boxes"
+    SEGMENTED_DIR="$FSOCO_DIR/segmented_images"
+    OUTPUT_BASE_DIR="data/transformed_images/fsoco_sample_cone_color"
+elif [ "$DATASET" = "test" ]; then
+    FSOCO_DIR="data/base_images/test"
+    IMAGES_DIR="$FSOCO_DIR/images"
+    LABELS_DIR="$FSOCO_DIR/labels"
+    SEGMENTED_DIR="$FSOCO_DIR/segmented_images/segmented_images_good"
+    OUTPUT_BASE_DIR="data/transformed_images/fsoco_test_cone_color"
+else
+    FSOCO_DIR="data/base_images/$DATASET"
+    IMAGES_DIR="$FSOCO_DIR/images"
+    LABELS_DIR="$FSOCO_DIR/labels"
+    SEGMENTED_DIR="$FSOCO_DIR/segmented_images/segmented_images_good"
+    OUTPUT_BASE_DIR="data/transformed_images/${DATASET}_cone_color"
+fi
 
 # Histogram backprojection configuration
 HIST_SAMPLES_DIR="utils/hist_backprojection"
@@ -24,11 +62,24 @@ fi
 echo "======================================"
 echo "Cone Color Transformation Pipeline"
 echo "======================================"
+echo "Dataset: $DATASET"
 echo "Images: $IMAGES_DIR"
 echo "Labels: $LABELS_DIR"
 echo "Segmentation: $SEGMENTED_DIR"
 echo "Output base: $OUTPUT_BASE_DIR"
 echo ""
+
+# Validate required directories
+if [ ! -d "$IMAGES_DIR" ]; then
+    echo "Error: Images directory not found: $IMAGES_DIR"
+    exit 1
+fi
+
+if [ ! -d "$LABELS_DIR" ]; then
+    echo "Error: Labels directory not found: $LABELS_DIR"
+    echo "Cone color transformations require ground truth labels."
+    exit 1
+fi
 
 # Check if segmentation directory exists and has files
 if [ ! -d "$SEGMENTED_DIR" ] || [ -z "$(ls -A "$SEGMENTED_DIR" 2>/dev/null)" ]; then

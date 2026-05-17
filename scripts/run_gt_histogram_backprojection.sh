@@ -1,20 +1,62 @@
 #!/bin/bash
+# ============================================
+# run_gt_histogram_backprojection.sh
+#
+# Create segmentation masks from ground truth labels using histogram backprojection.
+# Required for cone color transformations.
+#
+# Usage:
+#   bash scripts/run_gt_histogram_backprojection.sh [--dataset fsoco_sample|test]
+#
+# Outputs: data/base_images/<dataset>/segmented_images/
+# ============================================
+
 # Change to project root directory
 cd "$(dirname "$0")/.." || exit 1
 
-# Ground Truth based Histogram Backprojection Pipeline
-# Uses existing JSON annotation files instead of running YOLO detection
-
 set -e
 
-echo "=== Ground Truth Histogram Backprojection Pipeline ==="
-echo
+# ============================================
+# Parse arguments
+# ============================================
+DATASET="fsoco_sample"  # Default to sample dataset
 
+for arg in "$@"; do
+    case $arg in
+        --dataset) DATASET="${2:-fsoco_sample}"; shift ;;
+        --dataset=*) DATASET="${arg#*=}" ;;
+    esac
+done
+
+# ============================================
 # Configuration
-INPUT_IMAGES_DIR="data/base_images/test/images"
-LABELS_DIR="data/base_images/test/labels"
+# ============================================
+
+# Set paths based on dataset
+if [ "$DATASET" = "fsoco_sample" ]; then
+    INPUT_IMAGES_DIR="data/base_images/fsoco_sample/segmented_images"
+    LABELS_DIR="data/base_images/fsoco_sample/bounding_boxes"
+    OUTPUT_DIR="data/base_images/fsoco_sample/segmented_images"
+    echo "Note: fsoco_sample already includes segmented images."
+    echo "Skipping histogram backprojection for sample dataset."
+    exit 0
+elif [ "$DATASET" = "test" ]; then
+    INPUT_IMAGES_DIR="data/base_images/test/images"
+    LABELS_DIR="data/base_images/test/labels"
+    OUTPUT_DIR="data/base_images/test/segmented_images"
+else
+    INPUT_IMAGES_DIR="data/base_images/$DATASET/images"
+    LABELS_DIR="data/base_images/$DATASET/labels"
+    OUTPUT_DIR="data/base_images/$DATASET/segmented_images"
+fi
+
 HIST_SAMPLES_DIR="utils/hist_backprojection"
-OUTPUT_DIR="data/base_images/segmented_fsoco_test_gt"
+
+echo "======================================"
+echo "Ground Truth Histogram Backprojection"
+echo "======================================"
+echo "Dataset: $DATASET"
+echo ""
 
 # Check if input directories exist
 if [ ! -d "$INPUT_IMAGES_DIR" ]; then

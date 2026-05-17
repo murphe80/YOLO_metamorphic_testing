@@ -49,8 +49,8 @@ def extract_detections(result):
 
     for box in boxes:
         xyxy = box.xyxy[0].cpu().numpy()
-        conf = float(box.conf.cpu().numpy())
-        cls = int(box.cls.cpu().numpy())
+        conf = float(box.conf.squeeze().cpu().item())
+        cls = int(box.cls.squeeze().cpu().item())
 
         x1, y1, x2, y2 = xyxy
         cx, cy = (x1 + x2) / 2, (y1 + y2) / 2

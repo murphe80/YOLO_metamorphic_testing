@@ -1,9 +1,44 @@
 #!/bin/bash
-# Run from repo root. Saves analysis stats to analysis/results/{model}/{rule}/{comparison_type}/stats.json
-# Compares original vs transformed detections (metamorphic testing)
+# ============================================
+# run_all_analysis_matias_meta.sh
+#
+# Analyze metamorphic testing results by comparing original vs transformed detections.
+# Optionally compares against ground truth if available.
+#
+# Usage:
+#   bash analysis/scripts/run_all_analysis_matias_meta.sh [--dataset fsoco_sample|test]
+#
+# Outputs: analysis/results/<model>/<rule>/<comparison_type>/stats.json
+# ============================================
 
+# Change to repo root if not already there
+cd "$(dirname "$0")/../.." || exit 1
+
+# ============================================
+# Parse arguments
+# ============================================
+DATASET="fsoco_sample"  # Default to sample dataset
+
+for arg in "$@"; do
+    case $arg in
+        --dataset) DATASET="${2:-fsoco_sample}"; shift ;;
+        --dataset=*) DATASET="${arg#*=}" ;;
+    esac
+done
+
+# ============================================
+# Configuration
+# ============================================
 RESULTS_BASE="analysis/results"
-GT_COCO="data/base_images/test/annotations_coco.json"  # path to ground truth
+
+# Set ground truth path based on dataset
+if [ "$DATASET" = "test" ]; then
+    GT_COCO="data/base_images/test/annotations_coco.json"
+elif [ "$DATASET" = "fsoco_sample" ]; then
+    GT_COCO="data/base_images/fsoco_sample/annotations_coco.json"
+else
+    GT_COCO="data/base_images/$DATASET/annotations_coco.json"
+fi
 
 run_model_analysis() {
     local model_results="$1"   # e.g. results/yolov5
@@ -115,11 +150,20 @@ run_model_analysis() {
     echo ""
 }
 
-echo "Starting metamorphic testing analysis..."
+echo "======================================"
+echo "Metamorphic Testing Analysis"
+echo "======================================"
+echo "Dataset: $DATASET"
 echo "Comparing original vs transformed detections"
 echo ""
-echo "Note: GT comparisons will only include images that exist in the ground truth."
-echo "      Images not in GT will be skipped (this is expected if using different test sets)."
+
+if [ -f "$GT_COCO" ]; then
+    echo "Ground truth annotations found: $GT_COCO"
+    echo "Will also compare against ground truth."
+else
+    echo "No ground truth annotations found at: $GT_COCO"
+    echo "Only metamorphic comparison (original vs transformed) will run."
+fi
 echo ""
 
 run_model_analysis results/yolov5

@@ -1,36 +1,92 @@
 #!/bin/bash
+# ============================================
+# run_all_matias_transformations.sh
+#
+# Apply metamorphic image transformations to a dataset.
+# Supports fsoco_sample (bundled) and test (held-out) datasets.
+#
+# Usage:
+#   bash scripts/run_all_matias_transformations.sh [--dataset fsoco_sample|test]
+#
+# Outputs: data/transformed_images/<dataset>/<rule>/
+# ============================================
+
 # Change to project root directory
 cd "$(dirname "$0")/.." || exit 1
+
+# ============================================
+# Parse arguments
+# ============================================
+DATASET="fsoco_sample"  # Default to sample dataset
+
+for arg in "$@"; do
+    case $arg in
+        --dataset) DATASET="${2:-fsoco_sample}"; shift ;;
+        --dataset=*) DATASET="${arg#*=}" ;;
+    esac
+done
 
 # ============================================
 # Configuration Parameters
 # ============================================
 
-# Input directory
-BASE_IMAGES_DIR="data/base_images/test/images"
-OUTPUT_BASE_DIR="data/transformed_images/fsoco_test"
+# Set paths based on dataset
+if [ "$DATASET" = "fsoco_sample" ]; then
+    BASE_IMAGES_DIR="data/base_images/fsoco_sample/segmented_images"
+    OUTPUT_BASE_DIR="data/transformed_images/fsoco_sample"
+elif [ "$DATASET" = "test" ]; then
+    BASE_IMAGES_DIR="data/base_images/test/images"
+    OUTPUT_BASE_DIR="data/transformed_images/fsoco_test"
+else
+    # Custom dataset path
+    BASE_IMAGES_DIR="data/base_images/$DATASET/images"
+    OUTPUT_BASE_DIR="data/transformed_images/$DATASET"
+fi
 
-# Rule configurations (JSON format)
-declare -A RULE_CONFIGS
-RULE_CONFIGS[imgDarkBright]='{"brightness_constant": -20, "brightness_multiplier": 0.2, "gamma": 1, "method": "gamma"}'
-RULE_CONFIGS[imgResolution]='{"size_ratio": 0.6}'
-RULE_CONFIGS[imgMotionBlur]='{"kernel_size": 12, "orientation": 45}'
-RULE_CONFIGS[imgStretch]='{"height_ratio": 1.5, "width_ratio": 1.5}'
-RULE_CONFIGS[imgGrayscale]='{}'
-RULE_CONFIGS[imgColorWheel]='{"hue_rotation": 15}'
+# Rule configurations (JSON format; parallel arrays for bash 3.2 on macOS)
+RULE_NAMES=(
+    imgDarkBright
+    imgResolution
+    imgMotionBlur
+    imgStretch
+    imgGrayscale
+    imgColorWheel
+)
+RULE_CONFIGS=(
+    '{"brightness_constant": -20, "brightness_multiplier": 0.2, "gamma": 1, "method": "gamma"}'
+    '{"size_ratio": 0.6}'
+    '{"kernel_size": 12, "orientation": 45}'
+    '{"height_ratio": 1.5, "width_ratio": 1.5}'
+    '{}'
+    '{"hue_rotation": 15}'
+)
+
+# ============================================
+# Validate input directory
+# ============================================
+
+if [ ! -d "$BASE_IMAGES_DIR" ]; then
+    echo "Error: Base images directory not found: $BASE_IMAGES_DIR"
+    echo "Make sure the dataset exists or use --dataset fsoco_sample"
+    exit 1
+fi
 
 # ============================================
 # Generate metamorphic images
 # ============================================
 
-
+echo "======================================"
+echo "Metamorphic Image Transformations"
+echo "======================================"
+echo "Dataset: $DATASET"
 echo "Input: $BASE_IMAGES_DIR"
 echo "Output base: $OUTPUT_BASE_DIR"
 echo ""
 
 # Process each rule
-for rule in "${!RULE_CONFIGS[@]}"; do
-    config="${RULE_CONFIGS[$rule]}"
+for i in "${!RULE_NAMES[@]}"; do
+    rule="${RULE_NAMES[$i]}"
+    config="${RULE_CONFIGS[$i]}"
     output_dir="$OUTPUT_BASE_DIR/$rule"
     
     echo "======================================"
