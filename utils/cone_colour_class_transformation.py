@@ -341,19 +341,6 @@ def transform_cone_colors(image, detections, transformation_map, segmentation_ma
 
 def process_image(image_path, label_file, output_dir, transformation_map, segmented_dir=None):
     """Process a single image with cone color transformations."""
-    image = cv.imread(image_path)
-    if image is None:
-        print(f"Could not read {image_path}")
-        return
-    
-    # Get image dimensions for YOLO format support
-    image_shape = image.shape[:2]  # (height, width)
-    
-    detections = read_ground_truth_labels(label_file, image_shape)
-    if not detections:
-        print(f"No GT labels for {image_path}")
-        return
-    
     # Load segmentation mask if directory is provided
     segmentation_mask = None
     if segmented_dir is not None:
@@ -361,16 +348,35 @@ def process_image(image_path, label_file, output_dir, transformation_map, segmen
         if os.path.exists(seg_path):
             seg_image = cv.imread(seg_path)
             if seg_image is not None:
-                # Extract bottom half of segmented image as mask
+                # Segmented image contains: top half = color image, bottom half = segmentation mask
                 height = seg_image.shape[0]
+                # Extract top half as the image to transform
+                image = seg_image[:height//2, :]
+                # Extract bottom half as mask
                 segmentation_mask = seg_image[height//2:, :]
-                print(f"  ✓ Using segmentation mask from {os.path.basename(seg_path)} (bottom half: {segmentation_mask.shape})")
+                print(f"  ✓ Using top half of segmented image as input: {image.shape}")
+                print(f"  ✓ Using bottom half as segmentation mask: {segmentation_mask.shape}")
             else:
                 print(f"  ✗ Warning: Could not read segmentation image {seg_path}")
+                return
         else:
             print(f"  ✗ Warning: Segmentation image not found at {seg_path}")
+            return
     else:
+        # Fallback: read from original images directory (no segmentation mask)
+        image = cv.imread(image_path)
+        if image is None:
+            print(f"Could not read {image_path}")
+            return
         print("  ⚠ Warning: No segmentation directory provided - will transform entire bounding boxes")
+
+    # Get image dimensions for YOLO format support
+    image_shape = image.shape[:2]  # (height, width)
+
+    detections = read_ground_truth_labels(label_file, image_shape)
+    if not detections:
+        print(f"No GT labels for {image_path}")
+        return
     
     result, transformations_applied = transform_cone_colors(image, detections, transformation_map, segmentation_mask)
     

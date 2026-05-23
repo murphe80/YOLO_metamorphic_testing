@@ -248,12 +248,19 @@
             <div class="control-group">
                 <label for="transformSelect">Transformation</label>
                 <select id="transformSelect">
-                    <option value="imgColorWheel">Color Wheel</option>
-                    <option value="imgDarkBright">Dark/Bright</option>
-                    <option value="imgGrayscale">Grayscale</option>
-                    <option value="imgMotionBlur">Motion Blur</option>
-                    <option value="imgResolution">Resolution</option>
-                    <option value="imgStretch">Stretch</option>
+                    <optgroup label="Image Transformations">
+                        <option value="imgColorWheel">Color Wheel</option>
+                        <option value="imgDarkBright">Dark/Bright</option>
+                        <option value="imgGrayscale">Grayscale</option>
+                        <option value="imgMotionBlur">Motion Blur</option>
+                        <option value="imgResolution">Resolution</option>
+                        <option value="imgStretch">Stretch</option>
+                    </optgroup>
+                    <optgroup label="Label Transformations">
+                        <option value="labelRemove_black">Label Remove (Black)</option>
+                        <option value="labelRemove_white">Label Remove (White)</option>
+                        <option value="labelRemove_avg">Label Remove (Average)</option>
+                    </optgroup>
                 </select>
             </div>
 
@@ -325,7 +332,11 @@
 
     <script>
         const MODELS = ['yolov5', 'yolov8', 'yolov12'];
-        const TRANSFORMATIONS = ['imgColorWheel', 'imgDarkBright', 'imgGrayscale', 'imgMotionBlur', 'imgResolution', 'imgStretch'];
+        const TRANSFORMATIONS = [
+            'imgColorWheel', 'imgDarkBright', 'imgGrayscale',
+            'imgMotionBlur', 'imgResolution', 'imgStretch',
+            'labelRemove_black', 'labelRemove_white', 'labelRemove_avg'
+        ];
         const METRICS = ['AP', 'AP50', 'AP75', 'APs', 'APm', 'APl', 'AR1', 'AR10', 'AR100', 'ARs', 'ARm', 'ARl'];
 
         const MODEL_COLORS = {
@@ -699,10 +710,20 @@
                 charts.allTransforms.destroy();
             }
 
+            // Helper function to format transformation names
+            const formatTransformName = (t) => {
+                if (t.startsWith('img')) {
+                    return t.replace('img', '');
+                } else if (t.startsWith('labelRemove_')) {
+                    return 'Label-' + t.replace('labelRemove_', '');
+                }
+                return t;
+            };
+
             charts.allTransforms = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: TRANSFORMATIONS.map(t => t.replace('img', '')),
+                    labels: TRANSFORMATIONS.map(formatTransformName),
                     datasets: datasets
                 },
                 options: {
