@@ -205,7 +205,6 @@ python utils/imgDarkBright_tuning/tune_brightness.py \
 - Calculates brightness metrics (RMS contrast, luminosity, mean shift variance)
 - Uses search algorithm to find brightness multiplier where AP reaches target
 - Saves optimal configuration and brightness scores to JSON
-- Useful for RQ2: determining operational brightness ranges for YOLO
 
 **Requirements:**
 - Original model detections must exist: `results/<model>/original/`

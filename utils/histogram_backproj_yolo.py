@@ -66,31 +66,59 @@ def read_yolo_detections(detection_file):
                 
     return detections
 
+def fill_contour_holes(mask):
+    """Fill holes in segmented regions using contour-based approach.
+
+    This function finds the outer contours of the mask and fills any internal holes,
+    ensuring solid cone regions for color transformation.
+    """
+    if mask is None or mask.size == 0:
+        return mask
+
+    # Find contours in the mask
+    contours, hierarchy = cv.findContours(mask, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
+
+    if not contours:
+        return mask
+
+    # Create a filled mask
+    filled_mask = np.zeros_like(mask)
+
+    # Draw all outer contours (hierarchy[0][i][3] == -1 means outer contour)
+    # with filled interior (thickness=-1)
+    for i, contour in enumerate(contours):
+        if hierarchy is not None and len(hierarchy[0]) > i:
+            # Check if this is an outer contour (parent == -1)
+            if hierarchy[0][i][3] == -1:
+                cv.drawContours(filled_mask, [contour], -1, 255, thickness=-1)
+
+    return filled_mask
+
 def apply_backprojection_to_bbox(image, bbox, histograms):
     """Apply histogram backprojection to a specific bounding box region."""
     x1, y1, x2, y2 = [int(coord) for coord in bbox]
-    
+
     # Ensure bounding box is within image bounds
     h, w = image.shape[:2]
     x1 = max(0, min(x1, w-1))
-    y1 = max(0, min(y1, h-1)) 
+    y1 = max(0, min(y1, h-1))
     x2 = max(x1+1, min(x2, w))
     y2 = max(y1+1, min(y2, h))
-    
+
     # Extract region of interest
     roi = image[y1:y2, x1:x2]
     if roi.size == 0:
         return np.zeros((y2-y1, x2-x1), dtype=np.uint8)
-        
+
     # Convert to HSV
     hsv_roi = cv.cvtColor(roi, cv.COLOR_BGR2HSV)
-    
+
     # Apply backprojection for each color
     backproject_results = []
     for color, hist in histograms.items():
         dst = cv.calcBackProject([hsv_roi], [0, 1], hist, [0, 180, 0, 256], 1)
         backproject_results.append(dst)
-    
+
     # Combine results from all colors
     if backproject_results:
         combined = backproject_results[0]
@@ -98,19 +126,22 @@ def apply_backprojection_to_bbox(image, bbox, histograms):
             combined = cv.max(combined, dst)
     else:
         combined = np.zeros((y2-y1, x2-x1), dtype=np.uint8)
-    
+
     # Apply morphological operations
     disc = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
     cv.filter2D(combined, -1, disc, combined)
-    
+
     # Threshold
     ret, thresh = cv.threshold(combined, 20, 255, 0)
-    
+
     # Morphological operations to clean up
     kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
     thresh = cv.morphologyEx(thresh, cv.MORPH_ERODE, kernel)
     thresh = cv.morphologyEx(thresh, cv.MORPH_DILATE, kernel)
-    
+
+    # Apply contour smoothing to fill holes
+    thresh = fill_contour_holes(thresh)
+
     return thresh
 
 def process_image_with_detections(image_path, detection_file, histograms, output_dir):

@@ -1,0 +1,23 @@
+{
+  "imgStretch": {
+    "height_ratio": 1,
+    "width_ratio": 2
+  },
+  "imgResolution": {
+    "size_ratio": 0.1
+  },
+  "imgMotionBlur": {
+    "kernel_size": 20,
+    "orientation": 60
+  },
+  "imgDarkBright": {
+    "brightness_constant": 0,
+    "brightness_multiplier": 1,
+    "gamma": 5.0,
+    "method": "gamma"
+  },
+  "imgGrayscale": {},
+  "imgColorWheel": {
+    "hue_rotation": 20
+  }
+}

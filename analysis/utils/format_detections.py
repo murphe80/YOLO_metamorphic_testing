@@ -76,7 +76,7 @@ def parse_detection_txt(txt_file):
 def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_truth=False):
     """
     Format detection data from .txt files to COCO JSON format.
-    
+
     Args:
         detection_dir: Directory containing .txt detection files
         output_file: Output path for COCO format JSON
@@ -86,6 +86,18 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
                         If False, output just array of annotations (for detection results)
     """
     detection_path = Path(detection_dir)
+
+    # Model class mapping to COCO category IDs
+    # Model outputs: 0=yellow, 1=orange, 2=large_orange, 3=blue, 4=other, 5=unknown
+    # COCO GT uses: 1=yellow, 2=blue, 3=orange, 4=large_orange
+    MODEL_TO_COCO_CATEGORY = {
+        0: 1,  # yellow_cone -> yellow_cone
+        1: 3,  # orange_cone -> orange_cone
+        2: 4,  # large_orange_cone -> large_orange_cone
+        3: 2,  # blue_cone -> blue_cone
+        4: 5,  # other_cone (not in GT categories)
+        5: 6,  # unknown_cone (not in GT categories)
+    }
     
     # Build image mapping
     image_map = {}
@@ -170,10 +182,16 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
         
         # Convert to COCO format
         for det in detections:
+            # Map model class ID to COCO category ID
+            model_class = det['class_id']
+            if model_class not in MODEL_TO_COCO_CATEGORY:
+                print(f"Warning: Unknown model class {model_class} in {txt_file.name}")
+                continue
+
             coco_detection = {
                 'id': len(coco_detections) + 1,  # Unique annotation ID
                 'image_id': image_id,
-                'category_id': det['class_id'] + 1,  # COCO categories are 1-indexed
+                'category_id': MODEL_TO_COCO_CATEGORY[model_class],  # Map model class to COCO category
                 'bbox': det['bbox'],
                 'score': det['confidence'],
                 'area': det['bbox'][2] * det['bbox'][3],  # width * height

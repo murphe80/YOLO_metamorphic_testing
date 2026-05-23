@@ -34,12 +34,9 @@ done
 
 # Set paths based on dataset
 if [ "$DATASET" = "fsoco_sample" ]; then
-    INPUT_IMAGES_DIR="data/base_images/fsoco_sample/segmented_images"
+    INPUT_IMAGES_DIR="data/base_images/fsoco_sample/images"
     LABELS_DIR="data/base_images/fsoco_sample/bounding_boxes"
     OUTPUT_DIR="data/base_images/fsoco_sample/segmented_images"
-    echo "Note: fsoco_sample already includes segmented images."
-    echo "Skipping histogram backprojection for sample dataset."
-    exit 0
 elif [ "$DATASET" = "test" ]; then
     INPUT_IMAGES_DIR="data/base_images/test/images"
     LABELS_DIR="data/base_images/test/labels"

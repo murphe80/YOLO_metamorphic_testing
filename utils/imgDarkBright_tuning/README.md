@@ -218,7 +218,3 @@ print(f'Average optimal brightness multiplier: {avg_multiplier:.3f}')
 - Verify ground truth labels are correct
 - Check that detections format matches expected format
 - Ensure image and label filenames match
-
-## Citation
-
-If you use these brightness tuning utilities in your research, please cite the work addressing RQ2.

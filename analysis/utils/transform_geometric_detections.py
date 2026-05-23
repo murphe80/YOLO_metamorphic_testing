@@ -138,18 +138,71 @@ def transform_bbox(bbox, transform_params):
     return [x_orig, y_orig, w_orig, h_orig]
 
 
-def transform_detections_file(detection_file, original_image_dir, transformed_image_dir, 
+def load_transformation_config():
+    """
+    Load transformation parameters from config file.
+
+    Returns:
+        Dictionary with transformation configurations
+    """
+    # Look for config file in project root
+    config_path = Path(__file__).parent.parent.parent / 'config' / 'transformations.json'
+
+    if config_path.exists():
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    else:
+        print(f"Warning: Config file not found at {config_path}")
+        return {}
+
+
+def get_default_transform_params(transformation_name, config=None):
+    """
+    Get default transformation parameters from config.
+
+    Args:
+        transformation_name: Name of transformation (e.g., 'imgStretch')
+        config: Optional pre-loaded config dictionary
+
+    Returns:
+        Dictionary with scale_x and scale_y parameters
+    """
+    if config is None:
+        config = load_transformation_config()
+
+    transform_config = config.get(transformation_name, {})
+
+    if transformation_name == 'imgStretch':
+        # For stretch: scale back by inverse of width/height ratios
+        width_ratio = transform_config.get('width_ratio', 1.5)
+        height_ratio = transform_config.get('height_ratio', 1.15)
+        return {
+            'scale_x': 1.0 / width_ratio,
+            'scale_y': 1.0 / height_ratio
+        }
+    elif transformation_name == 'imgResolution':
+        # For resolution: scale back by inverse of size ratio
+        size_ratio = transform_config.get('size_ratio', 0.6)
+        return {
+            'scale_x': 1.0 / size_ratio,
+            'scale_y': 1.0 / size_ratio
+        }
+    else:
+        return {'scale_x': 1.0, 'scale_y': 1.0}
+
+
+def transform_detections_file(detection_file, original_image_dir, transformed_image_dir,
                               transformation_name, output_file=None):
     """
     Transform detections from a single file.
-    
+
     Args:
         detection_file: Path to detection COCO JSON file
         original_image_dir: Directory with original images
         transformed_image_dir: Directory with transformed images
         transformation_name: Name of transformation (e.g., 'imgStretch')
         output_file: Optional output file path
-        
+
     Returns:
         Transformed detections as list
     """
@@ -196,16 +249,8 @@ def transform_detections_file(detection_file, original_image_dir, transformed_im
     for ann in annotations:
         anns_by_image[ann['image_id']].append(ann)
     
-    # Get default transformation parameters based on transformation type
-    # These are scale factors to convert FROM transformed TO original coordinates
-    # For imgStretch: images are stretched by 1.5x, so scale back by 1/1.5 = 0.667
-    # For imgResolution: downscaled to 0.6x, so scale back by 1/0.6 = 1.667
-    if transformation_name == 'imgStretch':
-        default_params = {'scale_x': 0.667, 'scale_y': 0.667}  # 1/1.5 to reverse 1.5x stretch
-    elif transformation_name == 'imgResolution':
-        default_params = {'scale_x': 1.667, 'scale_y': 1.667}  # 1/0.6 to reverse 0.6x downscale
-    else:
-        default_params = {'scale_x': 1.0, 'scale_y': 1.0}
+    # Load transformation parameters from config file
+    default_params = get_default_transform_params(transformation_name)
     
     # Find actual transformation parameters from real images
     transform_params_cache = {}

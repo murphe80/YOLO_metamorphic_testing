@@ -63,6 +63,27 @@ fi
 RESULTS_BASE="results"
 
 # ─── Transformation rules ─────────────────────────────────────────────────────
+# Load transformation configurations from centralized config file
+CONFIG_FILE="config/transformations.json"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: Transformation config file not found at $CONFIG_FILE"
+    exit 1
+fi
+
+# Parse transformation configs using Python
+read -r -d '' PYTHON_PARSE_CONFIG << 'EOF' || true
+import json
+import sys
+with open(sys.argv[1]) as f:
+    config = json.load(f)
+    for rule_name in sys.argv[2:]:
+        if rule_name in config:
+            print(json.dumps(config[rule_name]))
+        else:
+            print("{}")
+EOF
+
 # Parallel arrays (bash 3.2 on macOS does not support declare -A).
 RULE_NAMES=(
     imgDarkBright
@@ -72,14 +93,12 @@ RULE_NAMES=(
     imgGrayscale
     imgColorWheel
 )
-RULE_CONFIGS=(
-    '{"brightness_constant": -20, "brightness_multiplier": 0.2, "gamma": 1, "method": "gamma"}'
-    '{"size_ratio": 0.6}'
-    '{"kernel_size": 12, "orientation": 45}'
-    '{"height_ratio": 1.5, "width_ratio": 1.5}'
-    '{}'
-    '{"hue_rotation": 15}'
-)
+
+# Read configurations from JSON file (while-read: portable on bash 3.2 / macOS)
+RULE_CONFIGS=()
+while IFS= read -r line; do
+    RULE_CONFIGS+=("$line")
+done < <(python3 -c "$PYTHON_PARSE_CONFIG" "$CONFIG_FILE" "${RULE_NAMES[@]}")
 
 # ─── Model weights and inference scripts ──────────────────────────────────────
 V5_WEIGHTS="models/yolov5/yolov5_param_kfold.pt"
