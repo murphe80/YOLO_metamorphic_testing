@@ -1,12 +1,31 @@
-contourpy==1.3.3
-cycler==0.12.1
-fonttools==4.61.1
-kiwisolver==1.4.9
-matplotlib==3.10.8
-numpy==2.4.1
-packaging==26.0
-pillow==12.1.0
-pycocotools==2.0.11
-pyparsing==3.3.2
-python-dateutil==2.9.0.post0
-six==1.17.0
+# ============================================================================
+# YOLO Metamorphic Testing - Core Dependencies
+# ============================================================================
+
+# Deep Learning & Computer Vision
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+yolov5>=7.0.0
+
+# Computer Vision
+opencv-python>=4.8.0  # Use this OR opencv-python-headless, not both
+pillow>=10.0.0
+
+# COCO Evaluation
+pycocotools>=2.0.0
+
+# Scientific Computing
+numpy>=1.24.0
+scipy>=1.10.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Utilities
+pyyaml>=6.0
+tqdm>=4.65.0
+requests>=2.31.0

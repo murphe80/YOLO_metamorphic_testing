@@ -62,6 +62,7 @@ def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]], class_n
     Args:
         image: Input image as numpy array
         detections: List of detection dictionaries from extract_detections()
+        class_names: List of class names
         conf_threshold: Minimum confidence threshold to display
 
     Returns:
@@ -128,17 +129,16 @@ def visualize_detections(image: np.ndarray, detections: List[Dict[str, Any]],
     # Convert BGR to RGB for matplotlib
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    # Draw detections
-    match model:
-        case "v12":
-            class_names = class_names_v12
-        case "v5":
-            class_names = class_names_v5
-        case "v8":
-            class_names = class_names_v8
-        case _:
-            class_names = class_names_v5
-        
+    # Draw detections (if/elif for Python 3.9 compatibility; match/case is 3.10+)
+    if model == "v12":
+        class_names = class_names_v12
+    elif model == "v5":
+        class_names = class_names_v5
+    elif model == "v8":
+        class_names = class_names_v8
+    else:
+        class_names = class_names_v5
+
     vis_image = draw_detections(
         image_rgb, detections,class_names, conf_threshold)
 
