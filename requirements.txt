@@ -23,9 +23,14 @@ scikit-learn>=1.3.0
 
 # Visualization
 matplotlib>=3.7.0
+matplotlib-venn>=0.11.10
 seaborn>=0.12.0
 
 # Utilities
 pyyaml>=6.0
 tqdm>=4.65.0
 requests>=2.31.0
+
+# Daytona SDK (for configuration tuning framework)
+daytona-sdk>=0.184.0
+python-dotenv>=1.0.0
