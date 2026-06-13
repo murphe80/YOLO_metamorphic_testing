@@ -14,6 +14,9 @@
 # Change to repo root if not already there
 cd "$(dirname "$0")/../.." || exit 1
 
+# Load model registry
+source utils/model_registry.sh
+
 # ============================================
 # Parse arguments
 # ============================================
@@ -166,7 +169,9 @@ else
 fi
 echo ""
 
-run_model_analysis results/yolov5
-run_model_analysis results/yolov8
-run_model_analysis results/yolov12
+# Run analysis for all enabled models
+for model in $(get_model_names); do
+    results_dir=$(get_model_field "$model" "results_dir")
+    run_model_analysis "$results_dir"
+done
 

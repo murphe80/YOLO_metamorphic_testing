@@ -8,7 +8,13 @@ import http.server
 import socketserver
 import webbrowser
 import os
+import json
+import sys
 from pathlib import Path
+
+# Add parent directory to path for model_registry import
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.model_registry import get_models
 
 # Configuration
 PORT = 8000
@@ -26,6 +32,18 @@ def main():
             self.send_header('Access-Control-Allow-Methods', 'GET')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
             super().end_headers()
+
+        def do_GET(self):
+            # Serve model configuration as JSON endpoint
+            if self.path == '/api/models':
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                models_data = get_models(enabled_only=True)
+                self.wfile.write(json.dumps(models_data).encode())
+                return
+            # Default: serve static files
+            super().do_GET()
 
         def log_message(self, format, *args):
             # Custom logging to make it cleaner

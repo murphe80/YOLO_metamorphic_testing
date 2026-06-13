@@ -33,8 +33,13 @@ Output includes:
 
 import json
 import argparse
+import sys
 from pathlib import Path
 from typing import Dict, List
+
+# Add parent directories to path to import model_registry
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from utils.model_registry import get_model_names
 
 
 def load_configs(transformed_images_dir: str = None) -> Dict:
@@ -76,8 +81,8 @@ def load_configs(transformed_images_dir: str = None) -> Dict:
 def load_stats(results_dir: str = "analysis/results") -> Dict:
     """Load all stats.json files for original_vs_transformed comparisons."""
     data = {}
-    models = ['yolov5', 'yolov8', 'yolov12']
-    
+    models = get_model_names()  # Load from model registry
+
     for model in models:
         data[model] = {}
         model_dir = Path(results_dir) / model

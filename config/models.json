@@ -1,0 +1,48 @@
+{
+  "models": [
+    {
+      "name": "yolov5",
+      "display_name": "YOLOv5",
+      "version": "v5",
+      "weights": "models/yolov5/yolov5_param_kfold.pt",
+      "inference_script": "models/yolov5/infer_v5_kfold.py",
+      "results_dir": "results/yolov5",
+      "enabled": true,
+      "color": {
+        "rgb": "rgb(25, 118, 210)",
+        "hex": "#1976D2"
+      }
+    },
+    {
+      "name": "yolov8",
+      "display_name": "YOLOv8",
+      "version": "v8",
+      "weights": "models/yolov8/yolov8_param_kfold.pt",
+      "inference_script": "models/yolov8/infer_v8.py",
+      "results_dir": "results/yolov8",
+      "enabled": true,
+      "color": {
+        "rgb": "rgb(123, 31, 162)",
+        "hex": "#7B1FA2"
+      }
+    },
+    {
+      "name": "yolov12",
+      "display_name": "YOLOv12",
+      "version": "v12",
+      "weights": "models/yolov12/yolov12_param_kfold.pt",
+      "inference_script": "models/yolov12/infer_v12.py",
+      "results_dir": "results/yolov12",
+      "enabled": true,
+      "color": {
+        "rgb": "rgb(56, 142, 60)",
+        "hex": "#388E3C"
+      }
+    }
+  ],
+  "default_inference_params": {
+    "conf_thres": 0.25,
+    "iou_thres": 0.45,
+    "device": "cuda:0"
+  }
+}
