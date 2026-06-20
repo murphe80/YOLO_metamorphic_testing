@@ -14,15 +14,17 @@ CLASS_NAMES = {
     3: "blue_cone",
 }
 
-# Transformation name -> (source_class_id, target_class_id)
+# Transformation name -> (source_class_id, target_class_id) or list of tuples for bidirectional
 # e.g. yellow_to_blue: cones that were yellow (0) are now blue (3) in the transformed image
+# e.g. swap_sides: yellow (0) ↔ blue (3) - bidirectional swap
 TRANSFORMATION_MAP = {
-    "yellow_to_blue": (0, 3),
-    "blue_to_yellow": (3, 0),
-    "yellow_to_orange": (0, 1),
-    "orange_to_blue": (1, 3),
-    "blue_to_orange": (3, 1),
-    "orange_to_yellow": (1, 0),
+    "yellow_to_blue": [(0, 3)],
+    "blue_to_yellow": [(3, 0)],
+    "yellow_to_orange": [(0, 1)],
+    "orange_to_blue": [(1, 3)],
+    "blue_to_orange": [(3, 1)],
+    "orange_to_yellow": [(1, 0)],
+    "swap_sides": [(0, 3), (3, 0)],  # Bidirectional: yellow ↔ blue
 }
 
 
@@ -80,9 +82,12 @@ def update_ground_truth_cone_color(ground_truth_file, transformation, output_pat
     For each annotation whose category is the source cone color, change it to the target
     cone color (e.g. for yellow_to_blue, all yellow_cone annotations become blue_cone).
 
+    For bidirectional transformations (e.g. swap_sides), iterates through annotations once
+    and updates each based on its original category_id.
+
     Args:
         ground_truth_file: Path to the ground truth COCO JSON file to update.
-        transformation: Transformation name (e.g. yellow_to_blue, blue_to_yellow).
+        transformation: Transformation name (e.g. yellow_to_blue, blue_to_yellow, swap_sides).
         output_path: Path to save the updated ground truth annotations_coco.json file.
     """
     if transformation not in TRANSFORMATION_MAP:
@@ -90,9 +95,7 @@ def update_ground_truth_cone_color(ground_truth_file, transformation, output_pat
             f"Unknown transformation: {transformation}. "
             f"Must be one of: {list(TRANSFORMATION_MAP.keys())}"
         )
-    source_class, target_class = TRANSFORMATION_MAP[transformation]
-    source_name = CLASS_NAMES[source_class]
-    target_name = CLASS_NAMES[target_class]
+    transformations = TRANSFORMATION_MAP[transformation]
 
     with open(ground_truth_file, "r") as f:
         raw = json.load(f)
@@ -100,54 +103,68 @@ def update_ground_truth_cone_color(ground_truth_file, transformation, output_pat
 
     name_to_id = _build_name_to_id(coco["categories"])
 
-    source_category_id = name_to_id.get(source_name)
-    target_category_id = name_to_id.get(target_name)
+    # Build mapping: source_category_id -> target_category_id
+    # For each transformation rule (source_class, target_class), find the corresponding category IDs
+    category_mapping = {}  # source_category_id -> target_category_id
 
-    if source_category_id is None:
-        raise ValueError(
-            f"Ground truth has no category '{source_name}'. "
-            f"Categories present: {list(name_to_id.keys())}"
-        )
-    if target_category_id is None:
-        sample = coco["categories"][0]["name"]
-        if (
-            isinstance(sample, str)
-            and sample.startswith("category_")
-            and sample[len("category_") :].isdigit()
-        ):
-            target_category_id = target_class + 1
-            coco["categories"].append(
-                {
-                    "id": target_category_id,
-                    "name": f"category_{target_category_id}",
-                    "supercategory": coco["categories"][0].get("supercategory", "cone"),
-                }
-            )
-        else:
-            max_id = max(coco["categories"], key=lambda c: c["id"])["id"]
-            target_category_id = max_id + 1
-            coco["categories"].append(
-                {
-                    "id": target_category_id,
-                    "name": target_name,
-                    "supercategory": coco["categories"][0].get("supercategory", "cone"),
-                }
-            )
-        name_to_id[target_name] = target_category_id
-        name_to_id[coco["categories"][-1]["name"]] = target_category_id
+    for source_class, target_class in transformations:
+        source_name = CLASS_NAMES[source_class]
+        target_name = CLASS_NAMES[target_class]
 
+        source_category_id = name_to_id.get(source_name)
+        if source_category_id is None:
+            raise ValueError(
+                f"Ground truth has no category '{source_name}'. "
+                f"Categories present: {list(name_to_id.keys())}"
+            )
+
+        target_category_id = name_to_id.get(target_name)
+        if target_category_id is None:
+            # Create new category if needed
+            sample = coco["categories"][0]["name"]
+            if (
+                isinstance(sample, str)
+                and sample.startswith("category_")
+                and sample[len("category_") :].isdigit()
+            ):
+                target_category_id = target_class + 1
+                coco["categories"].append(
+                    {
+                        "id": target_category_id,
+                        "name": f"category_{target_category_id}",
+                        "supercategory": coco["categories"][0].get("supercategory", "cone"),
+                    }
+                )
+            else:
+                max_id = max(coco["categories"], key=lambda c: c["id"])["id"]
+                target_category_id = max_id + 1
+                coco["categories"].append(
+                    {
+                        "id": target_category_id,
+                        "name": target_name,
+                        "supercategory": coco["categories"][0].get("supercategory", "cone"),
+                    }
+                )
+            name_to_id[target_name] = target_category_id
+            name_to_id[coco["categories"][-1]["name"]] = target_category_id
+
+        category_mapping[source_category_id] = target_category_id
+
+    # Update all annotations in a single pass based on their original category_id
     updated = 0
     for ann in coco["annotations"]:
-        if ann["category_id"] == source_category_id:
-            ann["category_id"] = target_category_id
+        original_category_id = ann["category_id"]
+        if original_category_id in category_mapping:
+            ann["category_id"] = category_mapping[original_category_id]
             updated += 1
+
+    print(f"Updated {updated} annotations for transformation: {transformation}")
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(coco, f, indent=2)
 
-    print(f"Updated {updated} annotations from {source_name} to {target_name}.")
     print(f"Saved to {output_path}")
     return coco
 

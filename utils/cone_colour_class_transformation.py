@@ -403,8 +403,9 @@ def main():
     parser.add_argument("--segmented_dir", required=True, help="Directory with segmented images (used to determine which images to process)")
     parser.add_argument(
         "--transformation",
-        choices=["yellow_to_blue", "blue_to_yellow", "yellow_to_orange", 
-                 "orange_to_blue", "blue_to_orange", "orange_to_yellow"],
+        choices=["yellow_to_blue", "blue_to_yellow", "yellow_to_orange",
+                 "orange_to_blue", "blue_to_orange", "orange_to_yellow",
+                 "swap_sides"],
         required=True,
         help="Type of color transformation to apply"
     )
@@ -421,6 +422,7 @@ def main():
         "orange_to_blue": {1: 3},      # Transform orange (1) to blue (3)
         "blue_to_orange": {3: 1},      # Transform blue (3) to orange (1)
         "orange_to_yellow": {1: 0},    # Transform orange (1) to yellow (0)
+        "swap_sides": {0: 3, 3: 0},    # Swap yellow (0) ↔ blue (3)
     }
     
     transformation_map = transformation_maps[args.transformation]

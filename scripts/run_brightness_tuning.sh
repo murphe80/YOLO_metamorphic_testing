@@ -26,6 +26,9 @@
 # Change to project root directory
 cd "$(dirname "$0")/.." || exit 1
 
+# Load model registry
+source utils/model_registry.sh
+
 # ─── Parse arguments ──────────────────────────────────────────────────────────
 DATASET="fsoco_sample"
 MODEL=""
@@ -46,15 +49,20 @@ done
 # ─── Validate arguments ───────────────────────────────────────────────────────
 if [ -z "$MODEL" ]; then
     echo "Error: --model is required"
-    echo "Usage: bash scripts/run_brightness_tuning.sh --model <yolov5|yolov8|yolov12>"
+    VALID_VERSIONS=$(get_model_versions)
+    echo "Usage: bash scripts/run_brightness_tuning.sh --model <$VALID_VERSIONS>"
     exit 1
 fi
 
-if [[ ! "$MODEL" =~ ^(yolov5|yolov8|yolov12)$ ]]; then
+# Validate model version
+if ! validate_model_version "$MODEL"; then
     echo "Error: Invalid model: $MODEL"
-    echo "Choose from: yolov5, yolov8, yolov12"
+    echo "Choose from: $(get_model_versions)"
     exit 1
 fi
+
+# Convert version to model name (e.g., v5 → yolov5)
+MODEL=$(get_model_by_version "$MODEL")
 
 # ─── Check prerequisites ──────────────────────────────────────────────────────
 DETECTIONS_DIR="results/$MODEL/original"

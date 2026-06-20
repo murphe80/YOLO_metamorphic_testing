@@ -219,3 +219,5 @@ data/
 !data/base_images/fsoco_sample/
 !data/base_images/fsoco_sample/**
 
+analysis/results/*
+.CLAUDE

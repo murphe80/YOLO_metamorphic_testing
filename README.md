@@ -294,17 +294,30 @@ To run experiments on your own dataset:
 
 This framework supports the following research questions:
 
-**RQ1:** Do metamorphic transformations reveal model-specific robustness disparities between YOLOv5, v8, and v12 that are not reflected by their rankings on standard benchmarks like COCO?
+RQ1: Do metamorphic transformations reveal model-specific robustness disparities between YOLOv5, v8, and v12 that are not reflected by their rankings on standard benchmarks like COCO? 
 
-**RQ1.a:** Do robustness disparities identified via metamorphic testing on held-out test data also show when the same transformations are applied to the model's training data?
+RQ1.a: If we look at a venn diagram of images that fail, do we find different failures than original images, or that of classic transformations like brightness or blur?
 
-**RQ2:** Can a search-based algorithm efficiently find the brightness adjustment parameter for which YOLO detection accuracy degrades beyond an acceptable level, thus producing an operational range?
+RQ1.b: Can we establish a clear pattern on when to use one model over another? 
 
-**RQ2.a:** Among different methods of brightness scoring, which most reliably predicts the degradation threshold?
+RQ1.c: Do robustness disparities identified via metamorphic testing on held-out test data also show when the same transformations are applied to the model's training data, and if so, to what extent?
 
-**RQ3:** Does a YOLO model's reported confidence score accurately reflect its actual accuracy across a range of brightness conditions?
+RQ2: Can we optimise tuning the brightness metamorphic test for the strongest signal?
 
-**RQ3.a:** Can incorporating a brightness-conditioned correction term into YOLO's confidence scores reduce calibration error?
+RQ2.a: Can a search algorithm find an operational range for models with things like brightness compared to a brute force approach?
+
+Note: Brute force approach involves linearly testing brightness values until threshold is met. 
+
+RQ2.b: Among different methods of brightness scoring, which most reliably predicts the degradation threshold identified in RQ2, and does the method remain consistent across all models?
+
+RQ2.c: How does the accuracy distribution of the original image versus the transformed brightness images compare? 
+
+RQ3: How can we minimize the amount of test runs?
+
+RQ3.a: If we run the metamorphic tests on 10% of the test data, do we gain sufficient insight in comparison to running on the entire dataset? 
+
+RQ3.b: Do any of the metamorphic tests subsume each other? 
+
 
 ---
 

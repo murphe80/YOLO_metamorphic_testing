@@ -14,6 +14,9 @@
 # Change to project root directory
 cd "$(dirname "$0")/.." || exit 1
 
+# Load model registry
+source utils/model_registry.sh
+
 # ============================================
 # Parse arguments
 # ============================================
@@ -122,6 +125,7 @@ TRANSFORMATIONS=(
     "blue_to_yellow"
     "yellow_to_orange"
     "blue_to_orange"
+    "swap_sides"
 )
 
 echo "======================================"
@@ -169,7 +173,7 @@ echo ""
 # COCO eval: run analysis on cone color detection results if any exist
 RESULTS_BASE="results"
 CONE_COLOR_RESULTS=()
-for model in yolov5 yolov8 yolov12; do
+for model in $(get_model_names); do
     if [ -d "$RESULTS_BASE/$model/cone_color" ] && [ -d "$RESULTS_BASE/$model/cone_color/original" ]; then
         CONE_COLOR_RESULTS+=("$RESULTS_BASE/$model/cone_color")
     fi
@@ -182,7 +186,7 @@ if [ ${#CONE_COLOR_RESULTS[@]} -gt 0 ]; then
     echo ""
     echo "COCO metrics saved under analysis/results/<model>/cone_color/"
 else
-    echo "No cone color detection results found under $RESULTS_BASE/<yolov5|yolov8|yolov12>/cone_color."
+    echo "No cone color detection results found under $RESULTS_BASE/<model>/cone_color."
     echo "Run YOLO inference on the transformed images, then run COCO eval with:"
     echo "  bash analysis/scripts/run_analysis_cone_color.sh"
     echo ""

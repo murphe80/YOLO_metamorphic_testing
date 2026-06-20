@@ -4,6 +4,11 @@ Detection matching utilities for computing overlap between detection sets.
 
 Implements three-way matching between original detections, transformed detections,
 and ground truth annotations using IoU (Intersection over Union) thresholds.
+
+Matching algorithm based on pycocotools COCOeval.evaluateImg approach:
+- Sort detections by confidence score (highest first)
+- Greedy assignment: each detection finds its best IoU match
+- One-to-one constraint: each detection matched at most once
 """
 
 import json
@@ -89,35 +94,110 @@ def match_three_way_per_image(
     iou_threshold: float = 0.5
 ) -> Dict[str, int]:
     """
-    Perform three-way matching of detections for a single image.
+    Perform three-way matching of detections for a single image using COCO evaluation approach.
 
-    Uses a greedy approach:
-    1. Find all three-way matches (detection present in all three sources)
-    2. Find two-way matches among remaining detections
-    3. Assign remaining detections to single-source regions
+    Algorithm (based on pycocotools COCOeval.evaluateImg, lines 273-296):
+    1. Sort detections by confidence score (highest first)
+    2. For each detection, find best IoU match via greedy assignment
+    3. Match original→GT, transformed→GT, original→transformed independently
+    4. Combine matches to identify 7 Venn regions
+
+    This ensures high-confidence detections get priority in matching, preventing
+    low-confidence spurious detections from "stealing" matches from true positives.
 
     Args:
         original_dets: Detections from original image
         transformed_dets: Detections from transformed image
-        gt_dets: Ground truth annotations
-        iou_threshold: Minimum IoU to consider a match
+        gt_dets: Ground truth annotations (assumed score=1.0)
+        iou_threshold: Minimum IoU to consider a match (default: 0.5)
 
     Returns:
         Dictionary with counts for each Venn region:
-        - orig_trans_gt: All three
-        - orig_trans: Original + Transformed only
-        - orig_gt: Original + GT only
-        - trans_gt: Transformed + GT only
-        - orig_only: Original only
-        - trans_only: Transformed only
-        - gt_only: GT only
+        - orig_trans_gt: All three (TPs maintained)
+        - orig_trans: Original + Transformed only (consistent FPs)
+        - orig_gt: Original + GT only (TPs lost during transformation)
+        - trans_gt: Transformed + GT only (TPs recovered)
+        - orig_only: Original only (FPs that disappeared)
+        - trans_only: Transformed only (spurious FPs introduced)
+        - gt_only: GT only (missed detections)
     """
-    # Track which detections have been matched
-    matched_orig = set()
-    matched_trans = set()
-    matched_gt = set()
+    # Sort by confidence (highest first) - COCO approach (coco_eval.py lines 173, 259)
+    # Ground truth has no scores, treat as 1.0
+    orig_sorted = sorted(
+        enumerate(original_dets),
+        key=lambda x: x[1].get('score', 1.0),
+        reverse=True
+    )
+    trans_sorted = sorted(
+        enumerate(transformed_dets),
+        key=lambda x: x[1].get('score', 1.0),
+        reverse=True
+    )
 
-    # Initialize region counts
+    # Tracking dictionaries for two-way matches
+    orig_to_gt = {}      # orig_idx -> gt_idx
+    trans_to_gt = {}     # trans_idx -> gt_idx
+    orig_to_trans = {}   # orig_idx -> trans_idx
+
+    # Step 1: Match original → GT (COCO-style greedy, coco_eval.py lines 274-296)
+    matched_gt = set()
+    for orig_idx, orig_det in orig_sorted:
+        best_iou = iou_threshold
+        best_gt_idx = -1
+
+        for gt_idx, gt_det in enumerate(gt_dets):
+            if gt_idx in matched_gt:
+                continue
+
+            iou = compute_iou(orig_det['bbox'], gt_det['bbox'])
+            # Use '>' not '>=' for consistency with COCO (coco_eval.py line 286)
+            if iou > best_iou:
+                best_iou = iou
+                best_gt_idx = gt_idx
+
+        if best_gt_idx != -1:
+            orig_to_gt[orig_idx] = best_gt_idx
+            matched_gt.add(best_gt_idx)
+
+    # Step 2: Match transformed → GT (independent matching)
+    matched_gt_trans = set()
+    for trans_idx, trans_det in trans_sorted:
+        best_iou = iou_threshold
+        best_gt_idx = -1
+
+        for gt_idx, gt_det in enumerate(gt_dets):
+            if gt_idx in matched_gt_trans:
+                continue
+
+            iou = compute_iou(trans_det['bbox'], gt_det['bbox'])
+            if iou > best_iou:
+                best_iou = iou
+                best_gt_idx = gt_idx
+
+        if best_gt_idx != -1:
+            trans_to_gt[trans_idx] = best_gt_idx
+            matched_gt_trans.add(best_gt_idx)
+
+    # Step 3: Match original → transformed
+    matched_trans = set()
+    for orig_idx, orig_det in orig_sorted:
+        best_iou = iou_threshold
+        best_trans_idx = -1
+
+        for trans_idx, trans_det in enumerate(transformed_dets):
+            if trans_idx in matched_trans:
+                continue
+
+            iou = compute_iou(orig_det['bbox'], trans_det['bbox'])
+            if iou > best_iou:
+                best_iou = iou
+                best_trans_idx = trans_idx
+
+        if best_trans_idx != -1:
+            orig_to_trans[orig_idx] = best_trans_idx
+            matched_trans.add(best_trans_idx)
+
+    # Step 4: Assign to Venn regions based on matches
     regions = {
         'orig_trans_gt': 0,
         'orig_trans': 0,
@@ -128,102 +208,51 @@ def match_three_way_per_image(
         'gt_only': 0
     }
 
-    # Step 1: Find three-way matches (Original ∩ Transformed ∩ GT)
-    for i, orig in enumerate(original_dets):
-        if i in matched_orig:
+    # Track which detections we've assigned to a region
+    assigned_orig = set()
+    assigned_trans = set()
+    assigned_gt = set()
+
+    # Three-way matches: orig matched to trans, and both match same GT
+    for orig_idx in range(len(original_dets)):
+        if orig_idx not in orig_to_trans:
             continue
+        trans_idx = orig_to_trans[orig_idx]
 
-        best_trans_idx = None
-        best_trans_iou = 0.0
+        orig_gt = orig_to_gt.get(orig_idx)
+        trans_gt = trans_to_gt.get(trans_idx)
 
-        # Find best matching transformed detection
-        for j, trans in enumerate(transformed_dets):
-            if j in matched_trans:
-                continue
-            iou = compute_iou(orig['bbox'], trans['bbox'])
-            if iou >= iou_threshold and iou > best_trans_iou:
-                best_trans_iou = iou
-                best_trans_idx = j
-
-        if best_trans_idx is None:
-            continue
-
-        # Now check if this pair also matches a GT detection
-        best_gt_idx = None
-        best_gt_iou = 0.0
-
-        for k, gt in enumerate(gt_dets):
-            if k in matched_gt:
-                continue
-            iou_orig_gt = compute_iou(orig['bbox'], gt['bbox'])
-            iou_trans_gt = compute_iou(transformed_dets[best_trans_idx]['bbox'], gt['bbox'])
-
-            # Both original and transformed should match GT
-            if (iou_orig_gt >= iou_threshold and
-                iou_trans_gt >= iou_threshold and
-                iou_orig_gt > best_gt_iou):
-                best_gt_iou = iou_orig_gt
-                best_gt_idx = k
-
-        if best_gt_idx is not None:
-            # Three-way match found!
+        if orig_gt is not None and orig_gt == trans_gt:
             regions['orig_trans_gt'] += 1
-            matched_orig.add(i)
-            matched_trans.add(best_trans_idx)
-            matched_gt.add(best_gt_idx)
+            assigned_orig.add(orig_idx)
+            assigned_trans.add(trans_idx)
+            assigned_gt.add(orig_gt)
 
-    # Step 2a: Find two-way matches (Original ∩ Transformed)
-    for i, orig in enumerate(original_dets):
-        if i in matched_orig:
-            continue
+    # Two-way: orig + trans (no GT match)
+    for orig_idx, trans_idx in orig_to_trans.items():
+        if orig_idx not in assigned_orig and trans_idx not in assigned_trans:
+            regions['orig_trans'] += 1
+            assigned_orig.add(orig_idx)
+            assigned_trans.add(trans_idx)
 
-        for j, trans in enumerate(transformed_dets):
-            if j in matched_trans:
-                continue
+    # Two-way: orig + GT (trans lost this detection)
+    for orig_idx, gt_idx in orig_to_gt.items():
+        if orig_idx not in assigned_orig and gt_idx not in assigned_gt:
+            regions['orig_gt'] += 1
+            assigned_orig.add(orig_idx)
+            assigned_gt.add(gt_idx)
 
-            iou = compute_iou(orig['bbox'], trans['bbox'])
-            if iou >= iou_threshold:
-                regions['orig_trans'] += 1
-                matched_orig.add(i)
-                matched_trans.add(j)
-                break
+    # Two-way: trans + GT (orig missed, trans recovered)
+    for trans_idx, gt_idx in trans_to_gt.items():
+        if trans_idx not in assigned_trans and gt_idx not in assigned_gt:
+            regions['trans_gt'] += 1
+            assigned_trans.add(trans_idx)
+            assigned_gt.add(gt_idx)
 
-    # Step 2b: Find two-way matches (Original ∩ GT)
-    for i, orig in enumerate(original_dets):
-        if i in matched_orig:
-            continue
-
-        for k, gt in enumerate(gt_dets):
-            if k in matched_gt:
-                continue
-
-            iou = compute_iou(orig['bbox'], gt['bbox'])
-            if iou >= iou_threshold:
-                regions['orig_gt'] += 1
-                matched_orig.add(i)
-                matched_gt.add(k)
-                break
-
-    # Step 2c: Find two-way matches (Transformed ∩ GT)
-    for j, trans in enumerate(transformed_dets):
-        if j in matched_trans:
-            continue
-
-        for k, gt in enumerate(gt_dets):
-            if k in matched_gt:
-                continue
-
-            iou = compute_iou(trans['bbox'], gt['bbox'])
-            if iou >= iou_threshold:
-                regions['trans_gt'] += 1
-                matched_trans.add(j)
-                matched_gt.add(k)
-                break
-
-    # Step 3: Count unmatched detections (single-source regions)
-    regions['orig_only'] = len(original_dets) - len(matched_orig)
-    regions['trans_only'] = len(transformed_dets) - len(matched_trans)
-    regions['gt_only'] = len(gt_dets) - len(matched_gt)
+    # Single-source only
+    regions['orig_only'] = len(original_dets) - len(assigned_orig)
+    regions['trans_only'] = len(transformed_dets) - len(assigned_trans)
+    regions['gt_only'] = len(gt_dets) - len(assigned_gt)
 
     return regions
 

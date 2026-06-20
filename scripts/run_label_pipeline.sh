@@ -40,6 +40,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
+# Load model registry
+source utils/model_registry.sh
+
 # ─── Parse arguments ──────────────────────────────────────────────────────────
 DATASET="fsoco_sample"  # Default to sample dataset
 MODEL_ARG="all"
@@ -89,15 +92,6 @@ if [ "$MODE_ARG" = "all" ]; then
 else
     TRANSFORM_MODES=("$MODE_ARG")
 fi
-
-# ─── Model weights and inference scripts ──────────────────────────────────────
-V5_WEIGHTS="models/yolov5/yolov5_param_kfold.pt"
-V8_WEIGHTS="models/yolov8/yolov8_param_kfold.pt"
-V12_WEIGHTS="models/yolov12/yolov12_param_kfold.pt"
-
-V5_SCRIPT="models/yolov5/infer_v5_kfold.py"
-V8_SCRIPT="models/yolov8/infer_v8.py"
-V12_SCRIPT="models/yolov12/infer_v12.py"
 
 LABEL_TRANSFORM_SCRIPT="utils/cone_label_transformation_bb.py"
 
@@ -186,12 +180,14 @@ echo "║  Stage 2: Running inference                  ║"
 echo "╚══════════════════════════════════════════════╝"
 
 run_model() {
-    local script="$1"
-    local weights="$2"
-    local model_label="$3"
+    local model_name="$1"
+
+    local script=$(get_model_field "$model_name" "inference_script")
+    local weights=$(get_model_field "$model_name" "weights")
+    local display_name=$(get_model_field "$model_name" "display_name")
 
     echo ""
-    echo "── $model_label — original images ──"
+    echo "── $display_name — original images ──"
     run_inference_dir "$script" "$weights" "$IMAGES_DIR" "original"
 
     for mode in "${TRANSFORM_MODES[@]}"; do
@@ -199,7 +195,7 @@ run_model() {
         if [ -d "$transformed_dir" ]; then
             # Use naming convention: labelRemove_<mode> to match analysis expectations
             rule_name="labelRemove_$mode"
-            echo "── $model_label — $rule_name ──"
+            echo "── $display_name — $rule_name ──"
             run_inference_dir "$script" "$weights" "$transformed_dir" "$rule_name"
         else
             echo "Warning: Transformed directory not found: $transformed_dir"
@@ -207,15 +203,25 @@ run_model() {
     done
 }
 
-if [[ "$MODEL_ARG" == "v5" || "$MODEL_ARG" == "all" ]]; then
-    run_model "$V5_SCRIPT" "$V5_WEIGHTS" "YOLOv5"
+# Determine which models to run
+if [ "$MODEL_ARG" = "all" ]; then
+    # Run all enabled models from registry
+    MODEL_LIST=$(get_model_names)
+else
+    # Map version to model name (e.g., v5 → yolov5)
+    MODEL_NAME=$(get_model_by_version "$MODEL_ARG")
+    if [ -z "$MODEL_NAME" ]; then
+        echo "Error: Invalid model version '$MODEL_ARG'"
+        echo "Valid versions: $(get_model_versions)"
+        exit 1
+    fi
+    MODEL_LIST="$MODEL_NAME"
 fi
-if [[ "$MODEL_ARG" == "v8" || "$MODEL_ARG" == "all" ]]; then
-    run_model "$V8_SCRIPT" "$V8_WEIGHTS" "YOLOv8"
-fi
-if [[ "$MODEL_ARG" == "v12" || "$MODEL_ARG" == "all" ]]; then
-    run_model "$V12_SCRIPT" "$V12_WEIGHTS" "YOLOv12"
-fi
+
+# Run inference for each model
+for model in $MODEL_LIST; do
+    run_model "$model"
+done
 
 # =============================================================================
 # Stage 3 — Evaluate (metamorphic comparison: original vs label-transformed)

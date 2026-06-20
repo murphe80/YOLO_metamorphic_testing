@@ -11,14 +11,8 @@ echo "Venn Diagram Visualization Pipeline"
 echo "=================================================="
 echo ""
 
-# Check if venv exists
-if [ ! -d "$PROJECT_ROOT/venv_venn" ]; then
-    echo "Virtual environment not found. Creating..."
-    bash "$SCRIPT_DIR/setup_venn_env.sh"
-fi
-
 # Activate venv
-source "$PROJECT_ROOT/venv_venn/bin/activate"
+source "$PROJECT_ROOT/venv/bin/activate"
 
 # Check if data exists
 RESULTS_DIR="$PROJECT_ROOT/results"
