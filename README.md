@@ -155,9 +155,13 @@ Transformations:
 bash scripts/run_all_cone_color_transformations.sh --dataset fsoco_sample
 ```
 
-### 3. Cone label removal tests
+### 3. Cone label removal tests on fsoco_sample
 
-Requires: Segmented images (from histogram backprojection) + ground truth labels
+Requires: fsoco_sample in /data/base_images (download git asset and extract)
+First run the segmentation use the command:
+   ```bash
+   bash scripts/run_gt_histogram_backprojection.sh --dataset fsoco_sample
+   ```
 
 Modes:
 - `avg`: Replace labels with average background color
