@@ -9,12 +9,12 @@ import os
 from pathlib import Path
 
 
-def generate_manifest(results_dir: str = "results") -> dict:
+def generate_manifest(results_dir: str = "../analysis/results") -> dict:
     """
     Scan the results directory and generate a manifest of available models and tests.
 
     Args:
-        results_dir: Path to the results directory
+        results_dir: Path to the results directory (relative to this script)
 
     Returns:
         Dictionary with 'models' and 'tests' lists
@@ -58,7 +58,7 @@ def main():
     """Generate and save the manifest file."""
     manifest = generate_manifest()
 
-    output_path = Path(__file__).parent / "results" / "manifest.json"
+    output_path = Path(__file__).parent / "manifest.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, 'w') as f:

@@ -15,6 +15,7 @@ Usage:
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 import matplotlib
@@ -25,6 +26,7 @@ from matplotlib_venn import venn3
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.detection_matching import aggregate_three_way_overlap
+from utils.transform_geometric_detections import transform_detections_file
 
 
 MODEL_COLORS = {
@@ -87,10 +89,46 @@ def plot_grid(
             original_path = results_dir / model / "original" / "detections_original_coco.json"
             transformed_path = results_dir / model / transformation / "detections_coco.json"
 
+            # Handle geometric transformations
+            geometric_transforms = ['imgStretch', 'imgResolution']
+            temp_file = None
+
+            if transformation in geometric_transforms:
+                # Try pre-computed transformed coordinates first
+                pre_transformed_path = results_dir / model / transformation / "detections_coco_transformed.json"
+
+                if pre_transformed_path.exists():
+                    transformed_path = pre_transformed_path
+                else:
+                    # Compute coordinate transformation on the fly
+                    original_image_dir = results_dir / model / "original"
+                    transformed_image_dir = results_dir / model / transformation
+
+                    temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
+                    temp_file.close()
+
+                    try:
+                        transform_detections_file(
+                            detection_file=str(transformed_path),
+                            original_image_dir=str(original_image_dir),
+                            transformed_image_dir=str(transformed_image_dir),
+                            transformation_name=transformation,
+                            output_file=temp_file.name
+                        )
+                        transformed_path = Path(temp_file.name)
+                    except Exception:
+                        # Clean up and continue without transformation
+                        Path(temp_file.name).unlink(missing_ok=True)
+                        temp_file = None
+
             try:
                 stats = aggregate_three_way_overlap(
                     original_path, transformed_path, gt_path, iou_threshold
                 )
+
+                # Clean up temp file if created
+                if temp_file is not None:
+                    Path(temp_file.name).unlink(missing_ok=True)
 
                 # Create mini Venn diagram
                 venn = venn3(

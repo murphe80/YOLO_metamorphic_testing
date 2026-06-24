@@ -20,6 +20,7 @@ Usage:
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 import matplotlib
@@ -31,6 +32,7 @@ from matplotlib_venn import venn3, venn3_circles
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.detection_matching import aggregate_three_way_overlap, compute_retention_metrics
+from utils.transform_geometric_detections import transform_detections_file
 
 
 # Model color scheme (from dashboard.html)
@@ -74,6 +76,42 @@ def plot_venn_for_model_transformation(
         raise FileNotFoundError(f"Transformed detections not found: {transformed_path}")
     if not gt_path.exists():
         raise FileNotFoundError(f"Ground truth not found: {gt_path}")
+
+    # Handle geometric transformations (need coordinate transformation)
+    geometric_transforms = ['imgStretch', 'imgResolution']
+    temp_file = None
+
+    if transformation in geometric_transforms:
+        # Try to use pre-computed transformed coordinates first
+        pre_transformed_path = results_dir / model / transformation / "detections_coco_transformed.json"
+
+        if pre_transformed_path.exists():
+            print(f"  Using pre-computed transformed coordinates from: {pre_transformed_path.name}")
+            transformed_path = pre_transformed_path
+        else:
+            # Compute coordinate transformation on the fly
+            print(f"  Computing coordinate transformation for {transformation}...")
+            original_image_dir = results_dir / model / "original"
+            transformed_image_dir = results_dir / model / transformation
+
+            # Create temporary file for transformed coordinates
+            temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
+            temp_file.close()
+
+            try:
+                transform_detections_file(
+                    detection_file=str(transformed_path),
+                    original_image_dir=str(original_image_dir),
+                    transformed_image_dir=str(transformed_image_dir),
+                    transformation_name=transformation,
+                    output_file=temp_file.name
+                )
+                transformed_path = Path(temp_file.name)
+                print(f"  ✓ Coordinate transformation complete")
+            except Exception as e:
+                # Clean up temp file if transformation fails
+                Path(temp_file.name).unlink(missing_ok=True)
+                raise RuntimeError(f"Failed to transform coordinates for {transformation}: {e}")
 
     # Get three-way overlap statistics
     stats = aggregate_three_way_overlap(
@@ -138,6 +176,10 @@ def plot_venn_for_model_transformation(
     output_path = output_dir / f"{model}_{transformation}_venn.png"
     plt.savefig(output_path, dpi=200, bbox_inches='tight', facecolor='white')
     plt.close(fig)
+
+    # Clean up temporary file if we created one
+    if temp_file is not None:
+        Path(temp_file.name).unlink(missing_ok=True)
 
     print(f"✓ Generated: {output_path.name}")
 

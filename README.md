@@ -172,6 +172,18 @@ bash scripts/run_cone_label_transformations.sh --dataset fsoco_sample
 
 ## Analysis
 
+### Interactive Dashboard
+
+Visualize and compare metamorphic testing results across all models and tests:
+
+```bash
+cd dashboard
+python3 generate_manifest.py  # Index available results
+python3 serve.py               # Launch at http://localhost:8000
+```
+
+See [`dashboard/README.md`](dashboard/README.md) for full documentation.
+
 ### Per-Class COCO Evaluation
 
 Analyze performance broken down by cone class (yellow, blue, orange):

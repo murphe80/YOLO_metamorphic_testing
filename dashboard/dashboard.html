@@ -126,6 +126,11 @@
             border-color: var(--accent);
         }
 
+        select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         select:focus {
             border-color: var(--accent);
         }
@@ -273,6 +278,14 @@
                     <option value="">Loading tests...</option>
                 </select>
             </div>
+            <div class="control-group">
+                <span class="control-label">Comparison Type</span>
+                <select id="comparisonSelector">
+                    <option value="original_vs_transformed">Original vs Transformed</option>
+                    <option value="transformed_vs_gt">Transformed vs Ground Truth</option>
+                    <option value="original_vs_gt">Original vs Ground Truth</option>
+                </select>
+            </div>
         </div>
 
         <div class="results" id="results">
@@ -282,7 +295,7 @@
 
     <script>
         // Configuration
-        const RESULTS_BASE_PATH = './results';
+        const RESULTS_BASE_PATH = '/analysis/results';
         const METRICS = ['AP', 'AP50', 'AP75', 'APs', 'APm', 'APl', 'AR1', 'AR10', 'AR100', 'ARs', 'ARm', 'ARl'];
 
         // State
@@ -290,6 +303,7 @@
         let availableTests = [];
         let selectedModels = [];
         let selectedTest = '';
+        let selectedComparison = 'original_vs_transformed';
         let cachedData = {};
 
         // Initialize dashboard
@@ -297,6 +311,10 @@
             await discoverModelsAndTests();
             renderModelCheckboxes();
             renderTestSelector();
+
+            // Set up comparison selector
+            const comparisonSelector = document.getElementById('comparisonSelector');
+            comparisonSelector.onchange = handleComparisonChange;
 
             // Select all models by default
             selectedModels = [...availableModels];
@@ -320,7 +338,7 @@
 
                 // Attempt to load from a manifest file if it exists
                 try {
-                    const manifestResponse = await fetch('./results/manifest.json');
+                    const manifestResponse = await fetch('/dashboard/manifest.json');
                     if (manifestResponse.ok) {
                         const manifest = await manifestResponse.json();
                         availableModels = manifest.models;
@@ -403,6 +421,16 @@
                 .join(' ');
         }
 
+        // Get comparison type display name
+        function getComparisonName() {
+            const names = {
+                'original_vs_transformed': 'Original vs Transformed',
+                'transformed_vs_gt': 'Transformed vs Ground Truth',
+                'original_vs_gt': 'Original vs Ground Truth'
+            };
+            return names[selectedComparison] || selectedComparison;
+        }
+
         // Handle model selection change
         function handleModelChange() {
             selectedModels = availableModels.filter(model =>
@@ -417,37 +445,61 @@
             updateResults();
         }
 
+        // Handle comparison type change
+        function handleComparisonChange(event) {
+            selectedComparison = event.target.value;
+
+            // For original_vs_gt, disable test selector since it's not needed
+            const testSelector = document.getElementById('testSelector');
+            if (selectedComparison === 'original_vs_gt') {
+                testSelector.disabled = true;
+            } else {
+                testSelector.disabled = false;
+            }
+
+            updateResults();
+        }
+
         // Load data for a specific model and test
-        async function loadData(model, test) {
-            const cacheKey = `${model}:${test}`;
+        async function loadData(model, test, comparison) {
+            const cacheKey = `${model}:${test}:${comparison}`;
 
             if (cachedData[cacheKey]) {
                 return cachedData[cacheKey];
             }
 
             try {
-                const response = await fetch(`${RESULTS_BASE_PATH}/${model}/${test}/original_vs_transformed/stats.json`);
+                // Handle original_vs_gt specially as it's at model level, not test level
+                let url;
+                if (comparison === 'original_vs_gt') {
+                    url = `${RESULTS_BASE_PATH}/${model}/original_vs_gt/stats.json`;
+                } else {
+                    url = `${RESULTS_BASE_PATH}/${model}/${test}/${comparison}/stats.json`;
+                }
+
+                const response = await fetch(url);
                 if (!response.ok) return null;
 
                 const data = await response.json();
                 cachedData[cacheKey] = data;
                 return data;
             } catch (error) {
-                console.error(`Error loading data for ${model}/${test}:`, error);
+                console.error(`Error loading data for ${model}/${test}/${comparison}:`, error);
                 return null;
             }
         }
 
         // Update results display
         async function updateResults() {
-            if (selectedModels.length === 0 || !selectedTest) {
+            // For original_vs_gt, test selection is not required
+            if (selectedModels.length === 0 || (!selectedTest && selectedComparison !== 'original_vs_gt')) {
                 document.getElementById('results').innerHTML = '<div class="no-data">Select models and a test to view results</div>';
                 return;
             }
 
             // Load data for all selected models
             const dataPromises = selectedModels.map(model =>
-                loadData(model, selectedTest).then(data => ({ model, data }))
+                loadData(model, selectedTest, selectedComparison).then(data => ({ model, data }))
             );
 
             const results = await Promise.all(dataPromises);
@@ -464,11 +516,13 @@
         // Render results
         function renderResults(results) {
             const container = document.getElementById('results');
+            const comparisonName = getComparisonName();
+            const testInfo = selectedComparison === 'original_vs_gt' ? '' : ` — ${formatTestName(selectedTest)}`;
 
             // Primary metric comparison (AP)
             const primarySection = `
                 <div class="metric-section">
-                    <div class="section-title">Average Precision (AP)</div>
+                    <div class="section-title">Average Precision (AP) — ${comparisonName}${testInfo}</div>
                     <div class="comparison-grid">
                         ${renderPrimaryMetrics(results)}
                     </div>

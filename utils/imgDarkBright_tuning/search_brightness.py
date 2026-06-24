@@ -1,5 +1,5 @@
 # Search algorithm to find the optimal brightness transformation for the image.
-# Uses golden-section search, which is correct for the unimodal (inverted-U)
+# Uses golden-section search
 # relationship between brightness and accuracy: both very-dark and very-bright
 # images yield poor detections, with a peak somewhere in between.
 

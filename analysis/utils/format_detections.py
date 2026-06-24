@@ -31,35 +31,72 @@ def xyxy_to_xywh(x1, y1, x2, y2):
     return [x, y, width, height]
 
 
-def parse_detection_txt(txt_file):
+def parse_detection_txt(txt_file, is_yolo_format=False, img_width=1920, img_height=1080):
     """
     Parse a detection .txt file.
-    
-    Format per line: class confidence x1 y1 x2 y2
-    
+
+    Detection format: class confidence x1 y1 x2 y2
+    YOLO format: class x_center y_center width height (all normalized 0-1)
+
     Args:
         txt_file: Path to .txt file with detections
-        
+        is_yolo_format: If True, parse as YOLO format (normalized xywh)
+        img_width: Image width for denormalizing YOLO format
+        img_height: Image height for denormalizing YOLO format
+
     Returns:
         List of detection dictionaries
     """
     detections = []
-    
+
     try:
         with open(txt_file, 'r') as f:
             for line in f:
                 parts = line.strip().split()
-                if len(parts) >= 6:
+                if not parts:
+                    continue
+
+                if is_yolo_format and len(parts) >= 5:
+                    # YOLO format: class x_center y_center width height (normalized)
+                    class_id = int(parts[0])
+                    x_center_norm = float(parts[1])
+                    y_center_norm = float(parts[2])
+                    width_norm = float(parts[3])
+                    height_norm = float(parts[4])
+
+                    # Denormalize to absolute pixel coordinates
+                    x_center = x_center_norm * img_width
+                    y_center = y_center_norm * img_height
+                    width = width_norm * img_width
+                    height = height_norm * img_height
+
+                    # Convert from center format to corner format
+                    x1 = x_center - width / 2
+                    y1 = y_center - height / 2
+                    x2 = x_center + width / 2
+                    y2 = y_center + height / 2
+
+                    # Convert bbox to COCO format
+                    bbox = xyxy_to_xywh(x1, y1, x2, y2)
+
+                    detections.append({
+                        'class_id': class_id,
+                        'confidence': 1.0,  # Ground truth has confidence 1.0
+                        'bbox': bbox
+                    })
+
+                elif not is_yolo_format and len(parts) >= 6:
+                    # Detection format: class confidence x1 y1 x2 y2
                     class_id = int(parts[0])
                     confidence = float(parts[1])
                     x1 = float(parts[2])
                     y1 = float(parts[3])
                     x2 = float(parts[4])
                     y2 = float(parts[5])
-                    
+
                     # Convert bbox to COCO format
                     bbox = xyxy_to_xywh(x1, y1, x2, y2)
-                    
+
                     detections.append({
                         'class_id': class_id,
                         'confidence': confidence,
@@ -69,11 +106,11 @@ def parse_detection_txt(txt_file):
         print(f"Warning: File not found: {txt_file}")
     except Exception as e:
         print(f"Error parsing {txt_file}: {e}")
-    
+
     return detections
 
 
-def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_truth=False):
+def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_truth=False, is_yolo_format=False, img_width=1920, img_height=1080):
     """
     Format detection data from .txt files to COCO JSON format.
 
@@ -84,6 +121,10 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
                      If None, image IDs will be auto-generated from filenames
         as_ground_truth: If True, output full COCO format with images/annotations/categories
                         If False, output just array of annotations (for detection results)
+        is_yolo_format: If True, parse files as YOLO format (class x_center y_center width height, normalized)
+                       rather than detection format (class conf x1 y1 x2 y2)
+        img_width: Image width for denormalizing YOLO format coordinates
+        img_height: Image height for denormalizing YOLO format coordinates
     """
     detection_path = Path(detection_dir)
 
@@ -178,7 +219,7 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
             image_id_to_stem[image_id] = basename
 
         # Parse detections from txt file
-        detections = parse_detection_txt(txt_file)
+        detections = parse_detection_txt(txt_file, is_yolo_format=is_yolo_format, img_width=img_width, img_height=img_height)
         
         # Convert to COCO format
         for det in detections:
@@ -272,10 +313,28 @@ def main():
         action='store_true',
         help='Output full COCO format with images/annotations/categories (for use as GT in evaluation)'
     )
-    
+    parser.add_argument(
+        '--yolo_format',
+        action='store_true',
+        help='Parse files as YOLO format (class x_center y_center width height, normalized)'
+    )
+    parser.add_argument(
+        '--img_width',
+        type=int,
+        default=1920,
+        help='Image width for denormalizing YOLO format (default: 1920)'
+    )
+    parser.add_argument(
+        '--img_height',
+        type=int,
+        default=1080,
+        help='Image height for denormalizing YOLO format (default: 1080)'
+    )
+
     args = parser.parse_args()
-    
-    format_detections(args.detection_dir, args.output_file, args.gt_coco, args.as_ground_truth)
+
+    format_detections(args.detection_dir, args.output_file, args.gt_coco, args.as_ground_truth,
+                     args.yolo_format, args.img_width, args.img_height)
 
 
 if __name__ == "__main__":

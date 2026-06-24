@@ -1,0 +1,18 @@
+{
+  "models": [
+    "yolov12",
+    "yolov5",
+    "yolov8"
+  ],
+  "tests": [
+    "imgColorWheel",
+    "imgDarkBright",
+    "imgGrayscale",
+    "imgMotionBlur",
+    "imgResolution",
+    "imgStretch",
+    "labelRemove_avg",
+    "labelRemove_black",
+    "labelRemove_white"
+  ]
+}
