@@ -1,16 +1,137 @@
 {
-  "imgGrayscale": {
+  "imgColorWheel": {
     "rank_1": {
-      "config": {},
-      "disparity": 0.0,
+      "config": {
+        "hue_rotation": 80
+      },
+      "disparity": 0.2540900518623291,
       "scores": {
-        "yolov5": 0.0,
-        "yolov8": 0.0,
-        "yolov12": 0.0
+        "yolov5": 0.28214285714285714,
+        "yolov8": 0.02805280528052805,
+        "yolov12": 0.03907355021216407
       }
     },
     "rank_2": {
-      "config": {},
+      "config": {
+        "hue_rotation": 20
+      },
+      "disparity": 0.10962081231164578,
+      "scores": {
+        "yolov5": 0.5152961724743904,
+        "yolov8": 0.6155940594059407,
+        "yolov12": 0.6249169847860362
+      }
+    },
+    "rank_3": {
+      "config": {
+        "hue_rotation": 120
+      },
+      "disparity": 0.08343040186371577,
+      "scores": {
+        "yolov5": 0.08415841584158414,
+        "yolov8": 0.0007280139778683749,
+        "yolov12": 0.0025695426685525694
+      }
+    }
+  },
+  "imgDarkBright": {
+    "rank_1": {
+      "config": {
+        "gamma": 5.0,
+        "method": "gamma",
+        "brightness_constant": 0,
+        "brightness_multiplier": 1
+      },
+      "disparity": 0.16006600660066012,
+      "scores": {
+        "yolov5": 0.2863036303630363,
+        "yolov8": 0.42739273927392746,
+        "yolov12": 0.26732673267326734
+      }
+    },
+    "rank_2": {
+      "config": {
+        "gamma": 3.5,
+        "method": "gamma",
+        "brightness_constant": 0,
+        "brightness_multiplier": 1
+      },
+      "disparity": 0.1543493635077795,
+      "scores": {
+        "yolov5": 0.7153465346534653,
+        "yolov8": 0.8696958981612448,
+        "yolov12": 0.7744430693069307
+      }
+    },
+    "rank_3": {
+      "config": {
+        "gamma": 2.0,
+        "method": "gamma",
+        "brightness_constant": 0,
+        "brightness_multiplier": 1
+      },
+      "disparity": 0.032178217821782096,
+      "scores": {
+        "yolov5": 0.9207920792079208,
+        "yolov8": 0.9529702970297029,
+        "yolov12": 0.943069306930693
+      }
+    }
+  },
+  "imgMotionBlur": {
+    "rank_1": {
+      "config": {
+        "kernel_size": 21,
+        "orientation": 0
+      },
+      "disparity": 0.04255068363979264,
+      "scores": {
+        "yolov5": 0.8836633663366337,
+        "yolov8": 0.9108910891089109,
+        "yolov12": 0.8683404054691183
+      }
+    },
+    "rank_2": {
+      "config": {
+        "kernel_size": 15,
+        "orientation": 0
+      },
+      "disparity": 0.029231494578029094,
+      "scores": {
+        "yolov5": 0.9356435643564357,
+        "yolov8": 0.9648750589344648,
+        "yolov12": 0.943069306930693
+      }
+    },
+    "rank_3": {
+      "config": {
+        "kernel_size": 9,
+        "orientation": 0
+      },
+      "disparity": 0.01980198019801982,
+      "scores": {
+        "yolov5": 0.9801980198019802,
+        "yolov8": 1.0,
+        "yolov12": 1.0
+      }
+    }
+  },
+  "imgResolution": {
+    "rank_1": {
+      "config": {
+        "size_ratio": 1.0
+      },
+      "disparity": 0.0,
+      "scores": {
+        "yolov5": 1.0,
+        "yolov8": 1.0,
+        "yolov12": 1.0
+      }
+    },
+    "rank_2": {
+      "config": {
+        "size_ratio": 0.1
+      },
       "disparity": 0.0,
       "scores": {
         "yolov5": 0.0,
@@ -19,7 +140,47 @@
       }
     },
     "rank_3": {
-      "config": {},
+      "config": {
+        "size_ratio": 0.4
+      },
+      "disparity": 0.0,
+      "scores": {
+        "yolov5": 0.0,
+        "yolov8": 0.0,
+        "yolov12": 0.0
+      }
+    }
+  },
+  "imgStretch": {
+    "rank_1": {
+      "config": {
+        "height_ratio": 1.0,
+        "width_ratio": 1.0
+      },
+      "disparity": 0.0,
+      "scores": {
+        "yolov5": 1.0,
+        "yolov8": 1.0,
+        "yolov12": 1.0
+      }
+    },
+    "rank_2": {
+      "config": {
+        "height_ratio": 1.0,
+        "width_ratio": 1.6
+      },
+      "disparity": 0.0,
+      "scores": {
+        "yolov5": 0.0,
+        "yolov8": 0.0,
+        "yolov12": 0.0
+      }
+    },
+    "rank_3": {
+      "config": {
+        "height_ratio": 1.0,
+        "width_ratio": 2.2
+      },
       "disparity": 0.0,
       "scores": {
         "yolov5": 0.0,
