@@ -55,12 +55,15 @@ if [ "$DATASET" = "fsoco_sample" ]; then
 elif [ "$DATASET" = "test" ]; then
     IMAGES_DIR="data/base_images/test/images"
     TRANSFORMED_DIR="data/transformed_images/fsoco_test"
+elif [ "$DATASET" = "val" ]; then
+    IMAGES_DIR="data/base_images/val/images"
+    TRANSFORMED_DIR="data/transformed_images/fsoco_val"
 else
     IMAGES_DIR="data/base_images/$DATASET/images"
     TRANSFORMED_DIR="data/transformed_images/$DATASET"
 fi
 
-RESULTS_BASE="results"
+RESULTS_BASE="results/$DATASET"
 
 # ─── Transformation rules ─────────────────────────────────────────────────────
 # Load transformation configurations from centralized config file

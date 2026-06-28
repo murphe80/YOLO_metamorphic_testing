@@ -14,13 +14,18 @@
 # Change to repo root if not already there
 cd "$(dirname "$0")/../.." || exit 1
 
+# Activate virtual environment if it exists
+if [ -d "venv" ]; then
+    source venv/bin/activate
+fi
+
 # Load model registry
 source utils/model_registry.sh
 
 # ============================================
 # Parse arguments
 # ============================================
-DATASET="fsoco_sample"  # Default to sample dataset
+DATASET="test"  # Default to sample dataset
 
 for arg in "$@"; do
     case $arg in
@@ -41,6 +46,29 @@ elif [ "$DATASET" = "fsoco_sample" ]; then
     GT_COCO="data/base_images/fsoco_sample/annotations_coco.json"
 else
     GT_COCO="data/base_images/$DATASET/annotations_coco.json"
+fi
+
+# Generate ground truth COCO annotations if not present
+if [ ! -f "$GT_COCO" ]; then
+    GT_DIR="$(dirname "$GT_COCO")"
+    GT_BB_DIR="${GT_DIR}/bounding_boxes"
+    GT_LABELS_DIR="${GT_DIR}/labels"
+    GT_IMAGES_DIR="${GT_DIR}/images"
+    if [ -d "$GT_BB_DIR" ]; then
+        echo "Ground truth COCO not found. Generating $GT_COCO from $GT_BB_DIR..."
+        python3 analysis/utils/format_gt.py \
+            --input_dir "$GT_BB_DIR" \
+            --output_file "$GT_COCO" \
+            --image_dir "$GT_IMAGES_DIR"
+    elif [ -d "$GT_LABELS_DIR" ]; then
+        echo "Ground truth COCO not found. Generating $GT_COCO from YOLO labels in $GT_LABELS_DIR..."
+        python3 analysis/utils/format_detections.py \
+            --detection_dir "$GT_LABELS_DIR" \
+            --output_file "$GT_COCO" \
+            --as_ground_truth \
+            --yolo_format \
+            --image_dir "$GT_IMAGES_DIR"
+    fi
 fi
 
 run_model_analysis() {

@@ -7,8 +7,8 @@
     "size_ratio": 0.1
   },
   "imgMotionBlur": {
-    "kernel_size": 20,
-    "orientation": 60
+    "kernel_size": 21,
+    "orientation": 0
   },
   "imgDarkBright": {
     "brightness_constant": 0,

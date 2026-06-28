@@ -12,6 +12,11 @@ import os
 import argparse
 from pathlib import Path
 
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
 
 def xyxy_to_xywh(x1, y1, x2, y2):
     """
@@ -110,7 +115,25 @@ def parse_detection_txt(txt_file, is_yolo_format=False, img_width=1920, img_heig
     return detections
 
 
-def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_truth=False, is_yolo_format=False, img_width=1920, img_height=1080):
+def resolve_image_info(stem, image_dir=None, default_width=1920, default_height=1080):
+    """Return (file_name, width, height) for a label/detection stem."""
+    if image_dir:
+        image_path = Path(image_dir)
+        for ext in ('.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'):
+            candidate = image_path / f"{stem}{ext}"
+            if candidate.exists():
+                if Image is not None:
+                    try:
+                        with Image.open(candidate) as im:
+                            width, height = im.size
+                        return candidate.name, width, height
+                    except OSError:
+                        pass
+                return candidate.name, default_width, default_height
+    return f"{stem}.jpg", default_width, default_height
+
+
+def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_truth=False, is_yolo_format=False, img_width=1920, img_height=1080, image_dir=None):
     """
     Format detection data from .txt files to COCO JSON format.
 
@@ -125,6 +148,7 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
                        rather than detection format (class conf x1 y1 x2 y2)
         img_width: Image width for denormalizing YOLO format coordinates
         img_height: Image height for denormalizing YOLO format coordinates
+        image_dir: Optional directory of source images (for per-image dimensions in YOLO GT)
     """
     detection_path = Path(detection_dir)
 
@@ -183,6 +207,7 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
     # Process all .txt files in the detection directory
     coco_detections = []
     image_id_to_stem = {}
+    image_id_to_info = {}
     txt_files = sorted(detection_path.glob("*.txt"))
     
     if not txt_files:
@@ -216,10 +241,20 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
         
         image_id = image_map[matched_basename]
         if image_id not in image_id_to_stem:
-            image_id_to_stem[image_id] = basename
+            image_id_to_stem[image_id] = matched_basename
+
+        file_name, file_width, file_height = resolve_image_info(
+            matched_basename, image_dir=image_dir, default_width=img_width, default_height=img_height
+        )
+        image_id_to_info[image_id] = (file_name, file_width, file_height)
 
         # Parse detections from txt file
-        detections = parse_detection_txt(txt_file, is_yolo_format=is_yolo_format, img_width=img_width, img_height=img_height)
+        detections = parse_detection_txt(
+            txt_file,
+            is_yolo_format=is_yolo_format,
+            img_width=file_width,
+            img_height=file_height,
+        )
         
         # Convert to COCO format
         for det in detections:
@@ -256,11 +291,15 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
         image_ids = set(det['image_id'] for det in coco_detections)
         for img_id in sorted(image_ids):
             stem = image_id_to_stem.get(img_id, f"image_{img_id}")
+            file_name, file_width, file_height = image_id_to_info.get(
+                img_id,
+                resolve_image_info(stem, image_dir=image_dir, default_width=img_width, default_height=img_height),
+            )
             coco_output['images'].append({
                 "id": img_id,
-                "file_name": f"{stem}.jpg",
-                "height": 1080,  # Placeholder dimensions
-                "width": 1920
+                "file_name": file_name,
+                "height": file_height,
+                "width": file_width,
             })
         
         # Add category entries (assuming categories 1-4 based on typical FSOCO)
@@ -330,11 +369,25 @@ def main():
         default=1080,
         help='Image height for denormalizing YOLO format (default: 1080)'
     )
+    parser.add_argument(
+        '--image_dir',
+        type=str,
+        default=None,
+        help='Directory containing source images (for per-image dimensions when parsing YOLO labels)'
+    )
 
     args = parser.parse_args()
 
-    format_detections(args.detection_dir, args.output_file, args.gt_coco, args.as_ground_truth,
-                     args.yolo_format, args.img_width, args.img_height)
+    format_detections(
+        args.detection_dir,
+        args.output_file,
+        args.gt_coco,
+        args.as_ground_truth,
+        args.yolo_format,
+        args.img_width,
+        args.img_height,
+        args.image_dir,
+    )
 
 
 if __name__ == "__main__":

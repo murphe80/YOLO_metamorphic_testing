@@ -39,7 +39,8 @@ from utils.transform_geometric_detections import transform_detections_file
 MODEL_COLORS = {
     'yolov5': '#1976d2',  # Blue
     'yolov8': '#7b1fa2',  # Purple
-    'yolov12': '#388e3c'  # Green
+    'yolov12': '#388e3c',  # Green
+    'yolov26': '#ff9800',  # Orange
 }
 
 
@@ -55,7 +56,7 @@ def plot_venn_for_model_transformation(
     Generate a three-circle Venn diagram for one model-transformation pair.
 
     Args:
-        model: Model name (yolov5, yolov8, yolov12)
+        model: Model name (yolov5, yolov8, yolov12, yolov26)
         transformation: Transformation name (e.g., imgGrayscale)
         results_dir: Base results directory
         gt_path: Path to ground truth COCO JSON
@@ -217,7 +218,7 @@ def main():
     parser.add_argument(
         '--model',
         type=str,
-        choices=['yolov5', 'yolov8', 'yolov12'],
+        choices=['yolov5', 'yolov8', 'yolov12', 'yolov26'],
         help='Generate for specific model only'
     )
     parser.add_argument(
@@ -232,11 +233,10 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Define models and transformations
-    models = [args.model] if args.model else ['yolov5', 'yolov8', 'yolov12']
+    models = [args.model] if args.model else ['yolov5', 'yolov8', 'yolov12', 'yolov26']
     transformations = [args.transformation] if args.transformation else [
         'imgGrayscale', 'imgColorWheel', 'imgDarkBright',
-        'imgMotionBlur', 'imgResolution', 'imgStretch',
-        'labelRemove_black', 'labelRemove_white', 'labelRemove_avg'
+        'imgMotionBlur', 'imgResolution', 'imgStretch'
     ]
 
     print("=" * 80)
