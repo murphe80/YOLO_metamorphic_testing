@@ -32,8 +32,78 @@ from utils.transform_geometric_detections import transform_detections_file
 MODEL_COLORS = {
     'yolov5': '#1976d2',
     'yolov8': '#7b1fa2',
-    'yolov12': '#388e3c'
+    'yolov12': '#388e3c',
+    'yolov26': '#ff9800'
 }
+
+BASE_TRANSFORMATIONS = [
+    'imgStretch', 'imgResolution', 'imgMotionBlur',
+    'imgDarkBright', 'imgGrayscale', 'imgColorWheel'
+]
+GEOMETRIC_TRANSFORMS = {'imgStretch', 'imgResolution'}
+
+
+def resolve_base_transformation(results_dir: Path, model: str, transformation: str) -> str:
+    """Resolve brute-force variant directories back to their base transformation."""
+    transform_dir = results_dir / model / transformation
+
+    for config_name in ('configs.json', 'config.json'):
+        config_path = transform_dir / config_name
+        if not config_path.exists():
+            continue
+        try:
+            with open(config_path) as f:
+                config = json.load(f)
+        except json.JSONDecodeError:
+            continue
+
+        if isinstance(config, dict):
+            if isinstance(config.get('transformation'), str):
+                return config['transformation']
+            for key in config:
+                if key in BASE_TRANSFORMATIONS:
+                    return key
+
+    for base_name in BASE_TRANSFORMATIONS:
+        if transformation == base_name or transformation.startswith(f"{base_name}_"):
+            return base_name
+
+    return transformation
+
+
+def discover_models(results_dir: Path) -> list:
+    """Discover model directories that contain original detections."""
+    if not results_dir.exists():
+        return []
+
+    models = []
+    for model_dir in sorted(results_dir.iterdir()):
+        if not model_dir.is_dir() or model_dir.name.startswith('.'):
+            continue
+        original_path = model_dir / "original" / "detections_original_coco.json"
+        if original_path.exists():
+            models.append(model_dir.name)
+    return models
+
+
+def discover_transformations(results_dir: Path, models: list) -> list:
+    """Discover legacy rule and brute-force variant result directories."""
+    transformations = set()
+
+    for model in models:
+        model_dir = results_dir / model
+        if not model_dir.exists():
+            continue
+
+        for transform_dir in model_dir.iterdir():
+            if not transform_dir.is_dir() or transform_dir.name.startswith('.'):
+                continue
+            if transform_dir.name == 'original':
+                continue
+            if (transform_dir / "detections_coco.json").exists():
+                transformations.add(transform_dir.name)
+
+    return sorted(transformations)
 
 
 def plot_grid(
@@ -53,12 +123,17 @@ def plot_grid(
         iou_threshold: IoU threshold for matching
         layout: 'row' (models as rows) or 'col' (models as columns)
     """
-    models = ['yolov5', 'yolov8', 'yolov12']
-    transformations = [
-        'imgGrayscale', 'imgColorWheel', 'imgDarkBright',
-        'imgMotionBlur', 'imgResolution', 'imgStretch',
-        'labelRemove_black', 'labelRemove_white', 'labelRemove_avg'
-    ]
+    models = discover_models(results_dir)
+    if not models:
+        models = ['yolov5', 'yolov8', 'yolov12']
+
+    transformations = discover_transformations(results_dir, models)
+    if not transformations:
+        transformations = [
+            'imgGrayscale', 'imgColorWheel', 'imgDarkBright',
+            'imgMotionBlur', 'imgResolution', 'imgStretch',
+            'labelRemove_black', 'labelRemove_white', 'labelRemove_avg'
+        ]
 
     # Determine grid layout
     if layout == 'row':
@@ -90,10 +165,10 @@ def plot_grid(
             transformed_path = results_dir / model / transformation / "detections_coco.json"
 
             # Handle geometric transformations
-            geometric_transforms = ['imgStretch', 'imgResolution']
+            base_transformation = resolve_base_transformation(results_dir, model, transformation)
             temp_file = None
 
-            if transformation in geometric_transforms:
+            if base_transformation in GEOMETRIC_TRANSFORMS:
                 # Try pre-computed transformed coordinates first
                 pre_transformed_path = results_dir / model / transformation / "detections_coco_transformed.json"
 
@@ -112,7 +187,7 @@ def plot_grid(
                             detection_file=str(transformed_path),
                             original_image_dir=str(original_image_dir),
                             transformed_image_dir=str(transformed_image_dir),
-                            transformation_name=transformation,
+                            transformation_name=base_transformation,
                             output_file=temp_file.name
                         )
                         transformed_path = Path(temp_file.name)
@@ -146,7 +221,7 @@ def plot_grid(
                     for subset_id in ['100', '110', '101', '111']:
                         patch = venn.get_patch_by_id(subset_id)
                         if patch:
-                            patch.set_color(MODEL_COLORS[model])
+                            patch.set_color(MODEL_COLORS.get(model, '#999999'))
                             patch.set_alpha(0.4)
 
                     # Make text smaller
@@ -184,9 +259,8 @@ def plot_grid(
 
     # Add legend
     legend_elements = [
-        plt.Rectangle((0, 0), 1, 1, fc=MODEL_COLORS['yolov5'], alpha=0.4, label='YOLOv5'),
-        plt.Rectangle((0, 0), 1, 1, fc=MODEL_COLORS['yolov8'], alpha=0.4, label='YOLOv8'),
-        plt.Rectangle((0, 0), 1, 1, fc=MODEL_COLORS['yolov12'], alpha=0.4, label='YOLOv12')
+        plt.Rectangle((0, 0), 1, 1, fc=MODEL_COLORS.get(model, '#999999'), alpha=0.4, label=model.upper())
+        for model in models
     ]
     fig.legend(handles=legend_elements, loc='upper right', fontsize=10, frameon=True)
 

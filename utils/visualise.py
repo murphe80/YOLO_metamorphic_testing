@@ -3,14 +3,14 @@
 Visualization utilities for YOLOvX detection results
 """
 
+import argparse
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-from typing import List, Dict, Any, Optional
-import argparse
 import os
+from typing import Any, Dict, List, Optional
 
-class_names_v5 = [
+
+CLASS_NAMES = [
     "Yellow Cone",
     "Orange Cone",
     "Big Orange Cone",
@@ -18,34 +18,7 @@ class_names_v5 = [
     "Unknown Cone",
 ]
 
-class_names_v8 = [
-    "Yellow Cone",
-    "Orange Cone",
-    "Big Orange Cone",
-    "Blue Cone",
-    "Unknown Cone",
-]
-
-class_names_v12 = [
-    "Yellow Cone",
-    "Orange Cone",
-    "Big Orange Cone",
-    "Blue Cone",
-    "Unknown Cone",
-]
-
-
-
-# class_names_v12 = [
-#     "Blue Cone", 
-#     "Orange Cone", 
-#     "Big Orange Cone", 
-#     "Unknown Cone", 
-#     "Yellow Cone"
-# ]
-
-# Define colours for different cone classes
-colours = {
+COLOURS = {
     "Yellow Cone": (255, 255, 0),  # Yellow
     "Orange Cone": (255, 165, 0),  # Orange
     "Big Orange Cone": (255, 0, 0),  # Big Orange
@@ -54,7 +27,36 @@ colours = {
 }
 
 
-def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]], class_names,
+def read_detection_file(detections_path: str) -> List[Dict[str, Any]]:
+    """Read detections saved as: class confidence x1 y1 x2 y2."""
+    detections = []
+
+    with open(detections_path, "r") as f:
+        for line_number, line in enumerate(f, start=1):
+            parts = line.strip().split()
+            if not parts:
+                continue
+            if len(parts) != 6:
+                raise ValueError(
+                    f"{detections_path}:{line_number} expected 6 fields, got {len(parts)}"
+                )
+
+            cls_id = int(parts[0])
+            confidence = float(parts[1])
+            x1, y1, x2, y2 = map(float, parts[2:])
+            detections.append({
+                "bbox": [x1, y1, x2, y2],
+                "center": [(x1 + x2) / 2, (y1 + y2) / 2],
+                "size": [x2 - x1, y2 - y1],
+                "confidence": confidence,
+                "class": cls_id,
+            })
+
+    return detections
+
+
+def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]],
+                    class_names: Optional[List[str]] = None,
                     conf_threshold: float = 0.0) -> np.ndarray:
     """
     Draw bounding boxes and labels on image
@@ -69,11 +71,10 @@ def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]], class_n
         Image with drawn detections
     """
 
-    # Create a copy of the image to draw on
+    class_names = class_names or CLASS_NAMES
     vis_image = image.copy()
 
     for detection in detections:
-        # Filter by confidence threshold
         if detection['confidence'] < conf_threshold:
             continue
 
@@ -85,7 +86,7 @@ def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]], class_n
         # Get class name and colour
         class_name = class_names[cls_id] if cls_id < len(
             class_names) else f'Class {cls_id}'
-        colour = colours.get(class_name)
+        colour = COLOURS.get(class_name, (255, 255, 255))
 
         # Draw bounding box
         cv2.rectangle(vis_image, (x1, y1), (x2, y2), colour, 2)
@@ -114,51 +115,43 @@ def draw_detections(image: np.ndarray, detections: List[Dict[str, Any]], class_n
 def visualize_detections(image: np.ndarray, detections: List[Dict[str, Any]],
                          output_path: Optional[str] = None,
                          conf_threshold: float = 0.25,
-                         show_plot: bool = True, model:str="v5") -> None:
+                         show_plot: bool = False,
+                         model: str = "v5") -> np.ndarray:
     """
     Visualize detections on an image
 
     Args:
-        image_path: Path to input image
+        image: Input image as BGR numpy array
         detections: List of detection dictionaries
         output_path: Optional path to save visualization
         conf_threshold: Minimum confidence threshold
-        show_plot: Whether to display the plot
+        show_plot: Whether to display the image in an OpenCV window
     """
 
     # Convert BGR to RGB for matplotlib
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    # Draw detections (if/elif for Python 3.9 compatibility; match/case is 3.10+)
-    if model == "v12":
-        class_names = class_names_v12
-    elif model == "v5":
-        class_names = class_names_v5
-    elif model == "v8":
-        class_names = class_names_v8
-    else:
-        class_names = class_names_v5
-
     vis_image = draw_detections(
-        image_rgb, detections,class_names, conf_threshold)
+        image_rgb, detections, CLASS_NAMES, conf_threshold)
 
-    # Display or save
     if show_plot:
-        plt.figure(figsize=(12, 8))
-        plt.imshow(vis_image)
-        plt.axis('off')
-        plt.title(f'YOLO Detections ({len(detections)} objects found)')
-        plt.tight_layout()
-        plt.show()
+        cv2.imshow(f"{model} detections", cv2.cvtColor(vis_image, cv2.COLOR_RGB2BGR))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     if output_path:
-        # Convert back to BGR for saving
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
         vis_image_bgr = cv2.cvtColor(vis_image, cv2.COLOR_RGB2BGR)
         cv2.imwrite(output_path, vis_image_bgr)
         print(f"Visualization saved to {output_path}")
 
+    return vis_image
 
-def print_detection_summary(detections: List[Dict[str, Any]]) -> None:
+
+def print_detection_summary(detections: List[Dict[str, Any]],
+                            class_names: Optional[List[str]] = None) -> None:
     """
     Print a summary of detections
 
@@ -169,6 +162,7 @@ def print_detection_summary(detections: List[Dict[str, Any]]) -> None:
         print("No detections found.")
         return
 
+    class_names = class_names or CLASS_NAMES
     print(f"\nDetection Summary ({len(detections)} objects):")
     print("-" * 50)
 
@@ -179,7 +173,7 @@ def print_detection_summary(detections: List[Dict[str, Any]]) -> None:
         conf = det['confidence']
         cls_id = det['class']
 
-        class_name = class_names[cls_id] if class_names and cls_id < len(
+        class_name = class_names[cls_id] if cls_id < len(
             class_names) else f'Class {cls_id}'
 
         print(f"Detection {i+1}:")
@@ -193,14 +187,15 @@ def print_detection_summary(detections: List[Dict[str, Any]]) -> None:
 
 
 def main():
-    """Example usage of visualization functions"""
     parser = argparse.ArgumentParser(description='Visualize YOLO detections')
     parser.add_argument('--image', required=True, type=str,
                         help='Path to input image')
-    parser.add_argument('--detections', type=str,
-                        help='List of detections')
+    parser.add_argument('--detections', required=True, type=str,
+                        help='Path to detection .txt file')
     parser.add_argument('--output', type=str,
                         help='Path to save visualization')
+    parser.add_argument('--model', type=str, default='v5',
+                        help='Model version label for display')
     parser.add_argument('--conf_threshold', type=float, default=0.0,
                         help='Confidence threshold for display')
     parser.add_argument('--no_show', action='store_true',
@@ -209,14 +204,19 @@ def main():
     args = parser.parse_args()
 
     try:
-        print_detection_summary(args.detections)
-        # Visualize detections
+        image = cv2.imread(args.image)
+        if image is None:
+            raise FileNotFoundError(f"Could not read image: {args.image}")
+
+        detections = read_detection_file(args.detections)
+        print_detection_summary(detections)
         visualize_detections(
-            image_path=args.image,
-            detections=args.detections,
+            image=image,
+            detections=detections,
             output_path=args.output,
             conf_threshold=args.conf_threshold,
-            show_plot=not args.no_show
+            show_plot=not args.no_show,
+            model=args.model,
         )
 
     except Exception as e:

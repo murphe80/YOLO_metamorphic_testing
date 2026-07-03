@@ -13,7 +13,7 @@ cd dashboard
 python3 generate_manifest.py
 ```
 
-This scans the `../analysis/results` directory and creates `manifest.json` with available models and tests.
+This scans the `../analysis/results` directory and creates `manifest.json` with available models and tests, including brute-force variant directories such as `imgResolution_3` when analysis stats exist for them.
 
 ### 2. Start the Dashboard
 
@@ -51,8 +51,7 @@ Then open `http://localhost:8000/dashboard/dashboard.html` in your browser.
 - **Original vs Ground Truth**: Baseline performance of original images against ground truth (no test selection needed)
 
 ### Supported Metamorphic Tests
-- **General transformations**: Grayscale, Motion Blur, Stretch, Resolution, Color Wheel, Dark/Bright
+- **General transformations**: Grayscale, Motion Blur, Stretch, Resolution, Color Wheel, Dark/Bright, including brute-force variants such as `imgStretch_4`
 - **Cone color transformations**: Yellow→Blue, Blue→Yellow, Blue→Orange, Yellow→Orange
 - **Label transformations**: Label removal with different backgrounds (avg, black, white)
-
 

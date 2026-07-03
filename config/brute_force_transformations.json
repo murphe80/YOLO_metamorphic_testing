@@ -1,0 +1,65 @@
+{
+  "imgGrayscale": [
+    { "variant_id": "imgGrayscale_0" }
+  ],
+  "imgColorWheel": [
+    { "variant_id": "imgColorWheel_0", "hue_rotation": 0 },
+    { "variant_id": "imgColorWheel_1", "hue_rotation": 20 },
+    { "variant_id": "imgColorWheel_2", "hue_rotation": 40 },
+    { "variant_id": "imgColorWheel_3", "hue_rotation": 60 },
+    { "variant_id": "imgColorWheel_4", "hue_rotation": 80 },
+    { "variant_id": "imgColorWheel_5", "hue_rotation": 100 },
+    { "variant_id": "imgColorWheel_6", "hue_rotation": 120 },
+    { "variant_id": "imgColorWheel_7", "hue_rotation": 140 },
+    { "variant_id": "imgColorWheel_8", "hue_rotation": 160 },
+    { "variant_id": "imgColorWheel_9", "hue_rotation": 180 }
+  ],
+  "imgResolution": [
+    { "variant_id": "imgResolution_0", "size_ratio": 0.1 },
+    { "variant_id": "imgResolution_1", "size_ratio": 0.2 },
+    { "variant_id": "imgResolution_2", "size_ratio": 0.3 },
+    { "variant_id": "imgResolution_3", "size_ratio": 0.4 },
+    { "variant_id": "imgResolution_4", "size_ratio": 0.5 },
+    { "variant_id": "imgResolution_5", "size_ratio": 0.6 },
+    { "variant_id": "imgResolution_6", "size_ratio": 0.7 },
+    { "variant_id": "imgResolution_7", "size_ratio": 0.8 },
+    { "variant_id": "imgResolution_8", "size_ratio": 0.9 },
+    { "variant_id": "imgResolution_9", "size_ratio": 1.0 }
+  ],
+  "imgDarkBright": [
+    { "variant_id": "imgDarkBright_0", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 0.5, "method": "gamma" },
+    { "variant_id": "imgDarkBright_1", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 1.0, "method": "gamma" },
+    { "variant_id": "imgDarkBright_2", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 1.5, "method": "gamma" },
+    { "variant_id": "imgDarkBright_3", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 2.0, "method": "gamma" },
+    { "variant_id": "imgDarkBright_4", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 2.5, "method": "gamma" },
+    { "variant_id": "imgDarkBright_5", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 3.0, "method": "gamma" },
+    { "variant_id": "imgDarkBright_6", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 3.5, "method": "gamma" },
+    { "variant_id": "imgDarkBright_7", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 4.0, "method": "gamma" },
+    { "variant_id": "imgDarkBright_8", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 4.5, "method": "gamma" },
+    { "variant_id": "imgDarkBright_9", "brightness_constant": 0, "brightness_multiplier": 1, "gamma": 5.0, "method": "gamma" }
+  ],
+  "imgMotionBlur": [
+    { "variant_id": "imgMotionBlur_0", "kernel_size": 3, "orientation": 0 },
+    { "variant_id": "imgMotionBlur_1", "kernel_size": 5, "orientation": 0 },
+    { "variant_id": "imgMotionBlur_2", "kernel_size": 7, "orientation": 0 },
+    { "variant_id": "imgMotionBlur_3", "kernel_size": 9, "orientation": 0 },
+    { "variant_id": "imgMotionBlur_4", "kernel_size": 11, "orientation": 0 },
+    { "variant_id": "imgMotionBlur_5", "kernel_size": 13, "orientation": 0 },
+    { "variant_id": "imgMotionBlur_6", "kernel_size": 15, "orientation": 0 },
+    { "variant_id": "imgMotionBlur_7", "kernel_size": 17, "orientation": 0 },
+    { "variant_id": "imgMotionBlur_8", "kernel_size": 19, "orientation": 0 },
+    { "variant_id": "imgMotionBlur_9", "kernel_size": 21, "orientation": 0 }
+  ],
+  "imgStretch": [
+    { "variant_id": "imgStretch_0", "height_ratio": 1.0, "width_ratio": 1.0 },
+    { "variant_id": "imgStretch_1", "height_ratio": 1.0, "width_ratio": 1.2 },
+    { "variant_id": "imgStretch_2", "height_ratio": 1.0, "width_ratio": 1.4 },
+    { "variant_id": "imgStretch_3", "height_ratio": 1.0, "width_ratio": 1.6 },
+    { "variant_id": "imgStretch_4", "height_ratio": 1.0, "width_ratio": 1.8 },
+    { "variant_id": "imgStretch_5", "height_ratio": 1.0, "width_ratio": 2.0 },
+    { "variant_id": "imgStretch_6", "height_ratio": 1.0, "width_ratio": 2.2 },
+    { "variant_id": "imgStretch_7", "height_ratio": 1.0, "width_ratio": 2.4 },
+    { "variant_id": "imgStretch_8", "height_ratio": 1.0, "width_ratio": 2.6 },
+    { "variant_id": "imgStretch_9", "height_ratio": 1.0, "width_ratio": 2.8 }
+  ]
+}

@@ -26,11 +26,15 @@ source utils/model_registry.sh
 # Parse arguments
 # ============================================
 DATASET="test"  # Default to sample dataset
+RULE_FILTER=""
 
-for arg in "$@"; do
-    case $arg in
-        --dataset) DATASET="${2:-fsoco_sample}"; shift ;;
-        --dataset=*) DATASET="${arg#*=}" ;;
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --dataset) DATASET="$2"; shift 2 ;;
+        --dataset=*) DATASET="${1#*=}"; shift ;;
+        --rules) RULE_FILTER="$2"; shift 2 ;;
+        --rules=*) RULE_FILTER="${1#*=}"; shift ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
 
@@ -38,6 +42,32 @@ done
 # Configuration
 # ============================================
 RESULTS_BASE="analysis/results"
+BASE_TRANSFORMATIONS=(
+    imgStretch
+    imgResolution
+    imgMotionBlur
+    imgDarkBright
+    imgGrayscale
+    imgColorWheel
+)
+
+IFS=',' read -r -a SELECTED_RULES <<< "$RULE_FILTER"
+
+should_process_rule() {
+    local rule_name="$1"
+
+    if [ -z "$RULE_FILTER" ]; then
+        return 0
+    fi
+
+    for selected_rule in "${SELECTED_RULES[@]}"; do
+        if [ "$rule_name" = "$selected_rule" ]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
 
 # Set ground truth path based on dataset
 if [ "$DATASET" = "test" ]; then
@@ -104,9 +134,48 @@ run_model_analysis() {
         [ ! -d "$rule_path" ] && continue
         
         rule_name=$(basename "$rule_path")
+        base_rule_name="$rule_name"
         
         # Skip the original directory in the loop
         [ "$rule_name" = "original" ] && continue
+        should_process_rule "$rule_name" || continue
+
+        if [ -f "$rule_path/configs.json" ]; then
+            detected_rule=$(python3 - "$rule_path/configs.json" <<'PY'
+import json
+import sys
+
+known_rules = {
+    "imgStretch",
+    "imgResolution",
+    "imgMotionBlur",
+    "imgDarkBright",
+    "imgGrayscale",
+    "imgColorWheel",
+}
+
+with open(sys.argv[1]) as f:
+    config = json.load(f)
+
+for key in config:
+    if key in known_rules:
+        print(key)
+        break
+PY
+)
+            if [ -n "$detected_rule" ]; then
+                base_rule_name="$detected_rule"
+            fi
+        else
+            for known_rule in "${BASE_TRANSFORMATIONS[@]}"; do
+                case "$rule_name" in
+                    "$known_rule"|"$known_rule"_*)
+                        base_rule_name="$known_rule"
+                        break
+                        ;;
+                esac
+            done
+        fi
         
         echo "=== Processing $model_name $rule_name detections ==="
         
@@ -124,12 +193,12 @@ run_model_analysis() {
         echo "Comparing original vs $rule_name (metamorphic)..."
         
         GEOMETRIC_TRANSFORMS=("imgStretch" "imgResolution")
-        if [[ " ${GEOMETRIC_TRANSFORMS[@]} " =~ " ${rule_name} " ]]; then
+        if [[ " ${GEOMETRIC_TRANSFORMS[@]} " =~ " ${base_rule_name} " ]]; then
             # For geometric transformations, transform coordinates before comparison
             echo "Transforming coordinates for geometric transformation..."
             python3 analysis/utils/transform_geometric_detections.py \
                 --detection_file "${rule_path}/detections_coco.json" \
-                --transformation "$rule_name" \
+                --transformation "$base_rule_name" \
                 --original_images "${model_results}/original" \
                 --transformed_images "$rule_path" \
                 --output_file "${rule_path}/detections_coco_transformed.json"
@@ -156,11 +225,11 @@ run_model_analysis() {
                 --gt_coco "$GT_COCO"
             
             # For geometric transformations, transform coordinates
-            if [[ " ${GEOMETRIC_TRANSFORMS[@]} " =~ " ${rule_name} " ]]; then
+            if [[ " ${GEOMETRIC_TRANSFORMS[@]} " =~ " ${base_rule_name} " ]]; then
                 echo "Transforming coordinates for GT comparison..."
                 python3 analysis/utils/transform_geometric_detections.py \
                     --detection_file "${rule_path}/detections_for_gt.json" \
-                    --transformation "$rule_name" \
+                    --transformation "$base_rule_name" \
                     --original_images "${model_results}/original" \
                     --transformed_images "$rule_path" \
                     --output_file "${rule_path}/detections_for_gt_transformed.json"
@@ -185,6 +254,9 @@ echo "======================================"
 echo "Metamorphic Testing Analysis"
 echo "======================================"
 echo "Dataset: $DATASET"
+if [ -n "$RULE_FILTER" ]; then
+    echo "Rules: $RULE_FILTER"
+fi
 echo "Comparing original vs transformed detections"
 echo ""
 
@@ -202,4 +274,3 @@ for model in $(get_model_names); do
     results_dir=$(get_model_field "$model" "results_dir")
     run_model_analysis "$results_dir"
 done
-

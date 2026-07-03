@@ -341,27 +341,47 @@
                     const manifestResponse = await fetch('/dashboard/manifest.json');
                     if (manifestResponse.ok) {
                         const manifest = await manifestResponse.json();
-                        availableModels = manifest.models;
-                        availableTests = manifest.tests;
-                        return;
+                        availableModels = [...(manifest.models || [])];
+                        availableTests = [...(manifest.tests || [])];
+
+                        if ((!availableModels.length || !availableTests.length) && manifest.datasets) {
+                            const modelSet = new Set(availableModels);
+                            const testSet = new Set(availableTests);
+
+                            Object.values(manifest.datasets).forEach(dataset => {
+                                (dataset.models || []).forEach(model => modelSet.add(model));
+                                (dataset.tests || []).forEach(test => testSet.add(test));
+                            });
+
+                            availableModels = [...modelSet].sort();
+                            availableTests = [...testSet].sort();
+                        }
+
+                        // Continue into fallback probes as a compatibility supplement for stale manifests.
                     }
                 } catch (e) {
                     // Manifest doesn't exist, fall through to discovery
                 }
 
-                // Fallback: discover by trying to load known structure
-                const knownModels = ['yolov5', 'yolov8', 'yolov12'];
-                const knownTests = [
+                // Fallback: discover by trying to load known legacy and brute-force structures
+                const knownModels = ['yolov5', 'yolov8', 'yolov12', 'yolov26'];
+                const baseTests = [
                     'imgGrayscale',
                     'imgMotionBlur',
                     'imgStretch',
                     'imgResolution',
                     'imgColorWheel',
-                    'imgDarkBright',
+                    'imgDarkBright'
+                ];
+                const bruteForceTests = baseTests.flatMap(test =>
+                    Array.from({ length: 10 }, (_, index) => `${test}_${index}`)
+                );
+                const labelTests = [
                     'labelRemove_avg',
                     'labelRemove_black',
                     'labelRemove_white'
                 ];
+                const knownTests = [...baseTests, ...bruteForceTests, ...labelTests];
 
                 // Test which models actually have data
                 for (const model of knownModels) {
