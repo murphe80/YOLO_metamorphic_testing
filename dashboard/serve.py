@@ -10,7 +10,15 @@ import webbrowser
 from pathlib import Path
 import os
 
-PORT = 8000
+PORT = 8081
+
+
+class DashboardHandler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        if self.path.endswith(('.html', '.json')):
+            self.send_header('Cache-Control', 'no-store')
+        super().end_headers()
+
 
 def main():
     # Change to the project root (parent of dashboard directory)
@@ -18,7 +26,7 @@ def main():
     project_root = Path(__file__).parent.parent
     os.chdir(project_root)
 
-    Handler = http.server.SimpleHTTPRequestHandler
+    Handler = DashboardHandler
 
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
         print(f"Dashboard server starting on http://localhost:{PORT}")

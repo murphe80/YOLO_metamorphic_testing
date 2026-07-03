@@ -1,57 +1,69 @@
 #!/usr/bin/env python3
 """
 Generate a manifest.json file for the dashboard by scanning the results directory.
-This allows the dashboard to dynamically discover available models and tests.
+This allows the dashboard to dynamically discover available datasets, models, and tests.
 """
 
 import json
-import os
 from pathlib import Path
 
+SKIP_DIRS = {'config_tuning', 'venn_diagrams'}
 
-def generate_manifest(results_dir: str = "../analysis/results") -> dict:
-    """
-    Scan the results directory and generate a manifest of available models and tests.
 
-    Args:
-        results_dir: Path to the results directory (relative to this script)
-
-    Returns:
-        Dictionary with 'models' and 'tests' lists
-    """
-    results_path = Path(__file__).parent / results_dir
-
+def scan_dataset(dataset_path: Path) -> dict:
+    """Scan a single dataset directory for available models and tests."""
     models = set()
     tests = set()
 
-    # Scan directory structure
-    if results_path.exists():
-        for model_dir in results_path.iterdir():
-            if not model_dir.is_dir() or model_dir.name.startswith('.'):
+    if not dataset_path.exists():
+        return {"models": [], "tests": []}
+
+    for model_dir in dataset_path.iterdir():
+        if not model_dir.is_dir() or model_dir.name.startswith('.'):
+            continue
+
+        models.add(model_dir.name)
+
+        for test_dir in model_dir.iterdir():
+            if not test_dir.is_dir() or test_dir.name.startswith('.'):
                 continue
 
-            # Skip non-model directories
-            if model_dir.name in ['config_tuning', 'venn_diagrams']:
-                continue
+            stats_file = test_dir / "original_vs_transformed" / "stats.json"
+            if stats_file.exists():
+                tests.add(test_dir.name)
 
-            models.add(model_dir.name)
-
-            # Scan for tests within this model
-            for test_dir in model_dir.iterdir():
-                if not test_dir.is_dir() or test_dir.name.startswith('.'):
-                    continue
-
-                # Check if this test has valid data
-                stats_file = test_dir / "original_vs_transformed" / "stats.json"
-                if stats_file.exists():
-                    tests.add(test_dir.name)
-
-    manifest = {
-        "models": sorted(list(models)),
-        "tests": sorted(list(tests))
+    return {
+        "models": sorted(models),
+        "tests": sorted(tests),
     }
 
-    return manifest
+
+def generate_manifest(results_root: str = "../analysis/results") -> dict:
+    """
+    Scan the results directory and generate a manifest of available datasets,
+    models, and tests.
+
+    Args:
+        results_root: Path to the results root directory (relative to this script)
+
+    Returns:
+        Dictionary with 'datasets' mapping dataset names to models/tests
+    """
+    results_path = Path(__file__).parent / results_root
+    datasets = {}
+
+    if results_path.exists():
+        for dataset_dir in sorted(results_path.iterdir()):
+            if not dataset_dir.is_dir() or dataset_dir.name.startswith('.'):
+                continue
+            if dataset_dir.name in SKIP_DIRS:
+                continue
+
+            dataset_info = scan_dataset(dataset_dir)
+            if dataset_info["models"]:
+                datasets[dataset_dir.name] = dataset_info
+
+    return {"datasets": datasets}
 
 
 def main():
@@ -64,9 +76,10 @@ def main():
     with open(output_path, 'w') as f:
         json.dump(manifest, f, indent=2)
 
-    print(f"Generated manifest with {len(manifest['models'])} models and {len(manifest['tests'])} tests")
-    print(f"Models: {', '.join(manifest['models'])}")
-    print(f"Tests: {', '.join(manifest['tests'])}")
+    dataset_names = list(manifest["datasets"].keys())
+    print(f"Generated manifest with {len(dataset_names)} datasets: {', '.join(dataset_names)}")
+    for name, info in manifest["datasets"].items():
+        print(f"  {name}: {len(info['models'])} models, {len(info['tests'])} tests")
 
 
 if __name__ == "__main__":
