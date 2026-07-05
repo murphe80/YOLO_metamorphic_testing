@@ -39,22 +39,6 @@ python3 "$PROJECT_ROOT/analysis/visualisation/plot_detection_venn.py" \
     --gt_path "$GT_PATH" \
     --output_dir "$PROJECT_ROOT/analysis/results/venn_diagrams/$DATASET_NAME"
 
-# echo ""
-# echo "Step 2: Generating grid visualization..."
-# echo "-----------------------------------------------"
-# python3 "$PROJECT_ROOT/analysis/visualisation/plot_venn_grid.py" \
-#     --results_dir "$RESULTS_DIR" \
-#     --gt_path "$GT_PATH" \
-#     --output "$PROJECT_ROOT/analysis/results/venn_diagrams/$DATASET_NAME/all_models_grid.png"
-
-# echo ""
-# echo "Step 3: Exporting statistics to CSV..."
-# echo "-----------------------------------------------"
-# python3 "$PROJECT_ROOT/analysis/utils/venn_statistics_analysis.py" \
-#     --input "$PROJECT_ROOT/analysis/results/venn_diagrams/$DATASET_NAME/venn_statistics.json" \
-#     --output "$PROJECT_ROOT/analysis/results/venn_diagrams/$DATASET_NAME/venn_statistics.csv" \
-#     --summary
-
 echo ""
 echo "=================================================="
 echo "✓ All visualizations generated successfully!"

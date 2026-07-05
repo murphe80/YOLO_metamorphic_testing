@@ -133,7 +133,7 @@ def plot_venn_for_model_transformation(
         iou_threshold: IoU threshold for matching (default: 0.5)
 
     Returns:
-        Dictionary with region counts and computed metrics
+        Dictionary with image-normalized region weights and computed metrics
     """
     # Construct paths
     original_path = results_dir / model / "original" / "detections_original_coco.json"
@@ -233,14 +233,31 @@ def plot_venn_for_model_transformation(
             linestyle='solid'
         )
 
-    # Add title with key metrics
+    # Add title
     title = (
         f"{model.upper()} - {transformation}\n"
-        f"Detection Overlap (IoU ≥ {iou_threshold})\n"
-        f"TP Retention: {stats['tp_retention_rate']:.1%} | "
-        f"Detection Loss: {stats['detection_loss_rate']:.1%}"
+        f"Detection Overlap (IoU ≥ {iou_threshold})"
     )
     plt.title(title, fontsize=12, fontweight='bold', pad=20)
+
+    # Report all derived metrics below the Venn diagram
+    metric_lines = [
+        f"TP Retention: {stats['tp_retention_rate']:.1%}",
+        f"New TP Rate: {stats['new_tp_rate']:.1%}",
+        f"FP Consistency: {stats['fp_consistency_rate']:.1%}",
+        f"Detection Loss: {stats['detection_loss_rate']:.1%}",
+        f"New Hallucination: {stats['new_hallucination_rate']:.1%}",
+    ]
+    fig.subplots_adjust(bottom=0.18)
+    fig.text(
+        0.5,
+        0.04,
+        " | ".join(metric_lines),
+        ha='center',
+        va='bottom',
+        fontsize=10,
+        wrap=True
+    )
 
     # Save figure
     output_path = output_dir / f"{model}_{transformation}_venn.png"

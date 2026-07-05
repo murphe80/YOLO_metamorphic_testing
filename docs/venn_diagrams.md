@@ -75,10 +75,10 @@ This implementation differs from the standard `pycocotools` COCO evaluation in s
 | **Assignment**         |  Best IoU match per detection               |  Best IoU match per detection        |
 | **Regions**            | 7 Venn regions                              | 3 categories (TP/FP/FN)               |
 | **IoU Thresholds**     | Single threshold (default: 0.5)             | Multiple thresholds [0.5:0.95]        |
-| **Metrics**            | TP retention, detection loss, spurious rate | AP, AP50, AP75, AR                    |
+| **Metrics**            | TP retention, new TP rate, detection loss, new hallucination rate | AP, AP50, AP75, AR                    |
 | **Confidence Use**     | Match priority only                         | Match priority + P-R curves           |
 | **Category**           | Ignored (all cones treated equally)         | Per-category evaluation               |
-| **Output**             | Venn region counts, CSV statistics          | AP/AR scores, precision-recall curves |
+| **Output**             | Image-normalized Venn region weights, CSV statistics | AP/AR scores, precision-recall curves |
 
 
 
@@ -88,7 +88,7 @@ The matching logic is in `analysis/utils/detection_matching.py`:
 
 - `compute_iou()`: COCO-format IoU (identical to pycocotools formula)
 - `match_three_way_per_image()`: Greedy three-way assignment
-- `aggregate_three_way_overlap()`: Aggregates across all images
+- `aggregate_three_way_overlap()`: Aggregates image-normalized region weights across all images
 
 **Algorithm Complexity**: O(n × m × k) per image, where n, m, k are detection counts in each source. Typically ~10-50 detections per image, so matching is fast (<1ms per image).
 
@@ -123,21 +123,6 @@ python3 analysis/visualisation/plot_detection_venn.py --model yolov8 --iou_thres
 python3 analysis/visualisation/plot_detection_venn.py --transformation imgGrayscale
 ```
 
-### 2. Generate Grid Visualization
-
-Create a comprehensive grid showing all combinations:
-
-```bash
-python3 analysis/visualisation/plot_venn_grid.py
-```
-
-Output: `analysis/results/venn_diagrams/all_models_grid.png`
-
-Options:
-
-- `--layout row`: Models as rows, transformations as columns (default)
-- `--layout col`: Models as columns, transformations as rows
-
 ### 3. Export Statistics to CSV
 
 Export quantitative analysis:
@@ -150,10 +135,11 @@ Output: `analysis/results/venn_diagrams/venn_statistics.csv`
 
 The CSV includes:
 
-- Raw region counts (7 Venn regions)
+- Image-normalized region weights (7 Venn regions)
 - TP retention rate: How many true positives are maintained
+- New TP rate: Proportion of ground-truth cones missed in the original image but recovered in the transformed image
 - Detection loss rate: Proportion of original detections that disappeared
-- Spurious detection rate: Proportion of new spurious detections
+- New hallucination rate: Proportion of transformed detections that are new false positives
 - Precision/recall for original and transformed images
 - Metamorphic consistency metrics
 
@@ -251,11 +237,6 @@ Of the true positives detected in original, what proportion are still detected a
 
 ## Troubleshooting
 
-**"No Data" in grid cells:**
-
-- Detection files don't exist for that model-transformation pair
-- Check that you've run inference on the transformed images
-
 **Low counts across all regions:**
 
 - Check IoU threshold - try lowering to 0.3 for more matches
@@ -275,4 +256,3 @@ After generating visualizations:
 2. **Identify weak transformations**: Which transformations cause most detection loss?
 3. **Answer RQ1.b**: Establish patterns on when to use one model over another
 4. **Integrate into dashboard**: Add Venn diagrams to `dashboard/dashboard.html`
-

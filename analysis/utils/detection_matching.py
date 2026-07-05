@@ -262,9 +262,12 @@ def aggregate_three_way_overlap(
     transformed_coco_path: Path,
     gt_coco_path: Path,
     iou_threshold: float = 0.5
-) -> Dict[str, int]:
+) -> Dict[str, float]:
     """
-    Compute aggregate three-way overlap statistics across all images.
+    Compute image-normalized three-way overlap statistics across all images.
+
+    Each image contributes at most 1.0 total weight across the seven Venn
+    regions, so images with many cones do not dominate images with few cones.
 
     Args:
         original_coco_path: Path to original detections COCO JSON
@@ -273,22 +276,22 @@ def aggregate_three_way_overlap(
         iou_threshold: Minimum IoU to consider a match (default: 0.5)
 
     Returns:
-        Dictionary with aggregate counts for all 7 Venn regions
+        Dictionary with image-normalized aggregate weights for all 7 Venn regions
     """
     # Load detections grouped by image
     original_by_img = load_detections_by_image(original_coco_path)
     transformed_by_img = load_detections_by_image(transformed_coco_path)
     gt_by_img = load_detections_by_image(gt_coco_path)
 
-    # Aggregate results across all images
+    # Aggregate per-image proportions across all images
     total_regions = {
-        'orig_trans_gt': 0,
-        'orig_trans': 0,
-        'orig_gt': 0,
-        'trans_gt': 0,
-        'orig_only': 0,
-        'trans_only': 0,
-        'gt_only': 0
+        'orig_trans_gt': 0.0,
+        'orig_trans': 0.0,
+        'orig_gt': 0.0,
+        'trans_gt': 0.0,
+        'orig_only': 0.0,
+        'trans_only': 0.0,
+        'gt_only': 0.0
     }
 
     # Get all image IDs that appear in any source
@@ -304,35 +307,40 @@ def aggregate_three_way_overlap(
             orig_dets, trans_dets, gt_dets, iou_threshold
         )
 
-        # Accumulate counts
+        image_total = sum(image_regions.values())
+        if image_total == 0:
+            continue
+
+        # Accumulate normalized per-image region weights
         for region, count in image_regions.items():
-            total_regions[region] += count
+            total_regions[region] += count / image_total
 
     return total_regions
 
 
-def compute_retention_metrics(regions: Dict[str, int]) -> Dict[str, float]:
+def compute_retention_metrics(regions: Dict[str, float]) -> Dict[str, float]:
     """
-    Compute retention and consistency metrics from Venn region counts.
+    Compute retention and consistency metrics from Venn region weights.
 
     Args:
-        regions: Dictionary with counts for all 7 Venn regions
+        regions: Dictionary with weights for all 7 Venn regions
 
     Returns:
         Dictionary with computed metrics:
         - tp_retention_rate: Proportion of true positives maintained
         - fp_consistency_rate: Proportion of false positives that are consistent
         - detection_loss_rate: Proportion of original detections lost
-        - spurious_detection_rate: Proportion of new spurious detections
+        - new_hallucination_rate: Proportion of transformed detections that are new false positives
+        - new_tp_rate: Proportion of original-missed GT cones recovered by transformed detections
     """
     metrics = {}
 
-    # True positive retention: (orig ∩ gt ∩ trans + orig ∩ gt) / (all orig that match GT)
+    # True positive retention: maintained original TPs / all original TPs.
+    # In Venn region terms: (orig ∩ gt ∩ trans) / (orig ∩ gt).
     orig_tp_count = regions['orig_trans_gt'] + regions['orig_gt']
-    all_gt_matched = regions['orig_trans_gt'] + regions['orig_gt'] + regions['trans_gt']
 
-    if all_gt_matched > 0:
-        metrics['tp_retention_rate'] = orig_tp_count / all_gt_matched
+    if orig_tp_count > 0:
+        metrics['tp_retention_rate'] = regions['orig_trans_gt'] / orig_tp_count
     else:
         metrics['tp_retention_rate'] = 0.0
 
@@ -351,12 +359,19 @@ def compute_retention_metrics(regions: Dict[str, int]) -> Dict[str, float]:
     else:
         metrics['detection_loss_rate'] = 0.0
 
-    # Spurious detection rate: new detections in transformed
+    # New hallucination rate: transformed detections that match neither original nor GT
     total_trans = (regions['orig_trans_gt'] + regions['orig_trans'] +
                    regions['trans_gt'] + regions['trans_only'])
     if total_trans > 0:
-        metrics['spurious_detection_rate'] = regions['trans_only'] / total_trans
+        metrics['new_hallucination_rate'] = regions['trans_only'] / total_trans
     else:
-        metrics['spurious_detection_rate'] = 0.0
+        metrics['new_hallucination_rate'] = 0.0
+
+    # New true positive rate: GT cones missed by original but recovered by transformed
+    original_missed_gt_count = regions['trans_gt'] + regions['gt_only']
+    if original_missed_gt_count > 0:
+        metrics['new_tp_rate'] = regions['trans_gt'] / original_missed_gt_count
+    else:
+        metrics['new_tp_rate'] = 0.0
 
     return metrics
