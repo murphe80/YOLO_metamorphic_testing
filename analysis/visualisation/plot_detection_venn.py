@@ -20,8 +20,8 @@ Usage:
 import argparse
 import json
 import sys
-import tempfile
 from pathlib import Path
+from typing import Optional
 
 import matplotlib
 matplotlib.use('Agg')  # Non-interactive backend
@@ -32,6 +32,7 @@ from matplotlib_venn import venn3, venn3_circles
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.detection_matching import aggregate_three_way_overlap, compute_retention_metrics
+from utils.format_detections import format_detections
 from utils.transform_geometric_detections import transform_detections_file
 
 
@@ -48,6 +49,7 @@ BASE_TRANSFORMATIONS = [
     'imgDarkBright', 'imgGrayscale', 'imgColorWheel'
 ]
 GEOMETRIC_TRANSFORMS = {'imgStretch', 'imgResolution'}
+DEFAULT_BRUTE_FORCE_CONFIG = Path('config/brute_force_transformations.json')
 
 
 def resolve_base_transformation(results_dir: Path, model: str, transformation: str) -> str:
@@ -76,6 +78,56 @@ def resolve_base_transformation(results_dir: Path, model: str, transformation: s
             return base_name
 
     return transformation
+
+
+def resolve_transform_params(
+    results_dir: Path,
+    model: str,
+    transformation: str,
+    base_transformation: str,
+    brute_force_config: Path
+) -> Optional[dict]:
+    """Resolve variant-specific geometric transform params, mirroring the analysis bash script."""
+    transform_dir = results_dir / model / transformation
+
+    for config_name in ('configs.json', 'config.json'):
+        config_path = transform_dir / config_name
+        if not config_path.exists():
+            continue
+        try:
+            with open(config_path) as f:
+                config = json.load(f)
+        except json.JSONDecodeError:
+            continue
+
+        if not isinstance(config, dict):
+            continue
+
+        nested_config = config.get(base_transformation)
+        if isinstance(nested_config, dict):
+            return nested_config
+
+        if any(key in config for key in ('scale_x', 'scale_y', 'width_ratio', 'height_ratio', 'size_ratio')):
+            return config
+
+    if not brute_force_config.exists():
+        return None
+
+    try:
+        with open(brute_force_config) as f:
+            config = json.load(f)
+    except json.JSONDecodeError:
+        return None
+
+    variants = config.get(base_transformation, [])
+    if isinstance(variants, dict):
+        variants = [variants]
+
+    for variant in variants:
+        if isinstance(variant, dict) and variant.get('variant_id') == transformation:
+            return variant
+
+    return None
 
 
 def discover_models(results_dir: Path) -> list:
@@ -119,7 +171,8 @@ def plot_venn_for_model_transformation(
     results_dir: Path,
     gt_path: Path,
     output_dir: Path,
-    iou_threshold: float = 0.5
+    iou_threshold: float = 0.5,
+    brute_force_config: Path = DEFAULT_BRUTE_FORCE_CONFIG
 ) -> dict:
     """
     Generate a three-circle Venn diagram for one model-transformation pair.
@@ -142,14 +195,21 @@ def plot_venn_for_model_transformation(
     # Check if files exist
     if not original_path.exists():
         raise FileNotFoundError(f"Original detections not found: {original_path}")
-    if not transformed_path.exists():
-        raise FileNotFoundError(f"Transformed detections not found: {transformed_path}")
     if not gt_path.exists():
         raise FileNotFoundError(f"Ground truth not found: {gt_path}")
 
     # Handle geometric transformations (need coordinate transformation)
     base_transformation = resolve_base_transformation(results_dir, model, transformation)
-    temp_file = None
+
+    if not transformed_path.exists():
+        if base_transformation in GEOMETRIC_TRANSFORMS:
+            print(f"  Generating COCO detections for {transformation}...")
+            format_detections(
+                detection_dir=str(results_dir / model / transformation),
+                output_file=str(transformed_path)
+            )
+        else:
+            raise FileNotFoundError(f"Transformed detections not found: {transformed_path}")
 
     if base_transformation in GEOMETRIC_TRANSFORMS:
         # Try to use pre-computed transformed coordinates first
@@ -163,10 +223,15 @@ def plot_venn_for_model_transformation(
             print(f"  Computing coordinate transformation for {transformation}...")
             original_image_dir = results_dir / model / "original"
             transformed_image_dir = results_dir / model / transformation
-
-            # Create temporary file for transformed coordinates
-            temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
-            temp_file.close()
+            transform_params = resolve_transform_params(
+                results_dir,
+                model,
+                transformation,
+                base_transformation,
+                brute_force_config
+            )
+            if transform_params:
+                print(f"  Using transform parameters for {transformation}: {transform_params}")
 
             try:
                 transform_detections_file(
@@ -174,13 +239,12 @@ def plot_venn_for_model_transformation(
                     original_image_dir=str(original_image_dir),
                     transformed_image_dir=str(transformed_image_dir),
                     transformation_name=base_transformation,
-                    output_file=temp_file.name
+                    output_file=str(pre_transformed_path),
+                    transform_params=transform_params
                 )
-                transformed_path = Path(temp_file.name)
+                transformed_path = pre_transformed_path
                 print(f"  ✓ Coordinate transformation complete")
             except Exception as e:
-                # Clean up temp file if transformation fails
-                Path(temp_file.name).unlink(missing_ok=True)
                 raise RuntimeError(f"Failed to transform coordinates for {transformation}: {e}")
 
     # Get three-way overlap statistics
@@ -264,10 +328,6 @@ def plot_venn_for_model_transformation(
     plt.savefig(output_path, dpi=200, bbox_inches='tight', facecolor='white')
     plt.close(fig)
 
-    # Clean up temporary file if we created one
-    if temp_file is not None:
-        Path(temp_file.name).unlink(missing_ok=True)
-
     print(f"✓ Generated: {output_path.name}")
 
     return stats
@@ -294,6 +354,12 @@ def main():
         type=Path,
         default=Path('analysis/results/venn_diagrams'),
         help='Output directory for Venn diagrams'
+    )
+    parser.add_argument(
+        '--brute_force_config',
+        type=Path,
+        default=DEFAULT_BRUTE_FORCE_CONFIG,
+        help='Path to brute-force transformation config (default: config/brute_force_transformations.json)'
     )
     parser.add_argument(
         '--iou_threshold',
@@ -356,7 +422,8 @@ def main():
                     args.results_dir,
                     args.gt_path,
                     args.output_dir,
-                    args.iou_threshold
+                    args.iou_threshold,
+                    args.brute_force_config
                 )
                 all_stats[f"{model}_{transformation}"] = stats
                 success_count += 1
