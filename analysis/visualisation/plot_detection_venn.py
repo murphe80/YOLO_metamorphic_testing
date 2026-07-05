@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.detection_matching import aggregate_three_way_overlap, compute_retention_metrics
 from utils.format_detections import format_detections
+from utils.format_gt import convert_to_coco_format
 from utils.transform_geometric_detections import transform_detections_file
 
 
@@ -50,6 +51,50 @@ BASE_TRANSFORMATIONS = [
 ]
 GEOMETRIC_TRANSFORMS = {'imgStretch', 'imgResolution'}
 DEFAULT_BRUTE_FORCE_CONFIG = Path('config/brute_force_transformations.json')
+
+
+def infer_gt_path(results_dir: Path) -> Path:
+    """Infer the dataset GT path from a results directory."""
+    if results_dir.name and results_dir.name != 'results':
+        candidate = Path('data/base_images') / results_dir.name / 'annotations_coco.json'
+        if candidate.parent.exists():
+            return candidate
+    return Path('data/base_images/fsoco_sample/annotations_coco.json')
+
+
+def ensure_gt_coco(gt_path: Path) -> Path:
+    """Create a missing COCO GT file from sibling bounding-box JSON or YOLO labels."""
+    if gt_path.exists():
+        return gt_path
+
+    dataset_dir = gt_path.parent
+    bounding_boxes_dir = dataset_dir / 'bounding_boxes'
+    labels_dir = dataset_dir / 'labels'
+    images_dir = dataset_dir / 'images'
+
+    if bounding_boxes_dir.is_dir():
+        print(f"Ground truth COCO not found. Generating {gt_path} from {bounding_boxes_dir}...")
+        convert_to_coco_format(
+            input_dir=str(bounding_boxes_dir),
+            output_file=str(gt_path),
+            image_dir=str(images_dir) if images_dir.is_dir() else None,
+        )
+        return gt_path
+
+    if labels_dir.is_dir():
+        print(f"Ground truth COCO not found. Generating {gt_path} from YOLO labels in {labels_dir}...")
+        format_detections(
+            detection_dir=str(labels_dir),
+            output_file=str(gt_path),
+            as_ground_truth=True,
+            is_yolo_format=True,
+            image_dir=str(images_dir) if images_dir.is_dir() else None,
+        )
+        return gt_path
+
+    raise FileNotFoundError(
+        f"Ground truth not found: {gt_path}. Expected either {bounding_boxes_dir} or {labels_dir} to generate it."
+    )
 
 
 def resolve_base_transformation(results_dir: Path, model: str, transformation: str) -> str:
@@ -346,8 +391,8 @@ def main():
     parser.add_argument(
         '--gt_path',
         type=Path,
-        default=Path('data/base_images/fsoco_sample/annotations_coco.json'),
-        help='Path to ground truth annotations'
+        default=None,
+        help='Path to ground truth annotations. If omitted, inferred from --results_dir.'
     )
     parser.add_argument(
         '--output_dir',
@@ -380,6 +425,11 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if args.gt_path is None:
+        args.gt_path = infer_gt_path(args.results_dir)
+
+    args.gt_path = ensure_gt_coco(args.gt_path)
 
     # Create output directory
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -429,7 +479,7 @@ def main():
                 success_count += 1
 
             except FileNotFoundError as e:
-                print(f"⚠ Skipping {model}/{transformation}: {e.args[0].split(':')[0]}")
+                print(f"⚠ Skipping {model}/{transformation}: {e}")
                 skip_count += 1
 
             except Exception as e:
