@@ -273,9 +273,15 @@
                 <div class="checkbox-group" id="modelCheckboxes"></div>
             </div>
             <div class="control-group">
-                <span class="control-label">Metamorphic Test</span>
-                <select id="testSelector">
-                    <option value="">Loading tests...</option>
+                <span class="control-label">Transformation Rule</span>
+                <select id="ruleSelector">
+                    <option value="">Loading rules...</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Parameter Setting</span>
+                <select id="variantSelector">
+                    <option value="">Select a rule first</option>
                 </select>
             </div>
             <div class="control-group">
@@ -296,12 +302,16 @@
     <script>
         // Configuration
         const RESULTS_BASE_PATH = '/analysis/results';
+        const TRANSFORMATIONS_PATH = '/config/brute_force_transformations.json';
         const METRICS = ['AP', 'AP50', 'AP75', 'APs', 'APm', 'APl', 'AR1', 'AR10', 'AR100', 'ARs', 'ARm', 'ARl'];
 
         // State
         let availableModels = [];
         let availableTests = [];
+        let testsByRule = {};
+        let transformationsConfig = {};
         let selectedModels = [];
+        let selectedRule = '';
         let selectedTest = '';
         let selectedComparison = 'original_vs_transformed';
         let cachedData = {};
@@ -309,8 +319,11 @@
         // Initialize dashboard
         async function init() {
             await discoverModelsAndTests();
+            await loadTransformationsConfig();
+            buildTestsByRule();
             renderModelCheckboxes();
-            renderTestSelector();
+            renderRuleSelector();
+            renderVariantSelector();
 
             // Set up comparison selector
             const comparisonSelector = document.getElementById('comparisonSelector');
@@ -322,11 +335,54 @@
                 document.getElementById(`model-${model}`).checked = true;
             });
 
-            // Select first test by default
-            if (availableTests.length > 0) {
-                selectedTest = availableTests[0];
-                document.getElementById('testSelector').value = selectedTest;
-                await updateResults();
+            // Select first rule and variant by default
+            const rules = Object.keys(testsByRule).sort();
+            if (rules.length > 0) {
+                selectedRule = rules[0];
+                document.getElementById('ruleSelector').value = selectedRule;
+                renderVariantSelector();
+                const variants = testsByRule[selectedRule];
+                if (variants.length > 0) {
+                    selectedTest = variants[0];
+                    document.getElementById('variantSelector').value = selectedTest;
+                    await updateResults();
+                }
+            }
+        }
+
+        async function loadTransformationsConfig() {
+            try {
+                const response = await fetch(TRANSFORMATIONS_PATH);
+                if (response.ok) {
+                    transformationsConfig = await response.json();
+                }
+            } catch (error) {
+                console.warn('Could not load transformations config:', error);
+            }
+        }
+
+        function getRuleFromTest(test) {
+            if (test.startsWith('labelRemove_')) {
+                return 'labelRemove';
+            }
+            const match = test.match(/^(.+?)_\d+$/);
+            if (match) {
+                return match[1];
+            }
+            return test;
+        }
+
+        function buildTestsByRule() {
+            testsByRule = {};
+            for (const test of availableTests) {
+                const rule = getRuleFromTest(test);
+                if (!testsByRule[rule]) {
+                    testsByRule[rule] = [];
+                }
+                testsByRule[rule].push(test);
+            }
+            for (const rule of Object.keys(testsByRule)) {
+                testsByRule[rule].sort();
             }
         }
 
@@ -421,24 +477,65 @@
             `).join('');
         }
 
-        // Render test selector
-        function renderTestSelector() {
-            const selector = document.getElementById('testSelector');
-            selector.innerHTML = availableTests.map(test =>
-                `<option value="${test}">${formatTestName(test)}</option>`
+        // Render rule selector
+        function renderRuleSelector() {
+            const selector = document.getElementById('ruleSelector');
+            const rules = Object.keys(testsByRule).sort();
+            selector.innerHTML = rules.map(rule =>
+                `<option value="${rule}">${formatRuleName(rule)}</option>`
             ).join('');
-            selector.onchange = handleTestChange;
+            selector.onchange = handleRuleChange;
         }
 
-        // Format test name for display
-        function formatTestName(test) {
-            return test
+        // Render variant selector for the currently selected rule
+        function renderVariantSelector() {
+            const selector = document.getElementById('variantSelector');
+            const variants = testsByRule[selectedRule] || [];
+
+            if (variants.length === 0) {
+                selector.innerHTML = '<option value="">No variants available</option>';
+                selector.disabled = true;
+                return;
+            }
+
+            selector.disabled = selectedComparison === 'original_vs_gt';
+            selector.innerHTML = variants.map(variant =>
+                `<option value="${variant}">${formatVariantLabel(variant)}</option>`
+            ).join('');
+            selector.onchange = handleVariantChange;
+        }
+
+        function formatRuleName(rule) {
+            return rule
                 .replace(/([A-Z])/g, ' $1')
                 .replace(/_/g, ' ')
                 .trim()
                 .split(' ')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
+        }
+
+        function formatVariantLabel(variantId) {
+            const rule = getRuleFromTest(variantId);
+
+            if (rule === 'labelRemove') {
+                const mode = variantId.replace('labelRemove_', '');
+                return `mode: ${mode}`;
+            }
+
+            const variants = transformationsConfig[rule];
+            if (variants) {
+                const variant = variants.find(entry => entry.variant_id === variantId);
+                if (variant) {
+                    const params = Object.entries(variant)
+                        .filter(([key]) => key !== 'variant_id')
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join(', ');
+                    return params || '(default)';
+                }
+            }
+
+            return variantId;
         }
 
         // Get comparison type display name
@@ -459,8 +556,20 @@
             updateResults();
         }
 
-        // Handle test selection change
-        function handleTestChange(event) {
+        // Handle rule selection change
+        function handleRuleChange(event) {
+            selectedRule = event.target.value;
+            renderVariantSelector();
+            const variants = testsByRule[selectedRule] || [];
+            selectedTest = variants[0] || '';
+            if (selectedTest) {
+                document.getElementById('variantSelector').value = selectedTest;
+            }
+            updateResults();
+        }
+
+        // Handle variant selection change
+        function handleVariantChange(event) {
             selectedTest = event.target.value;
             updateResults();
         }
@@ -469,13 +578,11 @@
         function handleComparisonChange(event) {
             selectedComparison = event.target.value;
 
-            // For original_vs_gt, disable test selector since it's not needed
-            const testSelector = document.getElementById('testSelector');
-            if (selectedComparison === 'original_vs_gt') {
-                testSelector.disabled = true;
-            } else {
-                testSelector.disabled = false;
-            }
+            const ruleSelector = document.getElementById('ruleSelector');
+            const variantSelector = document.getElementById('variantSelector');
+            const disableTestSelectors = selectedComparison === 'original_vs_gt';
+            ruleSelector.disabled = disableTestSelectors;
+            variantSelector.disabled = disableTestSelectors || !(testsByRule[selectedRule] || []).length;
 
             updateResults();
         }
@@ -537,7 +644,9 @@
         function renderResults(results) {
             const container = document.getElementById('results');
             const comparisonName = getComparisonName();
-            const testInfo = selectedComparison === 'original_vs_gt' ? '' : ` — ${formatTestName(selectedTest)}`;
+            const testInfo = selectedComparison === 'original_vs_gt'
+                ? ''
+                : ` — ${formatRuleName(selectedRule)} (${formatVariantLabel(selectedTest)})`;
 
             // Primary metric comparison (AP)
             const primarySection = `

@@ -313,7 +313,7 @@ def aggregate_three_way_overlap(
 
         # Accumulate normalized per-image region weights
         for region, count in image_regions.items():
-            total_regions[region] += count / image_total
+            total_regions[region] += round(count / image_total)
 
     return total_regions
 

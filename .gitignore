@@ -209,7 +209,6 @@ __marimo__/
 
 # Large output directories — not included in this repo
 results/
-analysis/results/*
 training/
 *-requests.jsonl
 

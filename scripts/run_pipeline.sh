@@ -39,9 +39,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
 # ─── Parse arguments ──────────────────────────────────────────────────────────
-DATASET="fsoco_sample"  # Default to sample dataset
+DATASET="test"  # Default to sample dataset
 MODEL_ARG="all"
-CONFIG_FILE="config/transformations.json"
+CONFIG_FILE="config/brute_force_transformations.json"
 VIZ_SAMPLES=5
 SKIP_TRANSFORM=false
 

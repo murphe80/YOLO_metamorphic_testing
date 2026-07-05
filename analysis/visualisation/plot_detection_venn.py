@@ -59,7 +59,7 @@ def infer_gt_path(results_dir: Path) -> Path:
         candidate = Path('data/base_images') / results_dir.name / 'annotations_coco.json'
         if candidate.parent.exists():
             return candidate
-    return Path('data/base_images/fsoco_sample/annotations_coco.json')
+    return Path('data/base_images/test/annotations_coco.json')
 
 
 def ensure_gt_coco(gt_path: Path) -> Path:
