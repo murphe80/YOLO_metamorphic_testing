@@ -50,6 +50,10 @@ BASE_TRANSFORMATIONS=(
     imgGrayscale
     imgColorWheel
 )
+GEOMETRIC_TRANSFORMS=(
+    imgStretch
+    imgResolution
+)
 
 IFS=',' read -r -a SELECTED_RULES <<< "$RULE_FILTER"
 
@@ -67,6 +71,78 @@ should_process_rule() {
     done
 
     return 1
+}
+
+is_geometric_transform() {
+    local rule_name="$1"
+
+    for geometric_rule in "${GEOMETRIC_TRANSFORMS[@]}"; do
+        if [ "$rule_name" = "$geometric_rule" ]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+resolve_base_rule_name() {
+    local rule_path="$1"
+    local rule_name="$2"
+
+    # Prefer explicit config metadata when available.
+    for config_path in \
+        "$rule_path/configs.json" \
+        "$rule_path/config.json"; do
+        [ ! -f "$config_path" ] && continue
+
+        detected_rule=$(python3 - "$config_path" <<'PY'
+import json
+import sys
+
+known_rules = {
+    "imgStretch",
+    "imgResolution",
+    "imgMotionBlur",
+    "imgDarkBright",
+    "imgGrayscale",
+    "imgColorWheel",
+}
+
+try:
+    with open(sys.argv[1]) as f:
+        config = json.load(f)
+except (OSError, json.JSONDecodeError):
+    sys.exit(0)
+
+if isinstance(config, dict):
+    transformation = config.get("transformation")
+    if transformation in known_rules:
+        print(transformation)
+        sys.exit(0)
+
+    for key in config:
+        if key in known_rules:
+            print(key)
+            sys.exit(0)
+PY
+)
+        if [ -n "$detected_rule" ]; then
+            echo "$detected_rule"
+            return 0
+        fi
+    done
+
+    # Fall back to directory names for variant IDs such as imgStretch_0.
+    for known_rule in "${BASE_TRANSFORMATIONS[@]}"; do
+        case "$rule_name" in
+            "$known_rule"|"$known_rule"_*)
+                echo "$known_rule"
+                return 0
+                ;;
+        esac
+    done
+
+    echo "$rule_name"
 }
 
 # Set ground truth path based on dataset
@@ -101,16 +177,96 @@ if [ ! -f "$GT_COCO" ]; then
     fi
 fi
 
-run_model_analysis() {
-    local model_results="$1"   # e.g. results/yolov5
-    local model_name
-    model_name=$(basename "$model_results")
-    local base_det="${model_results}/original/detections_original_coco.json"
+process_rule_analysis() {
+    local model_name="$1"
+    local original_results="$2"
+    local base_det="$3"
+    local rule_path="$4"
+    local rule_name="$5"
+    local base_rule_name
+    base_rule_name=$(resolve_base_rule_name "$rule_path" "$rule_name")
+
+    if ! should_process_rule "$rule_name" && ! should_process_rule "$base_rule_name"; then
+        return 0
+    fi
+
+    echo "=== Processing $model_name $rule_name detections ==="
+
+    # Create comparison type subdirectories
+    stats_dir_base="${RESULTS_BASE}/${model_name}/${rule_name}"
+    mkdir -p "${stats_dir_base}/original_vs_transformed"
+    mkdir -p "${stats_dir_base}/transformed_vs_gt"
+
+    # Format transformed detections
+    python3 analysis/utils/format_detections.py \
+        --detection_dir "$rule_path" \
+        --output_file "${rule_path}/detections_coco.json"
+
+    # Comparison 1: Original detections vs Transformed detections (metamorphic testing)
+    echo "Comparing original vs $rule_name (metamorphic)..."
+
+    if is_geometric_transform "$base_rule_name"; then
+        # For geometric transformations, transform coordinates before comparison
+        echo "Transforming coordinates for geometric transformation..."
+        python3 analysis/utils/transform_geometric_detections.py \
+            --detection_file "${rule_path}/detections_coco.json" \
+            --transformation "$base_rule_name" \
+            --original_images "$original_results" \
+            --transformed_images "$rule_path" \
+            --output_file "${rule_path}/detections_coco_transformed.json"
+
+        DT_FILE="${rule_path}/detections_coco_transformed.json"
+    else
+        DT_FILE="${rule_path}/detections_coco.json"
+    fi
+
+    python3 analysis/coco_eval.py \
+        --gt "$base_det" \
+        --dt "$DT_FILE" \
+        --stats-out "${stats_dir_base}/original_vs_transformed/stats.json"
+
+
+    # Comparison 3: Transformed detections vs Ground Truth (if GT available)
+    if [ -f "$GT_COCO" ]; then
+        echo "Comparing $rule_name vs ground truth..."
+
+        # Format detections with GT image IDs (strips transformation suffixes)
+        python3 analysis/utils/format_detections.py \
+            --detection_dir "$rule_path" \
+            --output_file "${rule_path}/detections_for_gt.json" \
+            --gt_coco "$GT_COCO"
+
+        # For geometric transformations, transform coordinates
+        if is_geometric_transform "$base_rule_name"; then
+            echo "Transforming coordinates for GT comparison..."
+            python3 analysis/utils/transform_geometric_detections.py \
+                --detection_file "${rule_path}/detections_for_gt.json" \
+                --transformation "$base_rule_name" \
+                --original_images "$original_results" \
+                --transformed_images "$rule_path" \
+                --output_file "${rule_path}/detections_for_gt_transformed.json"
+
+            DT_GT_FILE="${rule_path}/detections_for_gt_transformed.json"
+        else
+            DT_GT_FILE="${rule_path}/detections_for_gt.json"
+        fi
+
+        python3 analysis/coco_eval.py \
+            --gt "$GT_COCO" \
+            --dt "$DT_GT_FILE" \
+            --stats-out "${stats_dir_base}/transformed_vs_gt/stats.json" 2>&1 | grep -v "Warning: No matching image" || true
+    fi
+}
+
+prepare_original_detections() {
+    local model_name="$1"
+    local original_results="$2"
+    local base_det="${original_results}/detections_original_coco.json"
 
     # Format base detections (original images) - output as ground truth format
     echo "=== Processing $model_name original detections ==="
     python3 analysis/utils/format_detections.py \
-        --detection_dir "${model_results}/original" \
+        --detection_dir "$original_results" \
         --output_file "$base_det" \
         --as_ground_truth
 
@@ -119,131 +275,42 @@ run_model_analysis() {
         echo "Comparing original vs ground truth..."
         # Generate detections with GT image IDs (strips transformation suffixes)
         python3 analysis/utils/format_detections.py \
-            --detection_dir "${model_results}/original" \
-            --output_file "${model_results}/original/detections_for_gt.json" \
+            --detection_dir "$original_results" \
+            --output_file "${original_results}/detections_for_gt.json" \
             --gt_coco "$GT_COCO"
             
         stats_dir_base="${RESULTS_BASE}/${model_name}"
         python3 analysis/coco_eval.py \
             --gt "$GT_COCO" \
-            --dt "${model_results}/original/detections_for_gt.json" \
+            --dt "${original_results}/detections_for_gt.json" \
             --stats-out "${stats_dir_base}/original_vs_gt/stats.json" 2>&1 | grep -v "Warning: No matching image" || true
     fi
+
+    BASE_DET="$base_det"
+}
+
+run_model_analysis() {
+    local model_results="$1"   # e.g. results/yolov5
+    local model_name
+    model_name=$(basename "$model_results")
+    local original_results="${model_results}/original"
+
+    if [ ! -d "$original_results" ]; then
+        return 0
+    fi
+
+    prepare_original_detections "$model_name" "$original_results"
+    local base_det="$BASE_DET"
 
     for rule_path in "${model_results}"/*; do
         [ ! -d "$rule_path" ] && continue
         
         rule_name=$(basename "$rule_path")
-        base_rule_name="$rule_name"
         
         # Skip the original directory in the loop
         [ "$rule_name" = "original" ] && continue
-        should_process_rule "$rule_name" || continue
 
-        if [ -f "$rule_path/configs.json" ]; then
-            detected_rule=$(python3 - "$rule_path/configs.json" <<'PY'
-import json
-import sys
-
-known_rules = {
-    "imgStretch",
-    "imgResolution",
-    "imgMotionBlur",
-    "imgDarkBright",
-    "imgGrayscale",
-    "imgColorWheel",
-}
-
-with open(sys.argv[1]) as f:
-    config = json.load(f)
-
-for key in config:
-    if key in known_rules:
-        print(key)
-        break
-PY
-)
-            if [ -n "$detected_rule" ]; then
-                base_rule_name="$detected_rule"
-            fi
-        else
-            for known_rule in "${BASE_TRANSFORMATIONS[@]}"; do
-                case "$rule_name" in
-                    "$known_rule"|"$known_rule"_*)
-                        base_rule_name="$known_rule"
-                        break
-                        ;;
-                esac
-            done
-        fi
-        
-        echo "=== Processing $model_name $rule_name detections ==="
-        
-        # Create comparison type subdirectories
-        stats_dir_base="${RESULTS_BASE}/${model_name}/${rule_name}"
-        mkdir -p "${stats_dir_base}/original_vs_transformed"
-        mkdir -p "${stats_dir_base}/transformed_vs_gt"
-
-        # Format transformed detections
-        python3 analysis/utils/format_detections.py \
-            --detection_dir "$rule_path" \
-            --output_file "${rule_path}/detections_coco.json"
-
-        # Comparison 1: Original detections vs Transformed detections (metamorphic testing)
-        echo "Comparing original vs $rule_name (metamorphic)..."
-        
-        GEOMETRIC_TRANSFORMS=("imgStretch" "imgResolution")
-        if [[ " ${GEOMETRIC_TRANSFORMS[@]} " =~ " ${base_rule_name} " ]]; then
-            # For geometric transformations, transform coordinates before comparison
-            echo "Transforming coordinates for geometric transformation..."
-            python3 analysis/utils/transform_geometric_detections.py \
-                --detection_file "${rule_path}/detections_coco.json" \
-                --transformation "$base_rule_name" \
-                --original_images "${model_results}/original" \
-                --transformed_images "$rule_path" \
-                --output_file "${rule_path}/detections_coco_transformed.json"
-            
-            DT_FILE="${rule_path}/detections_coco_transformed.json"
-        else
-            DT_FILE="${rule_path}/detections_coco.json"
-        fi
-        
-        python3 analysis/coco_eval.py \
-            --gt "$base_det" \
-            --dt "$DT_FILE" \
-            --stats-out "${stats_dir_base}/original_vs_transformed/stats.json"
-    
-        
-        # Comparison 3: Transformed detections vs Ground Truth (if GT available)
-        if [ -f "$GT_COCO" ]; then
-            echo "Comparing $rule_name vs ground truth..."
-            
-            # Format detections with GT image IDs (strips transformation suffixes)
-            python3 analysis/utils/format_detections.py \
-                --detection_dir "$rule_path" \
-                --output_file "${rule_path}/detections_for_gt.json" \
-                --gt_coco "$GT_COCO"
-            
-            # For geometric transformations, transform coordinates
-            if [[ " ${GEOMETRIC_TRANSFORMS[@]} " =~ " ${base_rule_name} " ]]; then
-                echo "Transforming coordinates for GT comparison..."
-                python3 analysis/utils/transform_geometric_detections.py \
-                    --detection_file "${rule_path}/detections_for_gt.json" \
-                    --transformation "$base_rule_name" \
-                    --original_images "${model_results}/original" \
-                    --transformed_images "$rule_path" \
-                    --output_file "${rule_path}/detections_for_gt_transformed.json"
-                
-                DT_GT_FILE="${rule_path}/detections_for_gt_transformed.json"
-            else
-                DT_GT_FILE="${rule_path}/detections_for_gt.json"
-            fi
-            
-            python3 analysis/coco_eval.py \
-                --gt "$GT_COCO" \
-                --dt "$DT_GT_FILE" \
-                --stats-out "${stats_dir_base}/transformed_vs_gt/stats.json" 2>&1 | grep -v "Warning: No matching image" || true
-        fi
+        process_rule_analysis "$model_name" "$original_results" "$base_det" "$rule_path" "$rule_name"
     done
     
     echo "=== Completed $model_name analysis ==="
