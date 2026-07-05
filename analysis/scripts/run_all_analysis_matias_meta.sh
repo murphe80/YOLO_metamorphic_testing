@@ -42,6 +42,7 @@ done
 # Configuration
 # ============================================
 RESULTS_BASE="analysis/results"
+BRUTE_FORCE_CONFIG="config/brute_force_transformations.json"
 BASE_TRANSFORMATIONS=(
     imgStretch
     imgResolution
@@ -145,6 +146,37 @@ PY
     echo "$rule_name"
 }
 
+resolve_transform_params_json() {
+    local base_rule_name="$1"
+    local rule_name="$2"
+
+    [ ! -f "$BRUTE_FORCE_CONFIG" ] && return 0
+
+    python3 - "$BRUTE_FORCE_CONFIG" "$base_rule_name" "$rule_name" <<'PY'
+import json
+import sys
+
+config_path, base_rule_name, rule_name = sys.argv[1:4]
+
+try:
+    with open(config_path) as f:
+        config = json.load(f)
+except (OSError, json.JSONDecodeError):
+    sys.exit(0)
+
+variants = config.get(base_rule_name, [])
+if isinstance(variants, dict):
+    variants = [variants]
+
+for variant in variants:
+    if not isinstance(variant, dict):
+        continue
+    if variant.get("variant_id") == rule_name:
+        print(json.dumps(variant, separators=(",", ":")))
+        sys.exit(0)
+PY
+}
+
 # Set ground truth path based on dataset
 if [ "$DATASET" = "test" ]; then
     GT_COCO="data/base_images/test/annotations_coco.json"
@@ -185,6 +217,8 @@ process_rule_analysis() {
     local rule_name="$5"
     local base_rule_name
     base_rule_name=$(resolve_base_rule_name "$rule_path" "$rule_name")
+    local transform_params_json
+    transform_params_json=$(resolve_transform_params_json "$base_rule_name" "$rule_name")
 
     if ! should_process_rule "$rule_name" && ! should_process_rule "$base_rule_name"; then
         return 0
@@ -208,12 +242,17 @@ process_rule_analysis() {
     if is_geometric_transform "$base_rule_name"; then
         # For geometric transformations, transform coordinates before comparison
         echo "Transforming coordinates for geometric transformation..."
-        python3 analysis/utils/transform_geometric_detections.py \
-            --detection_file "${rule_path}/detections_coco.json" \
-            --transformation "$base_rule_name" \
-            --original_images "$original_results" \
-            --transformed_images "$rule_path" \
+        transform_args=(
+            --detection_file "${rule_path}/detections_coco.json"
+            --transformation "$base_rule_name"
+            --original_images "$original_results"
+            --transformed_images "$rule_path"
             --output_file "${rule_path}/detections_coco_transformed.json"
+        )
+        if [ -n "$transform_params_json" ]; then
+            transform_args+=(--transform_params "$transform_params_json")
+        fi
+        python3 analysis/utils/transform_geometric_detections.py "${transform_args[@]}"
 
         DT_FILE="${rule_path}/detections_coco_transformed.json"
     else
@@ -239,12 +278,17 @@ process_rule_analysis() {
         # For geometric transformations, transform coordinates
         if is_geometric_transform "$base_rule_name"; then
             echo "Transforming coordinates for GT comparison..."
-            python3 analysis/utils/transform_geometric_detections.py \
-                --detection_file "${rule_path}/detections_for_gt.json" \
-                --transformation "$base_rule_name" \
-                --original_images "$original_results" \
-                --transformed_images "$rule_path" \
+            transform_gt_args=(
+                --detection_file "${rule_path}/detections_for_gt.json"
+                --transformation "$base_rule_name"
+                --original_images "$original_results"
+                --transformed_images "$rule_path"
                 --output_file "${rule_path}/detections_for_gt_transformed.json"
+            )
+            if [ -n "$transform_params_json" ]; then
+                transform_gt_args+=(--transform_params "$transform_params_json")
+            fi
+            python3 analysis/utils/transform_geometric_detections.py "${transform_gt_args[@]}"
 
             DT_GT_FILE="${rule_path}/detections_for_gt_transformed.json"
         else

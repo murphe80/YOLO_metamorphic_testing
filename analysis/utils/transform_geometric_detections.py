@@ -191,8 +191,49 @@ def get_default_transform_params(transformation_name, config=None):
         return {'scale_x': 1.0, 'scale_y': 1.0}
 
 
+def normalize_transform_params(transformation_name, transform_config):
+    """
+    Convert rule configuration parameters into coordinate scaling factors.
+
+    Args:
+        transformation_name: Name of transformation (e.g., 'imgStretch')
+        transform_config: Rule config dictionary, usually from brute_force_transformations.json
+
+    Returns:
+        Dictionary with scale_x and scale_y parameters
+    """
+    if not transform_config:
+        return None
+
+    if 'scale_x' in transform_config or 'scale_y' in transform_config:
+        return {
+            'scale_x': transform_config.get('scale_x', 1.0),
+            'scale_y': transform_config.get('scale_y', 1.0),
+        }
+
+    if transformation_name == 'imgStretch':
+        width_ratio = transform_config.get('width_ratio')
+        height_ratio = transform_config.get('height_ratio')
+        if width_ratio is None or height_ratio is None:
+            return None
+        return {
+            'scale_x': 1.0 / width_ratio,
+            'scale_y': 1.0 / height_ratio,
+        }
+    elif transformation_name == 'imgResolution':
+        size_ratio = transform_config.get('size_ratio')
+        if size_ratio is None:
+            return None
+        return {
+            'scale_x': 1.0 / size_ratio,
+            'scale_y': 1.0 / size_ratio,
+        }
+
+    return None
+
+
 def transform_detections_file(detection_file, original_image_dir, transformed_image_dir,
-                              transformation_name, output_file=None):
+                              transformation_name, output_file=None, transform_params=None):
     """
     Transform detections from a single file.
 
@@ -202,6 +243,7 @@ def transform_detections_file(detection_file, original_image_dir, transformed_im
         transformed_image_dir: Directory with transformed images
         transformation_name: Name of transformation (e.g., 'imgStretch')
         output_file: Optional output file path
+        transform_params: Optional rule config or explicit scale params
 
     Returns:
         Transformed detections as list
@@ -249,51 +291,59 @@ def transform_detections_file(detection_file, original_image_dir, transformed_im
     for ann in annotations:
         anns_by_image[ann['image_id']].append(ann)
     
-    # Load transformation parameters from config file
-    default_params = get_default_transform_params(transformation_name)
+    explicit_params = normalize_transform_params(transformation_name, transform_params)
+
+    # Load transformation parameters from config file if explicit params were not provided
+    default_params = explicit_params or get_default_transform_params(transformation_name)
     
-    # Find actual transformation parameters from real images
-    transform_params_cache = {}
-    
-    # Sample a few images to determine actual transformation
-    sample_count = 0
-    for txt_file in txt_files[:5]:  # Sample first 5 images
-        full_name = txt_file.stem
-        if f'_{transformation_name}' in full_name:
-            base_name = full_name.replace(f'_{transformation_name}', '')
-        else:
-            base_name = full_name
-        
-        # Find images
-        orig_img = None
-        trans_img = None
-        for ext in ['.jpg', '.png', '.jpeg']:
-            orig_path = Path(original_image_dir) / f"{base_name}{ext}"
-            if orig_path.exists():
-                orig_img = orig_path
-                break
-        
-        for ext in ['.jpg', '.png', '.jpeg']:
-            trans_path = Path(transformed_image_dir) / f"{full_name}{ext}"
-            if trans_path.exists():
-                trans_img = trans_path
-                break
-        
-        if orig_img and trans_img:
-            params = parse_transformation_params(transformation_name, orig_img, trans_img)
-            transform_params_cache[base_name] = params
-            sample_count += 1
-            if sample_count >= 3:  # Get average from 3 samples
-                break
-    
-    # Calculate average transformation parameters
-    if transform_params_cache:
-        avg_scale_x = sum(p['scale_x'] for p in transform_params_cache.values()) / len(transform_params_cache)
-        avg_scale_y = sum(p['scale_y'] for p in transform_params_cache.values()) / len(transform_params_cache)
-        default_params = {'scale_x': avg_scale_x, 'scale_y': avg_scale_y}
-        print(f"Detected transformation parameters: scale_x={avg_scale_x:.3f}, scale_y={avg_scale_y:.3f}")
+    if explicit_params:
+        print(
+            "Using provided transformation parameters: "
+            f"scale_x={default_params['scale_x']}, scale_y={default_params['scale_y']}"
+        )
     else:
-        print(f"Using default transformation parameters: scale_x={default_params['scale_x']}, scale_y={default_params['scale_y']}")
+        # Find actual transformation parameters from real images
+        transform_params_cache = {}
+
+        # Sample a few images to determine actual transformation
+        sample_count = 0
+        for txt_file in txt_files[:5]:  # Sample first 5 images
+            full_name = txt_file.stem
+            if f'_{transformation_name}' in full_name:
+                base_name = full_name.replace(f'_{transformation_name}', '')
+            else:
+                base_name = full_name
+
+            # Find images
+            orig_img = None
+            trans_img = None
+            for ext in ['.jpg', '.png', '.jpeg']:
+                orig_path = Path(original_image_dir) / f"{base_name}{ext}"
+                if orig_path.exists():
+                    orig_img = orig_path
+                    break
+
+            for ext in ['.jpg', '.png', '.jpeg']:
+                trans_path = Path(transformed_image_dir) / f"{full_name}{ext}"
+                if trans_path.exists():
+                    trans_img = trans_path
+                    break
+
+            if orig_img and trans_img:
+                params = parse_transformation_params(transformation_name, orig_img, trans_img)
+                transform_params_cache[base_name] = params
+                sample_count += 1
+                if sample_count >= 3:  # Get average from 3 samples
+                    break
+
+        # Calculate average transformation parameters
+        if transform_params_cache:
+            avg_scale_x = sum(p['scale_x'] for p in transform_params_cache.values()) / len(transform_params_cache)
+            avg_scale_y = sum(p['scale_y'] for p in transform_params_cache.values()) / len(transform_params_cache)
+            default_params = {'scale_x': avg_scale_x, 'scale_y': avg_scale_y}
+            print(f"Detected transformation parameters: scale_x={avg_scale_x:.3f}, scale_y={avg_scale_y:.3f}")
+        else:
+            print(f"Using default transformation parameters: scale_x={default_params['scale_x']}, scale_y={default_params['scale_y']}")
     
     # Transform all annotations using the determined parameters
     transformed_annotations = []
@@ -366,18 +416,31 @@ def main():
         required=True,
         help='Output path for transformed detections'
     )
+    parser.add_argument(
+        '--transform_params',
+        type=str,
+        default=None,
+        help='JSON string with transformation parameters for this variant'
+    )
     
     args = parser.parse_args()
+
+    transform_params = None
+    if args.transform_params:
+        try:
+            transform_params = json.loads(args.transform_params)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid --transform_params JSON: {e}") from e
     
     transform_detections_file(
         args.detection_file,
         args.original_images,
         args.transformed_images,
         args.transformation,
-        args.output_file
+        args.output_file,
+        transform_params=transform_params
     )
 
 
 if __name__ == "__main__":
     main()
-
