@@ -51,6 +51,19 @@
         "rgb": "rgb(255, 87, 34)",
         "hex": "#FF5722"
       }
+    },
+    {
+      "name": "yolov26_v2",
+      "display_name": "YOLOv26_V2",
+      "version": "v26_v2",
+      "weights": "models/yolov26_v2/yolo26s_retained.pt",
+      "inference_script": "models/yolov26_v2/infer_v26.py",
+      "results_dir": "results/yolov26_v2",
+      "enabled": true,
+      "color": {
+        "rgb": "rgb(255, 152, 0)",
+        "hex": "#FF9800"
+      }
     }
   ],
   "default_inference_params": {

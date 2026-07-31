@@ -10,6 +10,7 @@ COCO format: bbox: [x, y, width, height], category_id: int, score: float
 import json
 import os
 import argparse
+import time
 from pathlib import Path
 
 try:
@@ -166,12 +167,14 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
     
     # Build image mapping
     image_map = {}
+    gt_image_count = 0
     
     if gt_coco_file:
         # Load ground truth to get image information
         print(f"Loading ground truth from: {gt_coco_file}")
         with open(gt_coco_file, 'r') as f:
             coco_gt = json.load(f)
+        gt_image_count = len(coco_gt.get('images', []))
         
         # Build mapping from image filename (without extension) to image ID
         # Include both original names and potential transformed variants
@@ -208,6 +211,8 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
     coco_detections = []
     image_id_to_stem = {}
     image_id_to_info = {}
+    matched_file_count = 0
+    unmatched_file_count = 0
     txt_files = sorted(detection_path.glob("*.txt"))
     
     if not txt_files:
@@ -237,8 +242,10 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
         
         if matched_basename is None:
             print(f"Warning: No matching image for {txt_file.name}")
+            unmatched_file_count += 1
             continue
         
+        matched_file_count += 1
         image_id = image_map[matched_basename]
         if image_id not in image_id_to_stem:
             image_id_to_stem[image_id] = matched_basename
@@ -274,6 +281,11 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
                 'iscrowd': 0  # Required by COCO evaluation
             }
             coco_detections.append(coco_detection)
+
+    # region agent log
+    with open("/moredata/emma/metamorphic_v2/YOLO_metamorphic_testing/.cursor/debug-3f141a.log", "a") as _debug_file:
+        _debug_file.write(json.dumps({"sessionId": "3f141a", "runId": "pre-fix", "hypothesisId": "H2,H3,H4", "location": "analysis/utils/format_detections.py:285", "message": "Formatted detection coverage and mappings", "data": {"detectionDir": str(detection_dir), "gtCoco": str(gt_coco_file) if gt_coco_file else None, "asGroundTruth": as_ground_truth, "txtFiles": len(txt_files), "matchedFiles": matched_file_count, "unmatchedFiles": unmatched_file_count, "uniqueMappedImages": len(image_id_to_stem), "gtImages": gt_image_count, "detections": len(coco_detections), "mappedCategoryIds": sorted({d["category_id"] for d in coco_detections})}, "timestamp": int(time.time() * 1000)}) + "\n")
+    # endregion
     
     # Save to output file
     output_path = Path(output_file)

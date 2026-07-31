@@ -12,7 +12,6 @@ Matching algorithm based on pycocotools COCOeval.evaluateImg approach:
 """
 
 import json
-import numpy as np
 from pathlib import Path
 from typing import Dict, List, Tuple, Set
 from collections import defaultdict
@@ -85,6 +84,50 @@ def load_detections_by_image(coco_json_path: Path) -> Dict[int, List[Dict]]:
         by_image[det['image_id']].append(det)
 
     return dict(by_image)
+
+
+def match_detection_pairs(
+    original_dets: List[Dict],
+    transformed_dets: List[Dict],
+    iou_threshold: float = 0.5
+) -> List[Tuple[int, int]]:
+    """
+    Match original detections to transformed detections using COCO-style greedy
+    assignment.
+
+    Original detections are considered from highest to lowest confidence. Each
+    is paired with the unmatched transformed detection having the greatest IoU
+    above the threshold. Returned tuples contain indices into the input lists.
+    """
+    original_sorted = sorted(
+        enumerate(original_dets),
+        key=lambda item: item[1].get('score', 1.0),
+        reverse=True
+    )
+    matched_transformed = set()
+    pairs = []
+
+    for original_index, original_detection in original_sorted:
+        best_iou = iou_threshold
+        best_transformed_index = -1
+
+        for transformed_index, transformed_detection in enumerate(transformed_dets):
+            if transformed_index in matched_transformed:
+                continue
+
+            iou = compute_iou(
+                original_detection['bbox'],
+                transformed_detection['bbox']
+            )
+            if iou > best_iou:
+                best_iou = iou
+                best_transformed_index = transformed_index
+
+        if best_transformed_index != -1:
+            pairs.append((original_index, best_transformed_index))
+            matched_transformed.add(best_transformed_index)
+
+    return pairs
 
 
 def match_three_way_per_image(
@@ -179,23 +222,9 @@ def match_three_way_per_image(
             matched_gt_trans.add(best_gt_idx)
 
     # Step 3: Match original → transformed
-    matched_trans = set()
-    for orig_idx, orig_det in orig_sorted:
-        best_iou = iou_threshold
-        best_trans_idx = -1
-
-        for trans_idx, trans_det in enumerate(transformed_dets):
-            if trans_idx in matched_trans:
-                continue
-
-            iou = compute_iou(orig_det['bbox'], trans_det['bbox'])
-            if iou > best_iou:
-                best_iou = iou
-                best_trans_idx = trans_idx
-
-        if best_trans_idx != -1:
-            orig_to_trans[orig_idx] = best_trans_idx
-            matched_trans.add(best_trans_idx)
+    orig_to_trans.update(
+        match_detection_pairs(original_dets, transformed_dets, iou_threshold)
+    )
 
     # Step 4: Assign to Venn regions based on matches
     regions = {
@@ -344,8 +373,8 @@ def compute_retention_metrics(regions: Dict[str, float]) -> Dict[str, float]:
     else:
         metrics['tp_retention_rate'] = 0.0
 
-    # False positive consistency: (orig ∩ trans only) / (all matched orig-trans pairs)
-    all_orig_trans = regions['orig_trans_gt'] + regions['orig_trans']
+    # False positive consistency: (orig ∩ trans only) / (all false positives)
+    all_orig_trans = regions['orig_only'] + regions['trans_only'] +regions['orig_trans']
     if all_orig_trans > 0:
         metrics['fp_consistency_rate'] = regions['orig_trans'] / all_orig_trans
     else:

@@ -6,9 +6,15 @@
 # Optionally compares against ground truth if available.
 #
 # Usage:
-#   bash analysis/scripts/run_all_analysis_matias_meta.sh [--dataset fsoco_sample|test]
+#   bash analysis/scripts/run_all_analysis_matias_meta.sh [OPTIONS]
 #
-# Outputs: analysis/results/<model>/<rule>/<comparison_type>/stats.json
+# Options:
+#   --dataset <name>           Dataset whose annotations are evaluated.
+#   --model <name>             Analyze only the specified enabled model.
+#   --detections-base <path>   Directory containing per-model detections
+#                              (default: results).
+#
+# Outputs: analysis/results/<dataset>/<model>/<rule>/<comparison_type>/stats.json
 # ============================================
 
 # Change to repo root if not already there
@@ -27,21 +33,52 @@ source utils/model_registry.sh
 # ============================================
 DATASET="test"  # Default to sample dataset
 RULE_FILTER=""
+MODEL_FILTER=""
+DETECTIONS_BASE="results"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --dataset) DATASET="$2"; shift 2 ;;
         --dataset=*) DATASET="${1#*=}"; shift ;;
+        --model)
+            [ $# -ge 2 ] && [ -n "$2" ] || { echo "--model requires a model name."; exit 1; }
+            MODEL_FILTER="$2"
+            shift 2
+            ;;
+        --model=*)
+            MODEL_FILTER="${1#*=}"
+            [ -n "$MODEL_FILTER" ] || { echo "--model requires a model name."; exit 1; }
+            shift
+            ;;
         --rules) RULE_FILTER="$2"; shift 2 ;;
         --rules=*) RULE_FILTER="${1#*=}"; shift ;;
+        --detections-base) DETECTIONS_BASE="$2"; shift 2 ;;
+        --detections-base=*) DETECTIONS_BASE="${1#*=}"; shift ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
 
+ENABLED_MODELS=$(get_model_names)
+if [ -n "$MODEL_FILTER" ]; then
+    model_found=false
+    for model in $ENABLED_MODELS; do
+        if [ "$model" = "$MODEL_FILTER" ]; then
+            model_found=true
+            break
+        fi
+    done
+
+    if [ "$model_found" = false ]; then
+        echo "Unknown or disabled model: $MODEL_FILTER"
+        echo "Enabled models: $ENABLED_MODELS"
+        exit 1
+    fi
+fi
+
 # ============================================
 # Configuration
 # ============================================
-RESULTS_BASE="analysis/results"
+RESULTS_BASE="analysis/results/$DATASET"
 BRUTE_FORCE_CONFIG="config/brute_force_transformations.json"
 BASE_TRANSFORMATIONS=(
     imgStretch
@@ -365,9 +402,13 @@ echo "======================================"
 echo "Metamorphic Testing Analysis"
 echo "======================================"
 echo "Dataset: $DATASET"
+if [ -n "$MODEL_FILTER" ]; then
+    echo "Model: $MODEL_FILTER"
+fi
 if [ -n "$RULE_FILTER" ]; then
     echo "Rules: $RULE_FILTER"
 fi
+echo "Detections: $DETECTIONS_BASE/<model>/"
 echo "Comparing original vs transformed detections"
 echo ""
 
@@ -380,8 +421,14 @@ else
 fi
 echo ""
 
-# Run analysis for all enabled models
-for model in $(get_model_names); do
-    results_dir=$(get_model_field "$model" "results_dir")
+# Run analysis for the selected model, or all enabled models by default.
+if [ -n "$MODEL_FILTER" ]; then
+    MODELS_TO_ANALYZE="$MODEL_FILTER"
+else
+    MODELS_TO_ANALYZE="$ENABLED_MODELS"
+fi
+
+for model in $MODELS_TO_ANALYZE; do
+    results_dir="$DETECTIONS_BASE/$model"
     run_model_analysis "$results_dir"
 done

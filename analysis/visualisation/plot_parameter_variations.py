@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-Plot AP vs parameter setting for each metamorphic test rule.
+Plot AP and AR vs parameter setting for each metamorphic test rule.
 
-Generates one line chart per transformation rule, with one line per YOLO model.
-Parameter values come from config/brute_force_transformations.json; AP values are
-read from analysis/results/<model>/<variant_id>/<comparison>/stats.json.
+Generates AP and AR line charts per transformation rule, with one line per YOLO
+model. Parameter values come from config/brute_force_transformations.json; metric
+values are read from
+analysis/results/<dataset>/<model>/<variant_id>/<comparison>/stats.json. AR plots
+use the COCO AR100 metric and are saved under the ar_plots output subdirectory.
 
 Usage:
     python3 analysis/visualisation/plot_parameter_variations.py
     python3 analysis/visualisation/plot_parameter_variations.py --comparison transformed_vs_gt
     python3 analysis/visualisation/plot_parameter_variations.py --rules imgStretch imgResolution
+    python3 analysis/visualisation/plot_parameter_variations.py --dataset test
 """
 
 import argparse
@@ -28,8 +31,17 @@ from utils.model_registry import get_model_by_name, get_model_names
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "brute_force_transformations.json"
-DEFAULT_RESULTS = PROJECT_ROOT / "analysis" / "results"
-DEFAULT_OUTPUT = PROJECT_ROOT / "analysis" / "results" / "visualisation" / "parameter_variations"
+RESULTS_ROOT = PROJECT_ROOT / "analysis" / "results"
+DEFAULT_DATASET = "val"
+AR_METRIC = "AR"
+
+
+def dataset_results_dir(dataset: str) -> Path:
+    return RESULTS_ROOT / dataset
+
+
+def dataset_output_dir(dataset: str) -> Path:
+    return RESULTS_ROOT / dataset / "parameter_variations"
 
 MARKERS = ["o", "s", "^", "D", "v", "P", "X", "*"]
 
@@ -73,6 +85,9 @@ def load_metric(
         stats = json.load(f)
 
     value = stats.get(metric)
+    if value is None and metric == AR_METRIC:
+        # COCO reports overall average recall at maxDets=100 as AR100.
+        value = stats.get("AR100")
     if value is None:
         return None
     return float(value)
@@ -213,7 +228,7 @@ def discover_models(results_dir: Path, requested_models: Optional[List[str]] = N
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Plot AP vs parameter setting for metamorphic test rules"
+        description="Plot AP and AR vs parameter setting for metamorphic test rules"
     )
     parser.add_argument(
         "--config",
@@ -222,16 +237,23 @@ def main():
         help="Path to brute_force_transformations.json",
     )
     parser.add_argument(
+        "--dataset",
+        type=str,
+        default=DEFAULT_DATASET,
+        choices=["test", "val", "train_samples"],
+        help="Dataset split to plot (default: val)",
+    )
+    parser.add_argument(
         "--results_dir",
         type=Path,
-        default=DEFAULT_RESULTS,
-        help="Directory containing analysis results",
+        default=None,
+        help="Directory containing analysis results (default: analysis/results/<dataset>)",
     )
     parser.add_argument(
         "--output_dir",
         type=Path,
-        default=DEFAULT_OUTPUT,
-        help="Directory to save generated plots",
+        default=None,
+        help="Directory to save generated plots (default: analysis/results/<dataset>/parameter_variations)",
     )
     parser.add_argument(
         "--comparison",
@@ -258,16 +280,19 @@ def main():
     )
     args = parser.parse_args()
 
+    results_dir = args.results_dir or dataset_results_dir(args.dataset)
+    output_dir = args.output_dir or dataset_output_dir(args.dataset)
+
     if not args.config.exists():
         print(f"Config not found: {args.config}")
         sys.exit(1)
 
-    if not args.results_dir.exists():
-        print(f"Results directory not found: {args.results_dir}")
+    if not results_dir.exists():
+        print(f"Results directory not found: {results_dir}")
         sys.exit(1)
 
     transformations = load_transformations_config(args.config)
-    models = discover_models(args.results_dir, args.models)
+    models = discover_models(results_dir, args.models)
     if not models:
         print("No models found in results directory.")
         sys.exit(1)
@@ -275,10 +300,15 @@ def main():
     rules = args.rules if args.rules else sorted(transformations.keys())
     generated = 0
     skipped = 0
+    ar_generated = 0
+    ar_skipped = 0
+    ar_output_dir = output_dir / "ar_plots"
 
+    print(f"Dataset: {args.dataset}")
     print(f"Models: {', '.join(models)}")
     print(f"Comparison: {args.comparison}")
-    print(f"Output: {args.output_dir}\n")
+    print(f"Output: {output_dir}")
+    print(f"AR output: {ar_output_dir}\n")
 
     for rule in rules:
         if rule not in transformations:
@@ -291,7 +321,7 @@ def main():
             rule,
             variants,
             models,
-            args.results_dir,
+            results_dir,
             args.comparison,
             args.metric,
         )
@@ -299,9 +329,10 @@ def main():
         if param_name is None:
             print(f"  Skip {rule}: no varying parameter across variants")
             skipped += 1
+            ar_skipped += 1
             continue
 
-        output_path = args.output_dir / f"{rule}_{args.comparison}.png"
+        output_path = output_dir / f"{rule}_{args.comparison}.png"
         if plot_rule(rule, param_name, series, args.comparison, args.metric, output_path):
             print(f"  Saved: {output_path}")
             generated += 1
@@ -309,8 +340,34 @@ def main():
             print(f"  Skip {rule}: no {args.metric} data found")
             skipped += 1
 
-    print(f"\nDone: {generated} plot(s) generated, {skipped} skipped.")
-    if generated == 0:
+        _, ar_series, _ = collect_series(
+            rule,
+            variants,
+            models,
+            results_dir,
+            args.comparison,
+            AR_METRIC,
+        )
+        ar_output_path = ar_output_dir / f"{rule}_{args.comparison}.png"
+        if plot_rule(
+            rule,
+            param_name,
+            ar_series,
+            args.comparison,
+            AR_METRIC,
+            ar_output_path,
+        ):
+            print(f"  Saved: {ar_output_path}")
+            ar_generated += 1
+        else:
+            print(f"  Skip {rule}: no {AR_METRIC} data found")
+            ar_skipped += 1
+
+    print(
+        f"\nDone: {generated} {args.metric} plot(s) generated, {skipped} skipped; "
+        f"{ar_generated} AR plot(s) generated, {ar_skipped} skipped."
+    )
+    if generated + ar_generated == 0:
         sys.exit(1)
 
 

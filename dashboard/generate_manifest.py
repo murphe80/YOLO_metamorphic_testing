@@ -7,7 +7,7 @@ This allows the dashboard to dynamically discover available datasets, models, an
 import json
 from pathlib import Path
 
-SKIP_DIRS = {'config_tuning', 'venn_diagrams', 'visualisation', 'visualization', 'visualizations'}
+SKIP_DIRS = {'config_tuning', 'venn_diagrams', 'visualisation', 'visualization', 'visualizations', 'archive'}
 
 
 def scan_model(model_dir: Path) -> set:

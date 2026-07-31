@@ -14,6 +14,15 @@ CLASS_NAMES = {
     3: "blue_cone",
 }
 
+# Generic category names written by format_detections.py follow the FSOCO
+# evaluation order, which is different from the model's class-id order.
+GENERIC_CATEGORY_NAMES = {
+    1: "yellow_cone",
+    2: "blue_cone",
+    3: "orange_cone",
+    4: "big_orange_cone",
+}
+
 # Transformation name -> (source_class_id, target_class_id) or list of tuples for bidirectional
 # e.g. yellow_to_blue: cones that were yellow (0) are now blue (3) in the transformed image
 # e.g. swap_sides: yellow (0) ↔ blue (3) - bidirectional swap
@@ -38,9 +47,9 @@ def _build_name_to_id(categories):
         if isinstance(name, str) and name.startswith("category_"):
             suffix = name[len("category_") :]
             if suffix.isdigit():
-                idx = int(suffix)
-                if 1 <= idx <= len(CLASS_NAMES):
-                    name_to_id[CLASS_NAMES[idx - 1]] = cid
+                semantic_name = GENERIC_CATEGORY_NAMES.get(int(suffix))
+                if semantic_name:
+                    name_to_id[semantic_name] = cid
     return name_to_id
 
 
@@ -127,7 +136,11 @@ def update_ground_truth_cone_color(ground_truth_file, transformation, output_pat
                 and sample.startswith("category_")
                 and sample[len("category_") :].isdigit()
             ):
-                target_category_id = target_class + 1
+                generic_ids = {
+                    name: category_id
+                    for category_id, name in GENERIC_CATEGORY_NAMES.items()
+                }
+                target_category_id = generic_ids[target_name]
                 coco["categories"].append(
                     {
                         "id": target_category_id,

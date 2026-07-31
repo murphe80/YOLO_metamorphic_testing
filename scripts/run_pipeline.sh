@@ -12,8 +12,10 @@
 #   bash scripts/run_pipeline.sh [OPTIONS]
 #
 # Options:
-#   --dataset <name>       Dataset to use (default: fsoco_sample)
-#                          Options: fsoco_sample, test, or custom path
+#   --dataset <name[,name...]>  Dataset(s) to use (default: test). May be
+#                          repeated or supplied as a comma-separated list.
+#                          Examples: test, train_samples, or
+#                          --dataset test --dataset train_samples.
 #   --model <v5|v8|v12|all> Which model(s) to run (default: all)
 #   --config <path>        Transformation config file
 #                          (default: config/transformations.json)
@@ -26,20 +28,36 @@
 # Examples:
 #   bash scripts/run_pipeline.sh
 #   bash scripts/run_pipeline.sh --dataset test --model v8
+#   bash scripts/run_pipeline.sh --dataset train_samples
+#   bash scripts/run_pipeline.sh --dataset test,train_samples
 #   bash scripts/run_pipeline.sh --dataset fsoco_sample --skip-transform
 #
 # Outputs are written to:
 #   data/transformed_images/<dataset>/<rule>/
-#   results/<model>/original/
-#   results/<model>/<rule>/
-#   analysis/results/<model>/<rule>/
+#   results/<dataset>/<model>/original/
+#   results/<dataset>/<model>/<rule>/
+#   analysis/results/<dataset>/<model>/<rule>/
 # =============================================================================
 
 set -euo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
+# All project scripts target Python 3.  Some environments do not provide a
+# `python` alias, which previously made Stage 2 stop at the first model with
+# only a shell error on stderr.
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    echo "Error: Python interpreter '$PYTHON_BIN' was not found. Set PYTHON_BIN to a Python 3 executable."
+    exit 1
+fi
+
+# Keep Ultralytics' settings/cache inside the project.  This also supports
+# read-only home directories used by CI and containerized runs.
+export YOLO_CONFIG_DIR="${YOLO_CONFIG_DIR:-$PWD/.ultralytics}"
+mkdir -p "$YOLO_CONFIG_DIR"
+
 # ─── Parse arguments ──────────────────────────────────────────────────────────
-DATASET="test"  # Default to sample dataset
+DATASETS=()
 MODEL_ARG="all"
 CONFIG_FILE="config/brute_force_transformations.json"
 VIZ_SAMPLES=5
@@ -47,8 +65,16 @@ SKIP_TRANSFORM=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --dataset) DATASET="$2"; shift 2 ;;
-        --dataset=*) DATASET="${1#*=}"; shift ;;
+        --dataset)
+            IFS=',' read -r -a selected_datasets <<< "$2"
+            DATASETS+=("${selected_datasets[@]}")
+            shift 2
+            ;;
+        --dataset=*)
+            IFS=',' read -r -a selected_datasets <<< "${1#*=}"
+            DATASETS+=("${selected_datasets[@]}")
+            shift
+            ;;
         --model) MODEL_ARG="$2"; shift 2 ;;
         --model=*) MODEL_ARG="${1#*=}"; shift ;;
         --config) CONFIG_FILE="$2"; shift 2 ;;
@@ -60,6 +86,38 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [ "${#DATASETS[@]}" -eq 0 ]; then
+    DATASETS=("test")
+fi
+
+# Run each requested dataset independently so transformations, detections, and
+# analyses cannot overwrite one another. Re-invoking this script keeps the
+# existing single-dataset pipeline unchanged.
+if [ "${#DATASETS[@]}" -gt 1 ]; then
+    for dataset in "${DATASETS[@]}"; do
+        if [ -z "$dataset" ]; then
+            echo "Error: Dataset names cannot be empty"
+            exit 1
+        fi
+        args=(--dataset "$dataset" --model "$MODEL_ARG" --config "$CONFIG_FILE" --viz-samples "$VIZ_SAMPLES")
+        if [ "$SKIP_TRANSFORM" = true ]; then
+            args+=(--skip-transform)
+        fi
+        bash "$0" "${args[@]}"
+    done
+    exit 0
+fi
+
+DATASET="${DATASETS[0]}"
+if [ -z "$DATASET" ]; then
+    echo "Error: Dataset names cannot be empty"
+    exit 1
+fi
+if [[ ! "$DATASET" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+    echo "Error: Dataset names may contain only letters, numbers, '.', '_', and '-': $DATASET"
+    exit 1
+fi
+
 # ─── Configure paths based on dataset ─────────────────────────────────────────
 if [ "$DATASET" = "fsoco_sample" ]; then
     IMAGES_DIR="data/base_images/fsoco_sample/images"
@@ -70,6 +128,9 @@ elif [ "$DATASET" = "test" ]; then
 elif [ "$DATASET" = "val" ]; then
     IMAGES_DIR="data/base_images/val/images"
     TRANSFORMED_DIR="data/transformed_images/fsoco_val"
+elif [ "$DATASET" = "train_samples" ]; then
+    IMAGES_DIR="data/base_images/train_samples/images"
+    TRANSFORMED_DIR="data/transformed_images/train_samples"
 else
     IMAGES_DIR="data/base_images/$DATASET/images"
     TRANSFORMED_DIR="data/transformed_images/$DATASET"
@@ -124,10 +185,24 @@ while IFS= read -r line; do
     RULE_CONFIGS+=("$config_json")
 done < <(python3 -c "$PYTHON_PARSE_CONFIG" "$CONFIG_FILE" "${RULE_NAMES[@]}")
 
+for output_name in "${RUN_OUTPUT_NAMES[@]}"; do
+    if [[ ! "$output_name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+        echo "Error: Rule output names may contain only letters, numbers, '.', '_', and '-': $output_name"
+        exit 1
+    fi
+done
+
 # ─── Load model registry ──────────────────────────────────────────────────────
 source utils/model_registry.sh
 
 # ─── Helper: run inference for one model on one image directory ───────────────
+is_supported_image() {
+    case "$1" in
+        *.png|*.PNG|*.jpg|*.JPG|*.jpeg|*.JPEG) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 run_inference_dir() {
     local script="$1"
     local weights="$2"
@@ -136,10 +211,29 @@ run_inference_dir() {
 
     for image in "$image_dir"/*; do
         [ -f "$image" ] || continue
-        python "$script" \
+        is_supported_image "$image" || continue
+        "$PYTHON_BIN" "$script" \
             --weights "$weights" \
             --image "$image" \
             --output-subdir "$output_subdir"
+    done
+}
+
+clear_yolov26_v2_run() {
+    local results_dir="$1"
+    local expected_results_dir="results/$DATASET/yolov26_v2"
+    local analysis_dir="analysis/results/$DATASET/yolov26_v2"
+    local output_name
+
+    if [ "$results_dir" != "$expected_results_dir" ]; then
+        echo "Error: Refusing to clear unexpected YOLOv26_V2 results directory: $results_dir"
+        return 1
+    fi
+
+    echo "Clearing stale YOLOv26_V2 outputs for this pipeline run..."
+    rm -rf -- "$results_dir/original" "$analysis_dir/original_vs_gt"
+    for output_name in "${RUN_OUTPUT_NAMES[@]}"; do
+        rm -rf -- "$results_dir/$output_name" "$analysis_dir/$output_name"
     done
 }
 
@@ -228,7 +322,8 @@ if [ "$SKIP_TRANSFORM" = false ]; then
         img_count=0
         for image in "$IMAGES_DIR"/*; do
             [ -f "$image" ] || continue
-            python utils/matias_metamorphic.py \
+            is_supported_image "$image" || continue
+            "$PYTHON_BIN" utils/matias_metamorphic.py \
                 --rule "$rule" \
                 --config "$config" \
                 --base_image "$image" \
@@ -260,18 +355,33 @@ run_model() {
     local weights=$(get_model_field "$model_name" "weights")
     local display_name=$(get_model_field "$model_name" "display_name")
     local model_version=$(get_model_field "$model_name" "version")
-    local results_dir=$(get_model_field "$model_name" "results_dir")
+    local results_dir="$RESULTS_BASE/$model_name"
+
+    if [ -z "$script" ] || [ ! -s "$script" ]; then
+        echo "Error: Inference script for $display_name is missing or empty: ${script:-<unset>}"
+        return 1
+    fi
+    if [ -z "$weights" ] || [ ! -f "$weights" ]; then
+        echo "Error: Weights for $display_name were not found: ${weights:-<unset>}"
+        return 1
+    fi
+
+    if [ "$model_name" = "yolov26_v2" ]; then
+        clear_yolov26_v2_run "$results_dir"
+    fi
 
     echo ""
     echo "── $display_name — original images ──"
-    run_inference_dir "$script" "$weights" "$IMAGES_DIR" "original"
+    # Inference scripts store outputs below results/<model>/ by default. The
+    # relative subdirectory below resolves to results/<dataset>/<model>/.
+    run_inference_dir "$script" "$weights" "$IMAGES_DIR" "../$DATASET/$model_name/original"
     visualize_detection_samples "$model_version" "$IMAGES_DIR" "$results_dir" "original"
 
     for rule_name in "${RUN_OUTPUT_NAMES[@]}"; do
         rule_dir="$TRANSFORMED_DIR/$rule_name"
         [ -d "$rule_dir" ] || continue
         echo "── $display_name — $rule_name ──"
-        run_inference_dir "$script" "$weights" "$rule_dir" "$rule_name"
+        run_inference_dir "$script" "$weights" "$rule_dir" "../$DATASET/$model_name/$rule_name"
         visualize_detection_samples "$model_version" "$rule_dir" "$results_dir" "$rule_name"
     done
 }
@@ -306,7 +416,10 @@ echo "╚═══════════════════════�
 echo ""
 
 RULE_FILTER=$(IFS=,; echo "${RUN_OUTPUT_NAMES[*]}")
-bash analysis/scripts/run_all_analysis_matias_meta.sh --dataset "$DATASET" --rules "$RULE_FILTER"
+bash analysis/scripts/run_all_analysis_matias_meta.sh \
+    --dataset "$DATASET" \
+    --detections-base "$RESULTS_BASE" \
+    --rules "$RULE_FILTER"
 
 echo ""
 echo "╔══════════════════════════════════════════════╗"
@@ -316,4 +429,5 @@ echo ""
 echo "Dataset: $DATASET"
 echo "Config: $CONFIG_FILE"
 echo "Visualization samples per model/configuration: $VIZ_SAMPLES"
-echo "Analysis results: analysis/results/<model>/<rule>/original_vs_transformed/stats.json"
+echo "Detections: results/$DATASET/<model>/<rule>/"
+echo "Analysis results: analysis/results/$DATASET/<model>/<rule>/original_vs_transformed/stats.json"

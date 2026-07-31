@@ -268,6 +268,12 @@
         </header>
 
         <div class="controls">
+            <div class="control-group" id="datasetControlGroup" style="display: none;">
+                <span class="control-label">Dataset</span>
+                <select id="datasetSelector">
+                    <option value="">Loading datasets...</option>
+                </select>
+            </div>
             <div class="control-group">
                 <span class="control-label">Models</span>
                 <div class="checkbox-group" id="modelCheckboxes"></div>
@@ -301,11 +307,15 @@
 
     <script>
         // Configuration
-        const RESULTS_BASE_PATH = '/analysis/results';
+        const RESULTS_ROOT = '/analysis/results';
         const TRANSFORMATIONS_PATH = '/config/brute_force_transformations.json';
         const METRICS = ['AP', 'AP50', 'AP75', 'APs', 'APm', 'APl', 'AR1', 'AR10', 'AR100', 'ARs', 'ARm', 'ARl'];
 
         // State
+        let manifest = null;
+        let availableDatasets = [];
+        let selectedDataset = '';
+        let resultsBasePath = RESULTS_ROOT;
         let availableModels = [];
         let availableTests = [];
         let testsByRule = {};
@@ -316,11 +326,29 @@
         let selectedComparison = 'original_vs_transformed';
         let cachedData = {};
 
+        function applyDatasetSelection(dataset) {
+            selectedDataset = dataset;
+            resultsBasePath = dataset ? `${RESULTS_ROOT}/${dataset}` : RESULTS_ROOT;
+            cachedData = {};
+
+            if (manifest?.datasets?.[dataset]) {
+                availableModels = [...manifest.datasets[dataset].models];
+                availableTests = [...manifest.datasets[dataset].tests];
+            } else if (manifest) {
+                availableModels = [...(manifest.models || [])];
+                availableTests = [...(manifest.tests || [])];
+            } else {
+                availableModels = [];
+                availableTests = [];
+            }
+        }
+
         // Initialize dashboard
         async function init() {
             await discoverModelsAndTests();
             await loadTransformationsConfig();
             buildTestsByRule();
+            renderDatasetSelector();
             renderModelCheckboxes();
             renderRuleSelector();
             renderVariantSelector();
@@ -386,84 +414,113 @@
             }
         }
 
-        // Discover available models and tests from directory structure
+        // Discover available models and tests from manifest or directory structure
         async function discoverModelsAndTests() {
             try {
-                // In a real implementation, this would require a backend API
-                // For now, we'll use a manifest approach or fallback to hardcoded discovery
+                const manifestResponse = await fetch('/dashboard/manifest.json');
+                if (manifestResponse.ok) {
+                    manifest = await manifestResponse.json();
 
-                // Attempt to load from a manifest file if it exists
-                try {
-                    const manifestResponse = await fetch('/dashboard/manifest.json');
-                    if (manifestResponse.ok) {
-                        const manifest = await manifestResponse.json();
-                        availableModels = [...(manifest.models || [])];
-                        availableTests = [...(manifest.tests || [])];
-
-                        if ((!availableModels.length || !availableTests.length) && manifest.datasets) {
-                            const modelSet = new Set(availableModels);
-                            const testSet = new Set(availableTests);
-
-                            Object.values(manifest.datasets).forEach(dataset => {
-                                (dataset.models || []).forEach(model => modelSet.add(model));
-                                (dataset.tests || []).forEach(test => testSet.add(test));
-                            });
-
-                            availableModels = [...modelSet].sort();
-                            availableTests = [...testSet].sort();
-                        }
-
-                        // Continue into fallback probes as a compatibility supplement for stale manifests.
+                    if (manifest.datasets && Object.keys(manifest.datasets).length > 0) {
+                        availableDatasets = Object.keys(manifest.datasets).sort();
+                        applyDatasetSelection(availableDatasets[0]);
+                        return;
                     }
-                } catch (e) {
-                    // Manifest doesn't exist, fall through to discovery
+
+                    applyDatasetSelection('');
+                    return;
                 }
-
-                // Fallback: discover by trying to load known legacy and brute-force structures
-                const knownModels = ['yolov5', 'yolov8', 'yolov12', 'yolov26'];
-                const baseTests = [
-                    'imgGrayscale',
-                    'imgMotionBlur',
-                    'imgStretch',
-                    'imgResolution',
-                    'imgColorWheel',
-                    'imgDarkBright'
-                ];
-                const bruteForceTests = baseTests.flatMap(test =>
-                    Array.from({ length: 10 }, (_, index) => `${test}_${index}`)
-                );
-                const labelTests = [
-                    'labelRemove_avg',
-                    'labelRemove_black',
-                    'labelRemove_white'
-                ];
-                const knownTests = [...baseTests, ...bruteForceTests, ...labelTests];
-
-                // Test which models actually have data
-                for (const model of knownModels) {
-                    for (const test of knownTests) {
-                        try {
-                            const response = await fetch(`${RESULTS_BASE_PATH}/${model}/${test}/original_vs_transformed/stats.json`);
-                            if (response.ok) {
-                                if (!availableModels.includes(model)) {
-                                    availableModels.push(model);
-                                }
-                                if (!availableTests.includes(test)) {
-                                    availableTests.push(test);
-                                }
-                            }
-                        } catch (e) {
-                            // File doesn't exist, continue
-                        }
-                    }
-                }
-
-                availableModels.sort();
-                availableTests.sort();
-
-            } catch (error) {
-                console.error('Error discovering models and tests:', error);
+            } catch (e) {
+                // Manifest doesn't exist, fall through to discovery
             }
+
+            // Fallback: discover by probing known legacy and brute-force structures
+            const knownModels = ['yolov5', 'yolov8', 'yolov12', 'yolov26'];
+            const baseTests = [
+                'imgGrayscale',
+                'imgMotionBlur',
+                'imgStretch',
+                'imgResolution',
+                'imgColorWheel',
+                'imgDarkBright'
+            ];
+            const bruteForceTests = baseTests.flatMap(test =>
+                Array.from({ length: 10 }, (_, index) => `${test}_${index}`)
+            );
+            const labelTests = [
+                'labelRemove_avg',
+                'labelRemove_black',
+                'labelRemove_white'
+            ];
+            const knownTests = [...baseTests, ...bruteForceTests, ...labelTests];
+
+            for (const model of knownModels) {
+                for (const test of knownTests) {
+                    try {
+                        const response = await fetch(`${resultsBasePath}/${model}/${test}/original_vs_transformed/stats.json`);
+                        if (response.ok) {
+                            if (!availableModels.includes(model)) {
+                                availableModels.push(model);
+                            }
+                            if (!availableTests.includes(test)) {
+                                availableTests.push(test);
+                            }
+                        }
+                    } catch (e) {
+                        // File doesn't exist, continue
+                    }
+                }
+            }
+
+            availableModels.sort();
+            availableTests.sort();
+        }
+
+        function renderDatasetSelector() {
+            const controlGroup = document.getElementById('datasetControlGroup');
+            const selector = document.getElementById('datasetSelector');
+
+            if (availableDatasets.length === 0) {
+                controlGroup.style.display = 'none';
+                return;
+            }
+
+            controlGroup.style.display = '';
+            selector.innerHTML = availableDatasets.map(dataset =>
+                `<option value="${dataset}">${dataset}</option>`
+            ).join('');
+            selector.value = selectedDataset;
+            selector.onchange = handleDatasetChange;
+        }
+
+        async function handleDatasetChange(event) {
+            applyDatasetSelection(event.target.value);
+            buildTestsByRule();
+            renderModelCheckboxes();
+            renderRuleSelector();
+            renderVariantSelector();
+
+            selectedModels = [...availableModels];
+            availableModels.forEach(model => {
+                document.getElementById(`model-${model}`).checked = true;
+            });
+
+            const rules = Object.keys(testsByRule).sort();
+            if (rules.length > 0) {
+                selectedRule = rules[0];
+                document.getElementById('ruleSelector').value = selectedRule;
+                renderVariantSelector();
+                const variants = testsByRule[selectedRule];
+                selectedTest = variants.length > 0 ? variants[0] : '';
+                if (selectedTest) {
+                    document.getElementById('variantSelector').value = selectedTest;
+                }
+            } else {
+                selectedRule = '';
+                selectedTest = '';
+            }
+
+            await updateResults();
         }
 
         // Render model checkboxes
@@ -599,9 +656,9 @@
                 // Handle original_vs_gt specially as it's at model level, not test level
                 let url;
                 if (comparison === 'original_vs_gt') {
-                    url = `${RESULTS_BASE_PATH}/${model}/original_vs_gt/stats.json`;
+                    url = `${resultsBasePath}/${model}/original_vs_gt/stats.json`;
                 } else {
-                    url = `${RESULTS_BASE_PATH}/${model}/${test}/${comparison}/stats.json`;
+                    url = `${resultsBasePath}/${model}/${test}/${comparison}/stats.json`;
                 }
 
                 const response = await fetch(url);

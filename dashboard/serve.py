@@ -10,7 +10,7 @@ import webbrowser
 from pathlib import Path
 import os
 
-PORT = 8081
+PORT = 8084
 
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):

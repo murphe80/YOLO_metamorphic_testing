@@ -1,0 +1,21 @@
+{
+  "settings_version": "0.0.6",
+  "datasets_dir": "/moredata/emma/metamorphic_v2/YOLO_metamorphic_testing/datasets",
+  "weights_dir": "weights",
+  "runs_dir": "runs",
+  "uuid": "a2db127f1e3012ac2197d5486e887cdf439d6dcfb4e35b3664c45753189a3b33",
+  "sync": true,
+  "api_key": "",
+  "openai_api_key": "",
+  "clearml": true,
+  "comet": true,
+  "dvc": true,
+  "hub": true,
+  "mlflow": true,
+  "neptune": true,
+  "raytune": true,
+  "tensorboard": false,
+  "wandb": false,
+  "vscode_msg": true,
+  "openvino_msg": true
+}

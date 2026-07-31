@@ -1,0 +1,277 @@
+{
+  "method": {
+    "test": "image-clustered permutation Pearson chi-square homogeneity",
+    "outcomes": [
+      "retained",
+      "lost",
+      "gained"
+    ],
+    "matching": "confidence-ordered greedy one-to-one IoU",
+    "iou_rule": "strictly greater than 0.5",
+    "permutations": 9999,
+    "seed": 20260729,
+    "alpha": 0.05,
+    "multiple_testing": "Benjamini-Hochberg",
+    "correction_scope": "model"
+  },
+  "reference_dataset": "test",
+  "target_datasets": [
+    "val",
+    "train_samples"
+  ],
+  "models": [
+    "yolov12",
+    "yolov26",
+    "yolov5",
+    "yolov8"
+  ],
+  "transformations": [
+    "imgColorWheel",
+    "imgDarkBright",
+    "imgGrayscale",
+    "imgMotionBlur",
+    "imgResolution",
+    "imgStretch"
+  ],
+  "settings_per_model": 51,
+  "total_comparisons": 408,
+  "by_target": [
+    {
+      "target_dataset": "train_samples",
+      "comparisons": 204,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 204,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.007198817716841438,
+      "max_total_variation": 0.03000388350978798
+    },
+    {
+      "target_dataset": "val",
+      "comparisons": 204,
+      "significant_differences": 1,
+      "no_significant_difference_detected": 203,
+      "significant_proportion": 0.004901960784313725,
+      "median_total_variation": 0.007662540091199725,
+      "max_total_variation": 0.03509612210751557
+    }
+  ],
+  "by_target_and_model": [
+    {
+      "target_dataset": "train_samples",
+      "model": "yolov12",
+      "comparisons": 51,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 51,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.006388165879450201,
+      "max_total_variation": 0.023749031695212895
+    },
+    {
+      "target_dataset": "train_samples",
+      "model": "yolov26",
+      "comparisons": 51,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 51,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.006185830666608334,
+      "max_total_variation": 0.027960217235108636
+    },
+    {
+      "target_dataset": "train_samples",
+      "model": "yolov5",
+      "comparisons": 51,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 51,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.008738963435638722,
+      "max_total_variation": 0.02424541010589356
+    },
+    {
+      "target_dataset": "train_samples",
+      "model": "yolov8",
+      "comparisons": 51,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 51,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.00701642399961663,
+      "max_total_variation": 0.03000388350978798
+    },
+    {
+      "target_dataset": "val",
+      "model": "yolov12",
+      "comparisons": 51,
+      "significant_differences": 1,
+      "no_significant_difference_detected": 50,
+      "significant_proportion": 0.0196078431372549,
+      "median_total_variation": 0.008433248033832268,
+      "max_total_variation": 0.02817843912528628
+    },
+    {
+      "target_dataset": "val",
+      "model": "yolov26",
+      "comparisons": 51,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 51,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.007898365838493602,
+      "max_total_variation": 0.02970532472123138
+    },
+    {
+      "target_dataset": "val",
+      "model": "yolov5",
+      "comparisons": 51,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 51,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.007723527016330151,
+      "max_total_variation": 0.03509612210751557
+    },
+    {
+      "target_dataset": "val",
+      "model": "yolov8",
+      "comparisons": 51,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 51,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.006504674765175439,
+      "max_total_variation": 0.030018899443440217
+    }
+  ],
+  "by_target_and_transformation": [
+    {
+      "target_dataset": "train_samples",
+      "transformation": "imgColorWheel",
+      "comparisons": 40,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 40,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.00587659074235125,
+      "max_total_variation": 0.028158024605680676
+    },
+    {
+      "target_dataset": "train_samples",
+      "transformation": "imgDarkBright",
+      "comparisons": 40,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 40,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.008536129573133606,
+      "max_total_variation": 0.03000388350978798
+    },
+    {
+      "target_dataset": "train_samples",
+      "transformation": "imgGrayscale",
+      "comparisons": 4,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 4,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.008017529070752615,
+      "max_total_variation": 0.008588892993497268
+    },
+    {
+      "target_dataset": "train_samples",
+      "transformation": "imgMotionBlur",
+      "comparisons": 40,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 40,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.006074439991932663,
+      "max_total_variation": 0.013434612383682407
+    },
+    {
+      "target_dataset": "train_samples",
+      "transformation": "imgResolution",
+      "comparisons": 40,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 40,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.005850082150919596,
+      "max_total_variation": 0.020379217439668338
+    },
+    {
+      "target_dataset": "train_samples",
+      "transformation": "imgStretch",
+      "comparisons": 40,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 40,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.01159989654187933,
+      "max_total_variation": 0.027960217235108636
+    },
+    {
+      "target_dataset": "val",
+      "transformation": "imgColorWheel",
+      "comparisons": 40,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 40,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.007407946048534182,
+      "max_total_variation": 0.019788396835520482
+    },
+    {
+      "target_dataset": "val",
+      "transformation": "imgDarkBright",
+      "comparisons": 40,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 40,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.009193520857647006,
+      "max_total_variation": 0.026590734291417867
+    },
+    {
+      "target_dataset": "val",
+      "transformation": "imgGrayscale",
+      "comparisons": 4,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 4,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.008859836787085424,
+      "max_total_variation": 0.018588397369284686
+    },
+    {
+      "target_dataset": "val",
+      "transformation": "imgMotionBlur",
+      "comparisons": 40,
+      "significant_differences": 1,
+      "no_significant_difference_detected": 39,
+      "significant_proportion": 0.025,
+      "median_total_variation": 0.0074541717767720875,
+      "max_total_variation": 0.013771021291011359
+    },
+    {
+      "target_dataset": "val",
+      "transformation": "imgResolution",
+      "comparisons": 40,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 40,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.00623799769420122,
+      "max_total_variation": 0.03509612210751557
+    },
+    {
+      "target_dataset": "val",
+      "transformation": "imgStretch",
+      "comparisons": 40,
+      "significant_differences": 0,
+      "no_significant_difference_detected": 40,
+      "significant_proportion": 0.0,
+      "median_total_variation": 0.008013647965987724,
+      "max_total_variation": 0.027482820937155518
+    }
+  ],
+  "joint": {
+    "total_model_settings": 204,
+    "counts": {
+      "different_for_both": 0,
+      "different_only_for_val": 1,
+      "different_only_for_train_samples": 0,
+      "no_difference_detected_for_either": 203
+    },
+    "proportions": {
+      "different_for_both": 0.0,
+      "different_only_for_val": 0.004901960784313725,
+      "different_only_for_train_samples": 0.0,
+      "no_difference_detected_for_either": 0.9950980392156863
+    }
+  }
+}
