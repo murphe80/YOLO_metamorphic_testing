@@ -13,6 +13,11 @@
 #   --model <name>             Analyze only the specified enabled model.
 #   --detections-base <path>   Directory containing per-model detections
 #                              (default: results).
+#   --images-dir <path>        Source image directory. Used to record the
+#                              correct image names and dimensions without GT.
+#   --comparison <name>        Run all comparisons (default), or one of
+#                              original_vs_transformed, transformed_vs_gt,
+#                              original_vs_gt.
 #
 # Outputs: analysis/results/<dataset>/<model>/<rule>/<comparison_type>/stats.json
 # ============================================
@@ -35,6 +40,8 @@ DATASET="test"  # Default to sample dataset
 RULE_FILTER=""
 MODEL_FILTER=""
 DETECTIONS_BASE="results"
+IMAGES_DIR_OVERRIDE=""
+COMPARISON_FILTER="all"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -54,9 +61,25 @@ while [[ $# -gt 0 ]]; do
         --rules=*) RULE_FILTER="${1#*=}"; shift ;;
         --detections-base) DETECTIONS_BASE="$2"; shift 2 ;;
         --detections-base=*) DETECTIONS_BASE="${1#*=}"; shift ;;
+        --images-dir) IMAGES_DIR_OVERRIDE="$2"; shift 2 ;;
+        --images-dir=*) IMAGES_DIR_OVERRIDE="${1#*=}"; shift ;;
+        --comparison) COMPARISON_FILTER="$2"; shift 2 ;;
+        --comparison=*) COMPARISON_FILTER="${1#*=}"; shift ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
+
+case "$COMPARISON_FILTER" in
+    all|original_vs_transformed|transformed_vs_gt|original_vs_gt) ;;
+    *)
+        echo "Unknown comparison: $COMPARISON_FILTER"
+        exit 1
+        ;;
+esac
+
+should_run_comparison() {
+    [ "$COMPARISON_FILTER" = "all" ] || [ "$COMPARISON_FILTER" = "$1" ]
+}
 
 ENABLED_MODELS=$(get_model_names)
 if [ -n "$MODEL_FILTER" ]; then
@@ -73,6 +96,12 @@ if [ -n "$MODEL_FILTER" ]; then
         echo "Enabled models: $ENABLED_MODELS"
         exit 1
     fi
+fi
+
+if [ -n "$IMAGES_DIR_OVERRIDE" ]; then
+    SOURCE_IMAGES_DIR="$IMAGES_DIR_OVERRIDE"
+else
+    SOURCE_IMAGES_DIR="data/base_images/$DATASET/images"
 fi
 
 # ============================================
@@ -265,13 +294,18 @@ process_rule_analysis() {
 
     # Create comparison type subdirectories
     stats_dir_base="${RESULTS_BASE}/${model_name}/${rule_name}"
-    mkdir -p "${stats_dir_base}/original_vs_transformed"
-    mkdir -p "${stats_dir_base}/transformed_vs_gt"
+    if should_run_comparison original_vs_transformed; then
+        mkdir -p "${stats_dir_base}/original_vs_transformed"
+    fi
+    if [ -f "$GT_COCO" ] && should_run_comparison transformed_vs_gt; then
+        mkdir -p "${stats_dir_base}/transformed_vs_gt"
+    fi
 
     # Format transformed detections
     python3 analysis/utils/format_detections.py \
         --detection_dir "$rule_path" \
-        --output_file "${rule_path}/detections_coco.json"
+        --output_file "${rule_path}/detections_coco.json" \
+        --image_dir "$SOURCE_IMAGES_DIR"
 
     # Comparison 1: Original detections vs Transformed detections (metamorphic testing)
     echo "Comparing original vs $rule_name (metamorphic)..."
@@ -296,21 +330,25 @@ process_rule_analysis() {
         DT_FILE="${rule_path}/detections_coco.json"
     fi
 
-    python3 analysis/coco_eval.py \
-        --gt "$base_det" \
-        --dt "$DT_FILE" \
-        --stats-out "${stats_dir_base}/original_vs_transformed/stats.json"
+    if should_run_comparison original_vs_transformed; then
+        python3 analysis/coco_eval.py \
+            --gt "$base_det" \
+            --dt "$DT_FILE" \
+            --image-dir "$SOURCE_IMAGES_DIR" \
+            --stats-out "${stats_dir_base}/original_vs_transformed/stats.json"
+    fi
 
 
     # Comparison 3: Transformed detections vs Ground Truth (if GT available)
-    if [ -f "$GT_COCO" ]; then
+    if [ -f "$GT_COCO" ] && should_run_comparison transformed_vs_gt; then
         echo "Comparing $rule_name vs ground truth..."
 
         # Format detections with GT image IDs (strips transformation suffixes)
         python3 analysis/utils/format_detections.py \
             --detection_dir "$rule_path" \
             --output_file "${rule_path}/detections_for_gt.json" \
-            --gt_coco "$GT_COCO"
+            --gt_coco "$GT_COCO" \
+            --image_dir "$SOURCE_IMAGES_DIR"
 
         # For geometric transformations, transform coordinates
         if is_geometric_transform "$base_rule_name"; then
@@ -335,6 +373,7 @@ process_rule_analysis() {
         python3 analysis/coco_eval.py \
             --gt "$GT_COCO" \
             --dt "$DT_GT_FILE" \
+            --image-dir "$SOURCE_IMAGES_DIR" \
             --stats-out "${stats_dir_base}/transformed_vs_gt/stats.json" 2>&1 | grep -v "Warning: No matching image" || true
     fi
 }
@@ -349,21 +388,25 @@ prepare_original_detections() {
     python3 analysis/utils/format_detections.py \
         --detection_dir "$original_results" \
         --output_file "$base_det" \
-        --as_ground_truth
+        --as_ground_truth \
+        --image_dir "$SOURCE_IMAGES_DIR" \
+        --category_ids 1 2 3 4
 
     # Original detections vs Ground Truth (if GT available)
-    if [ -f "$GT_COCO" ]; then
+    if [ -f "$GT_COCO" ] && should_run_comparison original_vs_gt; then
         echo "Comparing original vs ground truth..."
         # Generate detections with GT image IDs (strips transformation suffixes)
         python3 analysis/utils/format_detections.py \
             --detection_dir "$original_results" \
             --output_file "${original_results}/detections_for_gt.json" \
-            --gt_coco "$GT_COCO"
+            --gt_coco "$GT_COCO" \
+            --image_dir "$SOURCE_IMAGES_DIR"
             
         stats_dir_base="${RESULTS_BASE}/${model_name}"
         python3 analysis/coco_eval.py \
             --gt "$GT_COCO" \
             --dt "${original_results}/detections_for_gt.json" \
+            --image-dir "$SOURCE_IMAGES_DIR" \
             --stats-out "${stats_dir_base}/original_vs_gt/stats.json" 2>&1 | grep -v "Warning: No matching image" || true
     fi
 
@@ -408,6 +451,7 @@ fi
 if [ -n "$RULE_FILTER" ]; then
     echo "Rules: $RULE_FILTER"
 fi
+echo "Comparison: $COMPARISON_FILTER"
 echo "Detections: $DETECTIONS_BASE/<model>/"
 echo "Comparing original vs transformed detections"
 echo ""

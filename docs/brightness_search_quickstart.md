@@ -74,7 +74,7 @@ python scripts/rq2a_golden_section_search.py \
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--model` | `yolov8` | YOLO model: yolov5, yolov8, yolov12 |
+| `--model` | From `config/models.json` | Any enabled model defined in `config/models.json` |
 | `--dataset` | `test` | Dataset under data/base_images/ |
 | `--num-images` | All | Number of images to process |
 | `--target-ap` | `0.7` | Target mAP threshold |

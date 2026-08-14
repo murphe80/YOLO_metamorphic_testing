@@ -7,6 +7,7 @@ Compatible with Ultralytics yolov5 (.pt) models.
 import os
 import sys
 import argparse
+from functools import lru_cache
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -25,8 +26,23 @@ def load_model(weights, device="cuda:0"):
     return model, device
 
 
+@lru_cache(maxsize=None)
+def _load_cached_model(weights, device):
+    """Load a weights file once for repeated single-image inference calls."""
+    return load_model(weights, device)
+
+
 def run_inference(model, image_path, conf_thres=0.25, iou_thres=0.45, device="cuda:0"):
-    """Perform inference on a single image."""
+    """Perform inference on a single image.
+
+    ``model`` may be an already-loaded Ultralytics model or a weights path.
+    Weight paths are cached so iterative searches do not reload the model for
+    every candidate image.
+    """
+    if isinstance(model, (str, os.PathLike)):
+        model, resolved_device = _load_cached_model(os.fspath(model), str(device))
+        device = resolved_device
+
     img = cv2.imread(image_path)
     if img is None:
         raise FileNotFoundError(f"Could not load image from {image_path}")

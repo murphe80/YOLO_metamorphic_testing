@@ -9,6 +9,9 @@
 #   --dataset <name>              Dataset used for inference (default: test)
 #   --model <version|all>         Model version to analyze (default: all)
 #   --transformations <value>     Comma-separated transformation names
+#   --detections-base <path>      Override results/<dataset>
+#   --images-dir <path>           Override data/base_images/<dataset>/images
+#   --transformed-base <path>     Override data/transformed_images/<dataset>
 #
 # Inputs:
 #   results/<dataset>/<model>/original/
@@ -24,9 +27,16 @@ set -euo pipefail
 ANALYSIS_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ANALYSIS_SCRIPT_DIR/../.." || exit 1
 
+if [ -d "venv" ]; then
+    source venv/bin/activate
+fi
+
 DATASET="test"
 MODEL_ARG="all"
 TRANSFORMATION_ARG=""
+DETECTIONS_BASE_OVERRIDE=""
+IMAGES_DIR_OVERRIDE=""
+TRANSFORMED_BASE_OVERRIDE=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -52,6 +62,30 @@ while [[ $# -gt 0 ]]; do
             ;;
         --transformations=*|--rules=*)
             TRANSFORMATION_ARG="${1#*=}"
+            shift
+            ;;
+        --detections-base)
+            DETECTIONS_BASE_OVERRIDE="$2"
+            shift 2
+            ;;
+        --detections-base=*)
+            DETECTIONS_BASE_OVERRIDE="${1#*=}"
+            shift
+            ;;
+        --images-dir)
+            IMAGES_DIR_OVERRIDE="$2"
+            shift 2
+            ;;
+        --images-dir=*)
+            IMAGES_DIR_OVERRIDE="${1#*=}"
+            shift
+            ;;
+        --transformed-base)
+            TRANSFORMED_BASE_OVERRIDE="$2"
+            shift 2
+            ;;
+        --transformed-base=*)
+            TRANSFORMED_BASE_OVERRIDE="${1#*=}"
             shift
             ;;
         --help|-h)
@@ -98,6 +132,10 @@ GT_COCO="$BASE_DATASET_DIR/annotations_coco.json"
 RESULTS_BASE="results/$DATASET"
 ANALYSIS_BASE="analysis/results/$DATASET"
 
+if [ -n "$DETECTIONS_BASE_OVERRIDE" ]; then
+    RESULTS_BASE="$DETECTIONS_BASE_OVERRIDE"
+fi
+
 case "$DATASET" in
     test)
         TRANSFORMED_BASE="data/transformed_images/fsoco_test"
@@ -109,6 +147,13 @@ case "$DATASET" in
         TRANSFORMED_BASE="data/transformed_images/$DATASET"
         ;;
 esac
+
+if [ -n "$IMAGES_DIR_OVERRIDE" ]; then
+    IMAGES_DIR="$IMAGES_DIR_OVERRIDE"
+fi
+if [ -n "$TRANSFORMED_BASE_OVERRIDE" ]; then
+    TRANSFORMED_BASE="$TRANSFORMED_BASE_OVERRIDE"
+fi
 
 if [ ! -d "$IMAGES_DIR" ]; then
     echo "Error: Images directory not found: $IMAGES_DIR"
@@ -202,7 +247,7 @@ for model in "${MODELS[@]}"; do
         python3 analysis/coco_eval.py \
             --gt "$expected_original" \
             --dt "$transformed_coco" \
-            --image-dir "$transformed_images" \
+            --image-dir "$IMAGES_DIR" \
             --stats-out "$stats_base/original_vs_transformed/stats.json"
 
         if [ -f "$GT_COCO" ]; then
@@ -225,7 +270,7 @@ for model in "${MODELS[@]}"; do
             python3 analysis/coco_eval.py \
                 --gt "$expected_gt" \
                 --dt "$transformed_for_gt" \
-                --image-dir "$transformed_images" \
+                --image-dir "$IMAGES_DIR" \
                 --stats-out "$stats_base/transformed_vs_gt/stats.json"
         fi
     done

@@ -8,15 +8,110 @@ COCO format: bbox: [x, y, width, height], category_id: int, score: float
 """
 
 import json
-import os
 import argparse
-import time
 from pathlib import Path
 
 try:
     from PIL import Image
 except ImportError:
     Image = None
+
+
+# Canonical COCO categories used by the cone models in this repository.
+COCO_CATEGORIES = {
+    1: "yellow_cone",
+    2: "blue_cone",
+    3: "orange_cone",
+    4: "large_orange_cone",
+    5: "other_cone",
+    6: "unknown_cone",
+}
+
+# Model/default dataset labels:
+# 0=yellow, 1=orange, 2=large orange, 3=blue, 4=other, 5=unknown.
+MODEL_TO_COCO_CATEGORY = {
+    0: 1,
+    1: 3,
+    2: 4,
+    3: 2,
+    4: 5,
+    5: 6,
+}
+
+CLASS_NAME_TO_COCO_CATEGORY = {
+    "yellow_cone": 1,
+    "blue_cone": 2,
+    "orange_cone": 3,
+    "large_orange_cone": 4,
+    "big_orange_cone": 4,
+    "other_cone": 5,
+    "unknown_cone": 6,
+}
+
+SUPPORTED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+
+
+def discover_source_images(image_dir):
+    """Return source images in stable ID order, rejecting ambiguous stems."""
+    image_path = Path(image_dir)
+    if not image_path.is_dir():
+        raise ValueError(f"Image directory does not exist: {image_dir}")
+
+    image_files = sorted(
+        (
+            path
+            for path in image_path.iterdir()
+            if path.is_file() and path.suffix.lower() in SUPPORTED_IMAGE_EXTENSIONS
+        ),
+        key=lambda path: (path.stem, path.name),
+    )
+    stems = [path.stem for path in image_files]
+    duplicate_stems = sorted({stem for stem in stems if stems.count(stem) > 1})
+    if duplicate_stems:
+        examples = ", ".join(duplicate_stems[:5])
+        raise ValueError(f"Image directory has duplicate stems: {examples}")
+    return image_files
+
+
+def image_dimensions(image_path, default_width, default_height):
+    """Read image dimensions when Pillow is available."""
+    if Image is not None:
+        try:
+            with Image.open(image_path) as image:
+                return image.size
+        except OSError:
+            pass
+    return default_width, default_height
+
+
+def resolve_class_mapping(detection_path, is_yolo_format):
+    """Resolve label IDs to canonical COCO IDs.
+
+    Most repository datasets use the model's six-class order. A dataset can
+    override that order by placing ``classes.txt`` beside its label files.
+    """
+    if not is_yolo_format:
+        return MODEL_TO_COCO_CATEGORY
+
+    label_dir = detection_path.parent if detection_path.is_file() else detection_path
+    classes_file = label_dir / "classes.txt"
+    if not classes_file.is_file():
+        return MODEL_TO_COCO_CATEGORY
+
+    mapping = {}
+    with open(classes_file) as f:
+        for class_id, line in enumerate(f):
+            class_name = line.strip().lower()
+            if not class_name:
+                continue
+            category_id = CLASS_NAME_TO_COCO_CATEGORY.get(class_name)
+            if category_id is None:
+                print(
+                    f"Warning: Unknown class name '{class_name}' in {classes_file}"
+                )
+                continue
+            mapping[class_id] = category_id
+    return mapping
 
 
 def xyxy_to_xywh(x1, y1, x2, y2):
@@ -134,7 +229,7 @@ def resolve_image_info(stem, image_dir=None, default_width=1920, default_height=
     return f"{stem}.jpg", default_width, default_height
 
 
-def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_truth=False, is_yolo_format=False, img_width=1920, img_height=1080, image_dir=None):
+def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_truth=False, is_yolo_format=False, img_width=1920, img_height=1080, image_dir=None, category_ids=None):
     """
     Format detection data from .txt files to COCO JSON format.
 
@@ -150,23 +245,22 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
         img_width: Image width for denormalizing YOLO format coordinates
         img_height: Image height for denormalizing YOLO format coordinates
         image_dir: Optional directory of source images (for per-image dimensions in YOLO GT)
+        category_ids: Optional category IDs to declare in ground-truth output.
+                      Defaults to the complete canonical model label space.
     """
     detection_path = Path(detection_dir)
+    txt_files = (
+        [detection_path]
+        if detection_path.is_file() and detection_path.suffix.lower() == '.txt'
+        else sorted(detection_path.glob("*.txt"))
+    )
 
-    # Model class mapping to COCO category IDs
-    # Model outputs: 0=yellow, 1=orange, 2=large_orange, 3=blue, 4=other, 5=unknown
-    # COCO GT uses: 1=yellow, 2=blue, 3=orange, 4=large_orange
-    MODEL_TO_COCO_CATEGORY = {
-        0: 1,  # yellow_cone -> yellow_cone
-        1: 3,  # orange_cone -> orange_cone
-        2: 4,  # large_orange_cone -> large_orange_cone
-        3: 2,  # blue_cone -> blue_cone
-        4: 5,  # other_cone (not in GT categories)
-        5: 6,  # unknown_cone (not in GT categories)
-    }
+    class_mapping = resolve_class_mapping(detection_path, is_yolo_format)
     
     # Build image mapping
     image_map = {}
+    image_id_to_stem = {}
+    image_id_to_info = {}
     gt_image_count = 0
     
     if gt_coco_file:
@@ -190,10 +284,24 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
             base_no_ext = basename.split('.')[0]
             if base_no_ext != basename:
                 image_map[base_no_ext] = img['id']
+            image_id_to_stem[img['id']] = basename
+            image_id_to_info[img['id']] = (
+                filename,
+                img.get('width', img_width),
+                img.get('height', img_height),
+            )
+    elif image_dir:
+        source_images = discover_source_images(image_dir)
+        print(f"Assigning image IDs from {len(source_images)} source images")
+        for idx, image_path in enumerate(source_images, start=1):
+            width, height = image_dimensions(image_path, img_width, img_height)
+            image_map[image_path.stem] = idx
+            image_map[image_path.name] = idx
+            image_id_to_stem[idx] = image_path.stem
+            image_id_to_info[idx] = (image_path.name, width, height)
     else:
         # Auto-generate image IDs from detection filenames
         print("No ground truth provided, auto-generating image IDs from detection files")
-        txt_files = sorted(detection_path.glob("*.txt"))
         for idx, txt_file in enumerate(txt_files, start=1):
             basename = txt_file.stem
             # Strip transformation suffixes to get original image name
@@ -209,16 +317,11 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
     
     # Process all .txt files in the detection directory
     coco_detections = []
-    image_id_to_stem = {}
-    image_id_to_info = {}
     matched_file_count = 0
     unmatched_file_count = 0
-    txt_files = sorted(detection_path.glob("*.txt"))
-    
     if not txt_files:
         print(f"Warning: No .txt files found in {detection_dir}")
-        return
-    
+
     print(f"Processing {len(txt_files)} detection files...")
     
     for txt_file in txt_files:
@@ -250,10 +353,16 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
         if image_id not in image_id_to_stem:
             image_id_to_stem[image_id] = matched_basename
 
-        file_name, file_width, file_height = resolve_image_info(
-            matched_basename, image_dir=image_dir, default_width=img_width, default_height=img_height
-        )
-        image_id_to_info[image_id] = (file_name, file_width, file_height)
+        if image_id in image_id_to_info:
+            file_name, file_width, file_height = image_id_to_info[image_id]
+        else:
+            file_name, file_width, file_height = resolve_image_info(
+                matched_basename,
+                image_dir=image_dir,
+                default_width=img_width,
+                default_height=img_height,
+            )
+            image_id_to_info[image_id] = (file_name, file_width, file_height)
 
         # Parse detections from txt file
         detections = parse_detection_txt(
@@ -267,14 +376,14 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
         for det in detections:
             # Map model class ID to COCO category ID
             model_class = det['class_id']
-            if model_class not in MODEL_TO_COCO_CATEGORY:
+            if model_class not in class_mapping:
                 print(f"Warning: Unknown model class {model_class} in {txt_file.name}")
                 continue
 
             coco_detection = {
                 'id': len(coco_detections) + 1,  # Unique annotation ID
                 'image_id': image_id,
-                'category_id': MODEL_TO_COCO_CATEGORY[model_class],  # Map model class to COCO category
+                'category_id': class_mapping[model_class],
                 'bbox': det['bbox'],
                 'score': det['confidence'],
                 'area': det['bbox'][2] * det['bbox'][3],  # width * height
@@ -282,11 +391,6 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
             }
             coco_detections.append(coco_detection)
 
-    # region agent log
-    with open("/moredata/emma/metamorphic_v2/YOLO_metamorphic_testing/.cursor/debug-3f141a.log", "a") as _debug_file:
-        _debug_file.write(json.dumps({"sessionId": "3f141a", "runId": "pre-fix", "hypothesisId": "H2,H3,H4", "location": "analysis/utils/format_detections.py:285", "message": "Formatted detection coverage and mappings", "data": {"detectionDir": str(detection_dir), "gtCoco": str(gt_coco_file) if gt_coco_file else None, "asGroundTruth": as_ground_truth, "txtFiles": len(txt_files), "matchedFiles": matched_file_count, "unmatchedFiles": unmatched_file_count, "uniqueMappedImages": len(image_id_to_stem), "gtImages": gt_image_count, "detections": len(coco_detections), "mappedCategoryIds": sorted({d["category_id"] for d in coco_detections})}, "timestamp": int(time.time() * 1000)}) + "\n")
-    # endregion
-    
     # Save to output file
     output_path = Path(output_file)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -299,8 +403,11 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
             "categories": []
         }
         
-        # Add image entries for all unique image_ids
-        image_ids = set(det['image_id'] for det in coco_detections)
+        # Add image entries for every processed detection file, including
+        # empty files. In annotation-free metamorphic testing an empty original
+        # file is still part of the reference set: a new transformed detection
+        # on that image must not disappear from evaluation coverage.
+        image_ids = set(image_id_to_stem)
         for img_id in sorted(image_ids):
             stem = image_id_to_stem.get(img_id, f"image_{img_id}")
             file_name, file_width, file_height = image_id_to_info.get(
@@ -314,11 +421,14 @@ def format_detections(detection_dir, output_file, gt_coco_file=None, as_ground_t
                 "width": file_width,
             })
         
-        # Add category entries (assuming categories 1-4 based on typical FSOCO)
-        for cat_id in range(1, 5):
+        # Declare the complete model label space. In particular, the standard
+        # test/val labels contain class 5 (unknown_cone).
+        declared_category_ids = category_ids or COCO_CATEGORIES.keys()
+        for cat_id in declared_category_ids:
+            category_name = COCO_CATEGORIES[cat_id]
             coco_output['categories'].append({
                 "id": cat_id,
-                "name": f"category_{cat_id}",
+                "name": category_name,
                 "supercategory": "cone"
             })
 
@@ -387,6 +497,17 @@ def main():
         default=None,
         help='Directory containing source images (for per-image dimensions when parsing YOLO labels)'
     )
+    parser.add_argument(
+        '--category_ids',
+        type=int,
+        nargs='+',
+        choices=sorted(COCO_CATEGORIES),
+        default=None,
+        help=(
+            'Category IDs to declare in ground-truth output '
+            '(default: complete canonical model label space)'
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -399,6 +520,7 @@ def main():
         args.img_width,
         args.img_height,
         args.image_dir,
+        args.category_ids,
     )
 
 

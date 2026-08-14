@@ -36,13 +36,24 @@ import cv2 as cv
 import json
 import numpy as np
 import argparse
-from metamorphic_rules.instantiate_rules import instantiate_rule
+try:
+    from .cone_class_config import (
+        DEFAULT_CONFIG_PATH,
+        canonical_class_name,
+        load_cone_class_config,
+    )
+except ImportError:
+    from cone_class_config import (
+        DEFAULT_CONFIG_PATH,
+        canonical_class_name,
+        load_cone_class_config,
+    )
 
 # ------------------------------------------------------------
 # Ground truth reader
 # ------------------------------------------------------------
 
-def read_ground_truth_labels_txt(label_file, image_shape=None):
+def read_ground_truth_labels_txt(label_file, image_shape, class_id_to_name):
     """Read bounding box labels from TXT file.
     
     Supports two TXT formats:
@@ -52,13 +63,6 @@ def read_ground_truth_labels_txt(label_file, image_shape=None):
     Auto-detects format based on coordinate values.
     """
     detections = []
-    
-    class_names = {
-        0: 'yellow_cone',
-        1: 'orange_cone',
-        2: 'unknown_cone',
-        3: 'blue_cone'
-    }
     
     try:
         with open(label_file, 'r') as f:
@@ -73,6 +77,10 @@ def read_ground_truth_labels_txt(label_file, image_shape=None):
                 
                 try:
                     class_id = int(parts[0])
+                    if class_id not in class_id_to_name:
+                        raise ValueError(
+                            f"class ID {class_id} is not configured for this dataset"
+                        )
                     val1, val2, val3, val4 = float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4])
                     
                     # Auto-detect format: if all values <= 1.0, assume YOLO normalized format
@@ -102,45 +110,45 @@ def read_ground_truth_labels_txt(label_file, image_shape=None):
                     
                     detections.append({
                         "class": class_id,
-                        "class_name": class_names.get(class_id, 'unknown_cone'),
+                        "class_name": class_id_to_name[class_id],
                         "bbox": [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)]
                     })
-                except (ValueError, IndexError):
-                    continue
+                except (ValueError, IndexError) as error:
+                    raise ValueError(
+                        f"Invalid annotation at {label_file}:{line_num}: {error}"
+                    ) from error
     except Exception as e:
-        print(f"Error reading {label_file}: {e}")
-    
+        raise ValueError(f"Error reading {label_file}: {e}") from e
+
     return detections
 
 
-def read_ground_truth_labels_json(label_file):
+def read_ground_truth_labels_json(label_file, class_name_to_id, aliases):
     """Read bounding box labels from JSON file."""
     detections = []
     with open(label_file, "r") as f:
         data = json.load(f)
-
-    class_map = {
-        'blue_cone': 3,
-        'yellow_cone': 0,
-        'orange_cone': 1,
-        'big_orange_cone': 1,
-        'unknown_cone': 2
-    }
 
     for obj in data.get("objects", []):
         ext = obj.get("points", {}).get("exterior", [])
         if len(ext) < 2:
             continue
         (x1, y1), (x2, y2) = ext
+        class_name = canonical_class_name(obj["classTitle"], aliases)
+        if class_name not in class_name_to_id:
+            raise ValueError(
+                f"{label_file}: class {obj['classTitle']!r} is not configured "
+                "for this dataset"
+            )
         detections.append({
-            "class": class_map.get(obj["classTitle"], 2),
-            "class_name": obj["classTitle"],
+            "class": class_name_to_id[class_name],
+            "class_name": class_name,
             "bbox": [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)]
         })
     return detections
 
 
-def read_ground_truth_labels(label_file, image_shape=None):
+def read_ground_truth_labels(label_file, image_shape, class_config):
     """Read bounding box labels from either TXT or JSON format.
     
     Args:
@@ -148,9 +156,17 @@ def read_ground_truth_labels(label_file, image_shape=None):
         image_shape: Tuple of (height, width) needed for YOLO format TXT files
     """
     if label_file.endswith('.txt'):
-        return read_ground_truth_labels_txt(label_file, image_shape)
+        return read_ground_truth_labels_txt(
+            label_file,
+            image_shape,
+            class_config["class_id_to_name"],
+        )
     elif label_file.endswith('.json'):
-        return read_ground_truth_labels_json(label_file)
+        return read_ground_truth_labels_json(
+            label_file,
+            class_config["class_name_to_id"],
+            class_config["aliases"],
+        )
     else:
         print(f"Warning: Unknown label file format: {label_file}")
         return []
@@ -181,44 +197,35 @@ def apply_hue_transformation(roi, hue_value):
     return cv.cvtColor(transformed_hsv, cv.COLOR_HSV2BGR)
 
 
-def get_hue_transformation(from_class, to_class):
+def get_hue_transformation(to_class, class_hues):
     """
     Get hue value to convert from one cone class to another.
     
     Args:
-        from_class: Source cone class (0=yellow, 1=orange, 2=unknown, 3=blue)
-        to_class: Target cone class
+        to_class: Canonical target cone class name
+        class_hues: Canonical class name -> OpenCV hue mapping
     
     Returns:
         Hue value
     
-    Color characteristics:
-    - Yellow: Hue value 27
-    - Blue: Hue value 112
-    - Orange: Hue value 14
+    Hue values are loaded from ``config/cone_classes.json``.
     """
-    transformations = {
-        # From yellow (class 0)
-        (0, 3): 112,    # yellow -> blue
-        (0, 1): 14,    # yellow -> orange
-        
-        # From blue (class 3)
-        (3, 0): 27,    # blue -> yellow
-        (3, 1): 14,   # blue -> orange
-        
-        # From orange (class 1)
-        (1, 3): 112,    # orange -> blue
-        (1, 0): 27,    # orange -> yellow
-    }
-    
-    # Default: no transformation
-    return transformations.get((from_class, to_class), 0.0)
+    try:
+        return class_hues[to_class]
+    except KeyError as error:
+        raise ValueError(f"No hue configured for target class {to_class!r}") from error
 
 # ------------------------------------------------------------
 # Apply transformations to image
 # ------------------------------------------------------------
 
-def transform_cone_colors(image, detections, transformation_map, segmentation_mask=None):
+def transform_cone_colors(
+    image,
+    detections,
+    transformation_map,
+    class_hues,
+    segmentation_mask=None,
+):
     """
     Apply color transformations to cones based on their class.
     
@@ -237,7 +244,7 @@ def transform_cone_colors(image, detections, transformation_map, segmentation_ma
     transformations_applied = 0
     
     for det in detections:
-        from_class = det["class"]
+        from_class = det["class_name"]
         bbox = det["bbox"]
         
         # Skip if no transformation defined for this class
@@ -266,7 +273,7 @@ def transform_cone_colors(image, detections, transformation_map, segmentation_ma
         roi = cv.medianBlur(roi, 15)
         
         # Get transformation parameters
-        transformation = get_hue_transformation(from_class, to_class)
+        transformation = get_hue_transformation(to_class, class_hues)
         
         # Check if this is a direct color replacement
         transformed_roi = apply_hue_transformation(roi, transformation)
@@ -339,7 +346,14 @@ def transform_cone_colors(image, detections, transformation_map, segmentation_ma
 # Process images
 # ------------------------------------------------------------
 
-def process_image(image_path, label_file, output_dir, transformation_map, segmented_dir=None):
+def process_image(
+    image_path,
+    label_file,
+    output_dir,
+    transformation_map,
+    class_config,
+    segmented_dir=None,
+):
     """Process a single image with cone color transformations."""
     # Load segmentation mask if directory is provided
     segmentation_mask = None
@@ -373,12 +387,18 @@ def process_image(image_path, label_file, output_dir, transformation_map, segmen
     # Get image dimensions for YOLO format support
     image_shape = image.shape[:2]  # (height, width)
 
-    detections = read_ground_truth_labels(label_file, image_shape)
+    detections = read_ground_truth_labels(label_file, image_shape, class_config)
     if not detections:
         print(f"No GT labels for {image_path}")
         return
     
-    result, transformations_applied = transform_cone_colors(image, detections, transformation_map, segmentation_mask)
+    result, transformations_applied = transform_cone_colors(
+        image,
+        detections,
+        transformation_map,
+        class_config["hues"],
+        segmentation_mask,
+    )
     
     # Skip saving if no transformations were applied
     if transformations_applied == 0:
@@ -402,32 +422,36 @@ def main():
     parser.add_argument("--output_dir", required=True, help="Output directory for transformed images")
     parser.add_argument("--segmented_dir", required=True, help="Directory with segmented images (used to determine which images to process)")
     parser.add_argument(
+        "--dataset",
+        required=True,
+        help="Dataset schema name in config/cone_classes.json",
+    )
+    parser.add_argument(
+        "--class-config",
+        default=str(DEFAULT_CONFIG_PATH),
+        help="Semantic cone-class configuration JSON",
+    )
+    parser.add_argument(
         "--transformation",
-        choices=["yellow_to_blue", "blue_to_yellow", "yellow_to_orange",
-                 "orange_to_blue", "blue_to_orange", "orange_to_yellow",
-                 "swap_sides"],
         required=True,
         help="Type of color transformation to apply"
     )
     args = parser.parse_args()
-    
+
+    class_config = load_cone_class_config(args.class_config, args.dataset)
+    if args.transformation not in class_config["transformations"]:
+        supported = ", ".join(sorted(class_config["transformations"]))
+        parser.error(
+            f"unknown transformation {args.transformation!r}; supported: {supported}"
+        )
+
     os.makedirs(args.output_dir, exist_ok=True)
-    
-    # Define transformation map based on chosen transformation
-    # Class mapping: 0=yellow, 1=orange, 2=unknown, 3=blue
-    transformation_maps = {
-        "yellow_to_blue": {0: 3},      # Transform yellow (0) to blue (3)
-        "blue_to_yellow": {3: 0},      # Transform blue (3) to yellow (0)
-        "yellow_to_orange": {0: 1},    # Transform yellow (0) to orange (1)
-        "orange_to_blue": {1: 3},      # Transform orange (1) to blue (3)
-        "blue_to_orange": {3: 1},      # Transform blue (3) to orange (1)
-        "orange_to_yellow": {1: 0},    # Transform orange (1) to yellow (0)
-        "swap_sides": {0: 3, 3: 0},    # Swap yellow (0) ↔ blue (3)
-    }
-    
-    transformation_map = transformation_maps[args.transformation]
-    
+
+    transformation_map = class_config["transformations"][args.transformation]
+
     print(f"Applying transformation: {args.transformation}")
+    print(f"Dataset class schema: {args.dataset}")
+    print(f"Class IDs: {class_config['class_id_to_name']}")
     print(f"Transformation map: {transformation_map}")
     
     if not args.segmented_dir:
@@ -474,7 +498,14 @@ def main():
             continue
         
         print(f"\nProcessing {segmented_file}...")
-        process_image(image_path, label_path, args.output_dir, transformation_map, args.segmented_dir)
+        process_image(
+            image_path,
+            label_path,
+            args.output_dir,
+            transformation_map,
+            class_config,
+            args.segmented_dir,
+        )
 
 if __name__ == "__main__":
     main()

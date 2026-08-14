@@ -32,7 +32,7 @@ if [ ! -f "$GT_PATH" ]; then
     exit 1
 fi
 
-echo "Step 1: Generating individual Venn diagrams..."
+echo "Step 1: Generating model-comparison Venn diagram grids..."
 echo "-----------------------------------------------"
 python3 "$PROJECT_ROOT/analysis/visualisation/plot_detection_venn.py" \
     --results_dir "$RESULTS_DIR" \
@@ -45,5 +45,5 @@ echo "✓ All visualizations generated successfully!"
 echo "=================================================="
 echo ""
 echo "Output files:"
-echo "  - Individual diagrams: analysis/results/venn_diagrams/$DATASET_NAME/*_venn.png"
+echo "  - Model grids: analysis/results/venn_diagrams/$DATASET_NAME/*_venn.png"
 echo ""

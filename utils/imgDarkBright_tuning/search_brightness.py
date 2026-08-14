@@ -13,17 +13,18 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from matias_metamorphic import gen_metamorphic
 from analysis.utils.format_detections import format_detections
 from analysis.coco_eval_per_class import evaluate_coco_per_class
-from models.yolov5.infer_v5 import run_inference
+from models.yolov5.infer_v5_kfold import extract_detections, run_inference
 
 BRIGHTNESS_MULTIPLIER_LOW= 0.1
 BRIGHTNESS_MULTIPLIER_HIGH= 0.9
 BRIGHTNESS_CONSTANT= 0
 GAMMA= 1
-METHOD= "gamma"
+METHOD= "scale"
 THRESHOLD_AP= 0.01
 MAX_ITERATIONS= 30
-BLUE_CLASS_ID = 3
-YELLOW_CLASS_ID= 0
+# COCO category IDs produced by analysis.utils.format_detections.
+BLUE_CLASS_ID = 2
+YELLOW_CLASS_ID = 1
 
 RESULTS_DIR = "search_results/"
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -44,26 +45,51 @@ def _make_config(multiplier: float) -> dict:
 
 def _split_image_path(image_path: str) -> tuple[str, str]:
     """Return (stem, '.ext') from 'stem.ext'."""
-    parts = image_path.split(".")
-    return (parts[0], f".{parts[1]}")
+    return os.path.splitext(image_path)
 
 
 def get_accuracy(
     transformed_detections_filepath: str,
     gt_detections_filepath: str,
+    image_stem: str,
+    img_width: int,
+    img_height: int,
 ) -> tuple[float, float]:
     """
     Format both detection files to COCO JSON and return (AP_blue, AP_yellow).
     """
-    transformed_det_path = os.path.join(RESULTS_DIR, "coco_transf_detections.json")
-    gt_det_path          = os.path.join(RESULTS_DIR, "coco_gt_detections.json")
+    evaluation_dir = os.path.dirname(transformed_detections_filepath)
+    transformed_det_path = os.path.join(evaluation_dir, "coco_transf_detections.json")
+    gt_det_path          = os.path.join(evaluation_dir, "coco_gt_detections.json")
 
-    format_detections(transformed_detections_filepath, transformed_det_path)
-    format_detections(gt_detections_filepath,          gt_det_path)
+    gt_path = gt_detections_filepath
+    if os.path.isdir(gt_path):
+        gt_path = os.path.join(gt_path, f"{image_stem}.txt")
+    if not os.path.isfile(gt_path):
+        raise FileNotFoundError(f"Ground-truth label not found: {gt_path}")
+
+    format_detections(
+        gt_path,
+        gt_det_path,
+        as_ground_truth=True,
+        is_yolo_format=True,
+        img_width=img_width,
+        img_height=img_height,
+    )
+    format_detections(
+        transformed_detections_filepath,
+        transformed_det_path,
+        gt_coco_file=gt_det_path,
+    )
+
+    # pycocotools cannot load an empty result list. No predictions means zero
+    # AP for the classes being tuned.
+    if os.path.getsize(transformed_detections_filepath) == 0:
+        return 0.0, 0.0
 
     _, per_class_stats = evaluate_coco_per_class(gt_det_path, transformed_det_path)
-    ap_blue   = per_class_stats[BLUE_CLASS_ID]["AP"]
-    ap_yellow = per_class_stats[YELLOW_CLASS_ID]["AP"]
+    ap_blue   = per_class_stats.get(BLUE_CLASS_ID, {}).get("AP", float("nan"))
+    ap_yellow = per_class_stats.get(YELLOW_CLASS_ID, {}).get("AP", float("nan"))
     return ap_blue, ap_yellow
 
 
@@ -76,7 +102,7 @@ def _evaluate_multiplier(
 ) -> tuple[str, float, float, str]:
     """
     Apply the brightness transform, run YOLOv5 inference, and return
-    (output_filepath, ap_blue, ap_yellow).
+    (output_filepath, ap_blue, ap_yellow, detections_filepath).
     `label` is used only to name the output sub-directory.
     """
     config     = _make_config(multiplier)
@@ -89,15 +115,28 @@ def _evaluate_multiplier(
     if not success:
         raise RuntimeError(f"gen_metamorphic failed for label='{label}'")
 
-    updated_detections_filepath = os.path.join(output_dir, "detections.txt")
+    image_stem = os.path.basename(image_path_tuple[0])
+    updated_detections_filepath = os.path.join(output_dir, f"{image_stem}.txt")
 
     print(f"[{label}] Running YOLOv5 inference (multiplier={multiplier:.4f})")
-    detections = run_inference("models/yolov5/yolov5_param_kfold.pt", output_filepath)
+    result = run_inference("models/yolov5/yolov5_param_kfold.pt", output_filepath)
+    detections = extract_detections(result)
     with open(updated_detections_filepath, "w") as f:
         for detection in detections:
-            f.write(detection)
+            x1, y1, x2, y2 = detection["bbox"]
+            f.write(
+                f'{detection["class"]} {detection["confidence"]:.6f} '
+                f'{x1:.2f} {y1:.2f} {x2:.2f} {y2:.2f}\n'
+            )
 
-    ap_blue, ap_yellow = get_accuracy(output_filepath, gt_detections_filepath)
+    img_height, img_width = image_bgr.shape[:2]
+    ap_blue, ap_yellow = get_accuracy(
+        updated_detections_filepath,
+        gt_detections_filepath,
+        image_stem,
+        img_width,
+        img_height,
+    )
     print(f"[{label}] AP_blue={ap_blue:.4f}  AP_yellow={ap_yellow:.4f}")
     return output_filepath, ap_blue, ap_yellow, updated_detections_filepath
 
@@ -107,7 +146,9 @@ def _combined_ap(ap_blue: float, ap_yellow: float) -> float:
     Aggregate per-class APs into a single scalar for the search.
     Using the mean keeps both classes equally weighted.
     """
-    return (ap_blue + ap_yellow) / 2.0
+    class_aps = np.asarray([ap_blue, ap_yellow], dtype=float)
+    finite_aps = class_aps[np.isfinite(class_aps)]
+    return float(np.mean(finite_aps)) if finite_aps.size else 0.0
 
 def find_peak_multiplier(
     image_bgr:              np.ndarray,
@@ -188,7 +229,7 @@ def search_brightness(
     image_path:             str,
     target_accuracy:        float,
     gt_detections_filepath: str,
-) -> tuple[dict, float, float, str]:
+) -> tuple[dict, float, float, str, str]:
     """
     Find the brightness multiplier whose combined AP is closest to
     `target_accuracy`.
@@ -204,7 +245,7 @@ def search_brightness(
 
     Returns (best_config, ap_blue, ap_yellow, output_filepath, updated_detections_filepath).
     """
-    image_bgr        = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+    image_bgr        = image
     image_path_tuple = _split_image_path(image_path)
 
     # find peak multiplier
@@ -215,13 +256,13 @@ def search_brightness(
 
     if peak_ap < target_accuracy:
         print("[search] Target accuracy is unachievable; returning peak.")
-        _, ap_b, ap_y, det_path = _evaluate_multiplier(
+        final_path, ap_b, ap_y, det_path = _evaluate_multiplier(
             multiplier=peak_mult, image_bgr=image_bgr,
             image_path_tuple=image_path_tuple,
             gt_detections_filepath=gt_detections_filepath,
             label="final_peak",
         )
-        return _make_config(peak_mult), ap_b, ap_y, peak_filepath, det_path
+        return _make_config(peak_mult), ap_b, ap_y, final_path, det_path
 
     # regula-falsi on the right slope [peak_mult, HIGH]
     def _rf_search(lo_mult, hi_mult, lo_ap, hi_ap, side_label):
@@ -318,19 +359,19 @@ def search_brightness(
             best_mult, best_ap = BRIGHTNESS_MULTIPLIER_LOW, ap_low
         else:
             best_mult, best_ap = BRIGHTNESS_MULTIPLIER_HIGH, ap_high
-        _, ap_b, ap_y, det_path = _evaluate_multiplier(
+        final_path, ap_b, ap_y, det_path = _evaluate_multiplier(
             multiplier=best_mult, image_bgr=image_bgr,
             image_path_tuple=image_path_tuple,
             gt_detections_filepath=gt_detections_filepath,
             label="fallback_endpoint",
         )
-        return _make_config(best_mult), ap_b, ap_y, "", det_path
+        return _make_config(best_mult), ap_b, ap_y, final_path, det_path
 
     # Prefer the solution with the lower multiplier (darker image)
     results.sort(key=lambda x: x[0])
     best_mult, _, best_fp = results[0]
 
-    _, ap_b_final, ap_y_final, updated_detections_filepath = _evaluate_multiplier(
+    final_path, ap_b_final, ap_y_final, updated_detections_filepath = _evaluate_multiplier(
         multiplier=best_mult, image_bgr=image_bgr,
         image_path_tuple=image_path_tuple,
         gt_detections_filepath=gt_detections_filepath,
@@ -340,4 +381,4 @@ def search_brightness(
         f"[search] Final  multiplier={best_mult:.4f}  "
         f"AP_blue={ap_b_final:.4f}  AP_yellow={ap_y_final:.4f}"
     )
-    return _make_config(best_mult), ap_b_final, ap_y_final, best_fp, updated_detections_filepath
+    return _make_config(best_mult), ap_b_final, ap_y_final, final_path, updated_detections_filepath

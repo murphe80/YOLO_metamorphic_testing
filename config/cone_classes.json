@@ -1,0 +1,87 @@
+{
+  "classes": {
+    "yellow_cone": {
+      "hue": 27
+    },
+    "blue_cone": {
+      "hue": 112
+    },
+    "orange_cone": {
+      "hue": 14
+    },
+    "large_orange_cone": {
+      "hue": 14
+    },
+    "other_cone": {
+      "hue": null
+    },
+    "unknown_cone": {
+      "hue": null
+    }
+  },
+  "aliases": {
+    "big_orange_cone": "large_orange_cone"
+  },
+  "datasets": {
+    "test": [
+      "yellow_cone",
+      "orange_cone",
+      "large_orange_cone",
+      "blue_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "val": [
+      "yellow_cone",
+      "orange_cone",
+      "large_orange_cone",
+      "blue_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "comp_labelled": [
+      "yellow_cone",
+      "blue_cone",
+      "orange_cone",
+      "large_orange_cone"
+    ]
+  },
+  "transformations": {
+    "yellow_to_blue": {
+      "source": "yellow_cone",
+      "target": "blue_cone"
+    },
+    "blue_to_yellow": {
+      "source": "blue_cone",
+      "target": "yellow_cone"
+    },
+    "yellow_to_orange": {
+      "source": "yellow_cone",
+      "target": "orange_cone"
+    },
+    "orange_to_blue": {
+      "source": "orange_cone",
+      "target": "blue_cone"
+    },
+    "blue_to_orange": {
+      "source": "blue_cone",
+      "target": "orange_cone"
+    },
+    "orange_to_yellow": {
+      "source": "orange_cone",
+      "target": "yellow_cone"
+    },
+    "swap_sides": {
+      "pairs": [
+        {
+          "source": "yellow_cone",
+          "target": "blue_cone"
+        },
+        {
+          "source": "blue_cone",
+          "target": "yellow_cone"
+        }
+      ]
+    }
+  }
+}

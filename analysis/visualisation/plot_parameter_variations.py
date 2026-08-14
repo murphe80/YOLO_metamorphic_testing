@@ -3,10 +3,11 @@
 Plot AP and AR vs parameter setting for each metamorphic test rule.
 
 Generates AP and AR line charts per transformation rule, with one line per YOLO
-model. Parameter values come from config/brute_force_transformations.json; metric
-values are read from
-analysis/results/<dataset>/<model>/<variant_id>/<comparison>/stats.json. AR plots
-use the COCO AR100 metric and are saved under the ar_plots output subdirectory.
+model, plus a JSON file containing AP and AR for every rule, setting, and model.
+Parameter values come from config/brute_force_transformations.json; metric values
+are read from analysis/results/<dataset>/<model>/<variant_id>/<comparison>/stats.json.
+AR plots use the COCO AR100 metric and are saved under the ar_plots output
+subdirectory.
 
 Usage:
     python3 analysis/visualisation/plot_parameter_variations.py
@@ -32,7 +33,7 @@ from utils.model_registry import get_model_by_name, get_model_names
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "brute_force_transformations.json"
 RESULTS_ROOT = PROJECT_ROOT / "analysis" / "results"
-DEFAULT_DATASET = "val"
+DEFAULT_DATASET = "test"
 AR_METRIC = "AR"
 
 
@@ -155,6 +156,46 @@ def collect_series(
     return param_name, series, sorted(x_values)
 
 
+def collect_rule_metrics(
+    variants: List[dict],
+    models: List[str],
+    results_dir: Path,
+    comparison: str,
+) -> List[dict]:
+    """Collect AP and AR for every configured setting and selected model."""
+    settings = []
+
+    for variant in variants:
+        variant_id = variant["variant_id"]
+        model_metrics = {}
+        for model in models:
+            model_metrics[model] = {
+                "AP": load_metric(results_dir, model, variant_id, comparison, "AP"),
+                "AR": load_metric(
+                    results_dir, model, variant_id, comparison, AR_METRIC
+                ),
+            }
+
+        settings.append(
+            {
+                "variant_id": variant_id,
+                "setting": {
+                    key: value for key, value in variant.items() if key != "variant_id"
+                },
+                "models": model_metrics,
+            }
+        )
+
+    return settings
+
+
+def write_metrics_json(metrics: dict, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w") as f:
+        json.dump(metrics, f, indent=2)
+        f.write("\n")
+
+
 def plot_rule(
     rule: str,
     param_name: str,
@@ -240,8 +281,8 @@ def main():
         "--dataset",
         type=str,
         default=DEFAULT_DATASET,
-        choices=["test", "val", "train_samples"],
-        help="Dataset split to plot (default: val)",
+        choices=["test", "val", "train_samples", "competition", "comp_labelled"],
+        help="Dataset split to plot (default: test)",
     )
     parser.add_argument(
         "--results_dir",
@@ -254,6 +295,15 @@ def main():
         type=Path,
         default=None,
         help="Directory to save generated plots (default: analysis/results/<dataset>/parameter_variations)",
+    )
+    parser.add_argument(
+        "--json_output",
+        type=Path,
+        default=None,
+        help=(
+            "Path for AP/AR JSON output "
+            "(default: <output_dir>/metrics_<comparison>.json)"
+        ),
     )
     parser.add_argument(
         "--comparison",
@@ -282,6 +332,7 @@ def main():
 
     results_dir = args.results_dir or dataset_results_dir(args.dataset)
     output_dir = args.output_dir or dataset_output_dir(args.dataset)
+    json_output = args.json_output or output_dir / f"metrics_{args.comparison}.json"
 
     if not args.config.exists():
         print(f"Config not found: {args.config}")
@@ -303,6 +354,12 @@ def main():
     ar_generated = 0
     ar_skipped = 0
     ar_output_dir = output_dir / "ar_plots"
+    metrics_export = {
+        "dataset": args.dataset,
+        "comparison": args.comparison,
+        "models": models,
+        "rules": {},
+    }
 
     print(f"Dataset: {args.dataset}")
     print(f"Models: {', '.join(models)}")
@@ -317,6 +374,15 @@ def main():
             continue
 
         variants = transformations[rule]
+        metrics_export["rules"][rule] = {
+            "varying_parameter": get_varying_parameter(variants),
+            "settings": collect_rule_metrics(
+                variants,
+                models,
+                results_dir,
+                args.comparison,
+            ),
+        }
         param_name, series, _ = collect_series(
             rule,
             variants,
@@ -363,11 +429,21 @@ def main():
             print(f"  Skip {rule}: no {AR_METRIC} data found")
             ar_skipped += 1
 
+    write_metrics_json(metrics_export, json_output)
+    print(f"  Saved: {json_output}")
+
     print(
         f"\nDone: {generated} {args.metric} plot(s) generated, {skipped} skipped; "
         f"{ar_generated} AR plot(s) generated, {ar_skipped} skipped."
     )
-    if generated + ar_generated == 0:
+    has_exported_metrics = any(
+        value is not None
+        for rule_data in metrics_export["rules"].values()
+        for setting in rule_data["settings"]
+        for model_data in setting["models"].values()
+        for value in model_data.values()
+    )
+    if generated + ar_generated == 0 and not has_exported_metrics:
         sys.exit(1)
 
 

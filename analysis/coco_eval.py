@@ -6,43 +6,24 @@ Output is AP (Average Precision) and AR (Average Recall) metrics using COCO eval
 import argparse
 import json
 import tempfile
-import time
 from pathlib import Path
 
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 
-def _allowed_filenames_from_dt(dt_data, gt_id_to_file_name):
-    """
-    Collect file names for images covered by the detection file.
-    Uses `images[].file_name` when present, and maps `image_id` from detection
-    annotations through gt_id_to_file_name for list-only result files.
-    """
-    allowed = set()
-    if isinstance(dt_data, dict):
-        for img in dt_data.get("images") or []:
-            fn = img.get("file_name")
-            if fn:
-                allowed.add(fn)
-        anns = dt_data.get("annotations") or []
-    elif isinstance(dt_data, list):
-        anns = dt_data
-    else:
-        anns = []
-
-    for ann in anns:
-        if not isinstance(ann, dict):
-            continue
-        iid = ann.get("image_id")
-        if iid is not None and iid in gt_id_to_file_name:
-            allowed.add(gt_id_to_file_name[iid])
-    return allowed
+def _image_key(file_name):
+    """Return the dataset identity shared by image files and COCO entries."""
+    return Path(file_name).stem
 
 
-def _filter_gt_by_filenames(gt_data, allowed_file_names):
-    """Keep only images (and their annotations) whose file_name is in allowed_file_names."""
-    kept_images = [im for im in gt_data["images"] if im["file_name"] in allowed_file_names]
+def _filter_gt_by_image_keys(gt_data, allowed_image_keys):
+    """Keep only ground-truth images explicitly selected by dataset identity."""
+    kept_images = [
+        image
+        for image in gt_data["images"]
+        if _image_key(image["file_name"]) in allowed_image_keys
+    ]
     kept_ids = {im["id"] for im in kept_images}
     kept_ann = [a for a in gt_data["annotations"] if a["image_id"] in kept_ids]
     out = {
@@ -56,15 +37,21 @@ def _filter_gt_by_filenames(gt_data, allowed_file_names):
     return out
 
 
-def _allowed_filenames_from_image_dir(image_dir):
-    """Collect image file names from an explicitly supplied evaluation directory."""
+def _allowed_image_keys_from_image_dir(image_dir):
+    """Collect dataset image identities from an explicit evaluation directory."""
     image_path = Path(image_dir)
+    if not image_path.is_dir():
+        raise ValueError(f"Evaluation image directory does not exist: {image_dir}")
+
     supported_extensions = {".jpg", ".jpeg", ".png"}
-    return {
-        path.name
+    image_keys = {
+        _image_key(path.name)
         for path in image_path.iterdir()
         if path.is_file() and path.suffix.lower() in supported_extensions
     }
+    if not image_keys:
+        raise ValueError(f"Evaluation image directory contains no images: {image_dir}")
+    return image_keys
 
 
 def evaluate_coco(gt_file, dt_file, iou_type='bbox', image_dir=None):
@@ -75,6 +62,9 @@ def evaluate_coco(gt_file, dt_file, iou_type='bbox', image_dir=None):
         gt_file: Path to ground truth annotations file (COCO format JSON)
         dt_file: Path to detection results file (COCO format JSON)
         iou_type: Type of evaluation ('bbox', 'segm', or 'keypoints')
+        image_dir: Optional directory defining an explicit evaluation subset.
+            Without it, every image declared by the ground-truth COCO file is
+            evaluated, including images absent from detection annotations.
     
     Returns:
         stats: Array of evaluation metrics
@@ -86,35 +76,27 @@ def evaluate_coco(gt_file, dt_file, iou_type='bbox', image_dir=None):
     with open(dt_file) as f:
         dt_data = json.load(f)
 
-    gt_id_to_fn = {img["id"]: img["file_name"] for img in gt_data["images"]}
     if image_dir:
-        allowed = _allowed_filenames_from_image_dir(image_dir)
-        filter_source = f"image directory {image_dir}"
-    else:
-        allowed = _allowed_filenames_from_dt(dt_data, gt_id_to_fn)
-        filter_source = "detection file"
-
-    # region agent log
-    _dt_annotations_debug = dt_data.get("annotations", []) if isinstance(dt_data, dict) else (dt_data if isinstance(dt_data, list) else [])
-    with open("/moredata/emma/metamorphic_v2/YOLO_metamorphic_testing/.cursor/debug-3f141a.log", "a") as _debug_file:
-        _debug_file.write(json.dumps({"sessionId": "3f141a", "runId": "pre-fix", "hypothesisId": "H1,H3,H4", "location": "analysis/coco_eval.py:97", "message": "Loaded COCO evaluation inputs", "data": {"gtFile": str(gt_file), "dtFile": str(dt_file), "gtImages": len(gt_data.get("images", [])), "gtAnnotations": len(gt_data.get("annotations", [])), "dtAnnotations": len(_dt_annotations_debug), "dtUniqueImageIds": len({a.get("image_id") for a in _dt_annotations_debug if isinstance(a, dict)}), "allowedImages": len(allowed), "gtCategoryIds": sorted({c.get("id") for c in gt_data.get("categories", [])}), "dtCategoryIds": sorted({a.get("category_id") for a in _dt_annotations_debug if isinstance(a, dict)})}, "timestamp": int(time.time() * 1000)}) + "\n")
-    # endregion
-
-    if allowed:
-        n_before = len(gt_data["images"])
-        gt_data = _filter_gt_by_filenames(gt_data, allowed)
-        print(
-            f"Filtered ground truth to {len(gt_data['images'])}/{n_before} images "
-            f"present in {filter_source} (by file name)."
-        )
-        if not gt_data["images"]:
+        allowed = _allowed_image_keys_from_image_dir(image_dir)
+        declared = {_image_key(image["file_name"]) for image in gt_data["images"]}
+        missing = allowed - declared
+        if missing:
+            examples = ", ".join(sorted(missing)[:5])
             raise ValueError(
-                f"No ground-truth image names match the images in {filter_source}."
+                f"{len(missing)} image(s) from {image_dir} are not declared in "
+                f"the ground-truth COCO file (for example: {examples})."
             )
+
+        n_before = len(gt_data["images"])
+        gt_data = _filter_gt_by_image_keys(gt_data, allowed)
+        print(
+            f"Selected {len(gt_data['images'])}/{n_before} ground-truth images "
+            f"from image directory {image_dir}."
+        )
     else:
         print(
-            f"Warning: No image file names inferred from {filter_source}; "
-            "using full ground truth."
+            f"Using all {len(gt_data['images'])} images declared by the "
+            "ground-truth COCO file."
         )
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
@@ -129,19 +111,22 @@ def evaluate_coco(gt_file, dt_file, iou_type='bbox', image_dir=None):
     print(f"Loading detection results from: {dt_file}")
     if isinstance(dt_data, dict):
         dt_annotations = dt_data.get("annotations", [])
-    else:
+    elif isinstance(dt_data, list):
         dt_annotations = dt_data
+    else:
+        raise ValueError("Detection JSON must be a COCO result list or object.")
     valid_image_ids = {image["id"] for image in gt_data["images"]}
+    n_before = len(dt_annotations)
     dt_annotations = [
         annotation
         for annotation in dt_annotations
         if annotation.get("image_id") in valid_image_ids
     ]
-
-    # region agent log
-    with open("/moredata/emma/metamorphic_v2/YOLO_metamorphic_testing/.cursor/debug-3f141a.log", "a") as _debug_file:
-        _debug_file.write(json.dumps({"sessionId": "3f141a", "runId": "pre-fix", "hypothesisId": "H1,H3", "location": "analysis/coco_eval.py:145", "message": "Prepared filtered COCO evaluation set", "data": {"keptGtImages": len(gt_data.get("images", [])), "keptGtAnnotations": len(gt_data.get("annotations", [])), "keptDtAnnotations": len(dt_annotations), "keptDtUniqueImageIds": len({a.get("image_id") for a in dt_annotations}), "excludedGtImages": len(gt_id_to_fn) - len(gt_data.get("images", [])), "excludedDtAnnotations": len(_dt_annotations_debug) - len(dt_annotations)}, "timestamp": int(time.time() * 1000)}) + "\n")
-    # endregion
+    if len(dt_annotations) != n_before:
+        print(
+            f"Ignored {n_before - len(dt_annotations)} detection annotation(s) "
+            "outside the evaluation image universe."
+        )
 
     if dt_annotations:
         cocoDt = cocoGt.loadRes(dt_annotations)
@@ -163,6 +148,7 @@ def evaluate_coco(gt_file, dt_file, iou_type='bbox', image_dir=None):
 
     imgIds = sorted(cocoGt.getImgIds())
     print(f"Evaluating on all {len(imgIds)} images")
+    cocoEval.params.imgIds = imgIds
     
     # Run evaluation
     print("\nRunning evaluation...")

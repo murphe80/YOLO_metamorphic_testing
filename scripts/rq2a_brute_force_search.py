@@ -34,9 +34,10 @@ from analysis.utils.format_detections import format_detections
 from analysis.coco_eval import evaluate_coco
 
 # Configuration
-GAMMA_RANGE = (0.1, 8.0)
+GAMMA_RANGE = (0.01, 20.0)
 GAMMA_STEP = 0.1
-AP_TOLERANCE = 0.02
+AP_TOLERANCE = 0.05
+MAX_ROOT_REFINEMENT_ITERATIONS = 35
 BRIGHTNESS_CONSTANT = 0
 BRIGHTNESS_MULTIPLIER = 1.0
 METHOD = "gamma"
@@ -196,27 +197,49 @@ def run_yolo_inference(model, image_path: str, output_dir: str, device: str = "c
     return detections_filepath
 
 
-def calculate_map(detections_dir: str, gt_labels_dir: str, img_width: int = 1920, img_height: int = 1080) -> float:
+def calculate_map(
+    detections_dir: str,
+    gt_labels_dir: str,
+    image_name: str,
+    img_width: int = 1920,
+    img_height: int = 1080,
+) -> float:
     """
     Calculate mAP using COCO evaluation.
 
     Args:
-        detections_dir: Directory with detection .txt files
+        detections_dir: Directory with the image's detection .txt file
         gt_labels_dir: Directory with ground truth .txt files (in YOLO format)
+        image_name: Filename of the image being evaluated. Only its matching
+            ground-truth label is included in this per-image evaluation.
         img_width: Image width for denormalizing coordinates
         img_height: Image height for denormalizing coordinates
 
     Returns:
         mAP: Mean Average Precision @ IoU=0.50:0.95
     """
+    gt_label_file = Path(gt_labels_dir) / f"{Path(image_name).stem}.txt"
+    if not gt_label_file.is_file():
+        raise FileNotFoundError(
+            f"Ground-truth label not found for {image_name}: {gt_label_file}"
+        )
+
     with tempfile.TemporaryDirectory() as tmpdir:
         # Format detections to COCO JSON
         det_json = os.path.join(tmpdir, "detections.json")
         gt_json = os.path.join(tmpdir, "ground_truth.json")
 
-        # First format ground truth to establish image IDs (ground truth is in YOLO format)
-        format_detections(gt_labels_dir, gt_json, as_ground_truth=True, is_yolo_format=True,
-                         img_width=img_width, img_height=img_height)
+        # This search scores one image at a time. Formatting the entire labels
+        # directory here makes COCO treat the other dataset images as missed
+        # detections, driving every per-image AP close to zero.
+        format_detections(
+            gt_label_file,
+            gt_json,
+            as_ground_truth=True,
+            is_yolo_format=True,
+            img_width=img_width,
+            img_height=img_height,
+        )
 
         # Then format detections using the ground truth file to match image IDs
         format_detections(detections_dir, det_json, gt_coco_file=gt_json, as_ground_truth=False)
@@ -266,6 +289,109 @@ def apply_gamma_transformation(
     return output_filepath if success else None
 
 
+def evaluate_gamma(
+    gamma: float,
+    image: np.ndarray,
+    image_name: str,
+    gt_labels_dir: str,
+    model,
+    device: str,
+    results_dir: str,
+    label: str,
+    all_results: List[Tuple[float, float]],
+    img_width: int,
+    img_height: int,
+) -> float:
+    """Evaluate AP for one gamma value and record the result."""
+    transform_dir = os.path.join(results_dir, f"gamma_{gamma:.3f}_{label}")
+    transformed_path = apply_gamma_transformation(image, gamma, image_name, transform_dir)
+
+    if transformed_path is None:
+        raise RuntimeError(f"Failed to apply gamma transformation at gamma={gamma:.3f}")
+
+    detections_dir = os.path.join(transform_dir, "detections")
+    run_yolo_inference(
+        model,
+        transformed_path,
+        detections_dir,
+        device,
+        original_image_name=image_name,
+    )
+    ap = calculate_map(detections_dir, gt_labels_dir, image_name, img_width, img_height)
+    all_results.append((float(gamma), float(ap)))
+    return ap
+
+
+def refine_crossing(
+    lo_gamma: float,
+    lo_ap: float,
+    hi_gamma: float,
+    hi_ap: float,
+    target_ap: float,
+    image: np.ndarray,
+    image_name: str,
+    gt_labels_dir: str,
+    model,
+    device: str,
+    results_dir: str,
+    side_label: str,
+    all_results: List[Tuple[float, float]],
+    img_width: int,
+    img_height: int,
+) -> Tuple[float, float]:
+    """Refine a target-AP bracket until the AP tolerance is met."""
+    best_gamma, best_ap = min(
+        ((lo_gamma, lo_ap), (hi_gamma, hi_ap)),
+        key=lambda result: abs(result[1] - target_ap),
+    )
+
+    if abs(best_ap - target_ap) < 1e-9:
+        return best_gamma, best_ap
+
+    for iteration in range(MAX_ROOT_REFINEMENT_ITERATIONS):
+        denominator = hi_ap - lo_ap
+        if abs(denominator) < 1e-9:
+            gamma = (lo_gamma + hi_gamma) / 2.0
+        else:
+            gamma = lo_gamma + (hi_gamma - lo_gamma) * (target_ap - lo_ap) / denominator
+            gamma = float(np.clip(gamma, lo_gamma, hi_gamma))
+
+        if gamma == lo_gamma or gamma == hi_gamma:
+            gamma = (lo_gamma + hi_gamma) / 2.0
+
+        ap = evaluate_gamma(
+            gamma,
+            image,
+            image_name,
+            gt_labels_dir,
+            model,
+            device,
+            results_dir,
+            f"root_{side_label}_iter{iteration}",
+            all_results,
+            img_width,
+            img_height,
+        )
+        print(
+            f"  [{side_label} refinement {iteration + 1}] "
+            f"gamma={gamma:.3f}, mAP={ap:.4f}, "
+            f"bracket=[{lo_gamma:.3f}, {hi_gamma:.3f}]"
+        )
+
+        if abs(ap - target_ap) < abs(best_ap - target_ap):
+            best_gamma, best_ap = gamma, ap
+
+        if abs(ap - target_ap) <= AP_TOLERANCE:
+            return gamma, ap
+
+        if (ap - target_ap) * (lo_ap - target_ap) > 0:
+            lo_gamma, lo_ap = gamma, ap
+        else:
+            hi_gamma, hi_ap = gamma, ap
+
+    return best_gamma, best_ap
+
+
 def brute_force_gamma_search(
     image_path: str,
     gt_labels_dir: str,
@@ -310,7 +436,9 @@ def brute_force_gamma_search(
     print("Calculating original AP...")
     orig_det_dir = os.path.join(results_dir, "original_detections")
     run_yolo_inference(model, image_path, orig_det_dir, device)
-    original_ap = calculate_map(orig_det_dir, gt_labels_dir, img_width, img_height)
+    original_ap = calculate_map(
+        orig_det_dir, gt_labels_dir, image_name, img_width, img_height
+    )
     print(f"  Original mAP: {original_ap:.4f}")
 
     # Check if original AP meets target threshold
@@ -334,13 +462,15 @@ def brute_force_gamma_search(
             'skip_reason': f'Original AP ({original_ap:.4f}) below target ({target_ap:.2f})'
         }
 
-    # Generate gamma values
-    gamma_values = np.arange(GAMMA_RANGE[0], GAMMA_RANGE[1] + GAMMA_STEP, GAMMA_STEP)
+    gamma_values = np.arange(GAMMA_RANGE[0], GAMMA_RANGE[1], GAMMA_STEP)
+    if not np.isclose(gamma_values[-1], GAMMA_RANGE[1]):
+        gamma_values = np.append(gamma_values, GAMMA_RANGE[1])
     print(f"\nStarting brute force search:")
     print(f"  Gamma range: [{GAMMA_RANGE[0]}, {GAMMA_RANGE[1]}]")
     print(f"  Step size: {GAMMA_STEP}")
     print(f"  Total iterations: {len(gamma_values)}")
-    print(f"  Target AP: {target_ap:.2f} ± {AP_TOLERANCE:.2f}")
+    print(f"  Target AP: {target_ap:.2f}")
+    print(f"  Root refinement AP tolerance: {AP_TOLERANCE:.2f}")
 
     all_results = []
     gamma_left = None
@@ -348,6 +478,7 @@ def brute_force_gamma_search(
     gamma_right = None
     ap_right = None
     inference_count = 0
+    grid_results = []
 
     # Track peak for finding crossings
     peak_gamma = None
@@ -370,8 +501,11 @@ def brute_force_gamma_search(
         inference_count += 1
 
         # Calculate AP
-        ap = calculate_map(detections_dir, gt_labels_dir, img_width, img_height)
-        all_results.append((gamma, ap))
+        ap = calculate_map(
+            detections_dir, gt_labels_dir, image_name, img_width, img_height
+        )
+        grid_results.append((float(gamma), float(ap)))
+        all_results.append((float(gamma), float(ap)))
         print(f"  mAP: {ap:.4f}")
 
         # Save visualization for whole number gamma values
@@ -386,21 +520,59 @@ def brute_force_gamma_search(
             peak_ap = ap
             peak_gamma = gamma
 
-        # Check for crossings
-        # Left crossing: AP rises above target (moving from dark to bright)
-        if gamma_left is None and ap >= (target_ap - AP_TOLERANCE):
-            if len(all_results) > 1 and all_results[-2][1] < (target_ap - AP_TOLERANCE):
-                gamma_left = gamma
-                ap_left = ap
-                print(f"  ✓ Left crossing found: gamma={gamma_left:.2f}, AP={ap_left:.4f}")
+    if grid_results:
+        peak_index = max(range(len(grid_results)), key=lambda index: grid_results[index][1])
 
-        # Right crossing: AP falls below target (moving from peak to very bright)
-        if peak_gamma is not None and gamma > peak_gamma:
-            if gamma_right is None and ap <= (target_ap + AP_TOLERANCE):
-                if len(all_results) > 1 and all_results[-2][1] > (target_ap + AP_TOLERANCE):
-                    gamma_right = gamma
-                    ap_right = ap
-                    print(f"  ✓ Right crossing found: gamma={gamma_right:.2f}, AP={ap_right:.4f}")
+        for index in range(1, peak_index + 1):
+            lo_gamma, lo_ap = grid_results[index - 1]
+            hi_gamma, hi_ap = grid_results[index]
+            if lo_ap < target_ap <= hi_ap:
+                gamma_left, ap_left = refine_crossing(
+                    lo_gamma,
+                    lo_ap,
+                    hi_gamma,
+                    hi_ap,
+                    target_ap,
+                    image,
+                    image_name,
+                    gt_labels_dir,
+                    model,
+                    device,
+                    results_dir,
+                    "left",
+                    all_results,
+                    img_width,
+                    img_height,
+                )
+                print(f"  ✓ Left crossing found: gamma={gamma_left:.3f}, AP={ap_left:.4f}")
+                break
+
+        for index in range(peak_index + 1, len(grid_results)):
+            lo_gamma, lo_ap = grid_results[index - 1]
+            hi_gamma, hi_ap = grid_results[index]
+            if lo_ap > target_ap >= hi_ap:
+                gamma_right, ap_right = refine_crossing(
+                    lo_gamma,
+                    lo_ap,
+                    hi_gamma,
+                    hi_ap,
+                    target_ap,
+                    image,
+                    image_name,
+                    gt_labels_dir,
+                    model,
+                    device,
+                    results_dir,
+                    "right",
+                    all_results,
+                    img_width,
+                    img_height,
+                )
+                print(f"  ✓ Right crossing found: gamma={gamma_right:.3f}, AP={ap_right:.4f}")
+                break
+
+    all_results.sort(key=lambda result: result[0])
+    inference_count = len(all_results)
 
     elapsed_time = time.time() - start_time
 
@@ -409,9 +581,9 @@ def brute_force_gamma_search(
     print("Brute Force Search Complete")
     print(f"{'='*60}")
     print(f"Original AP: {original_ap:.4f}")
-    print(f"Peak AP: {peak_ap:.4f} at gamma={peak_gamma:.2f}")
-    print(f"Left crossing: {'gamma=' + f'{gamma_left:.2f}, AP={ap_left:.4f}' if gamma_left else 'Not found'}")
-    print(f"Right crossing: {'gamma=' + f'{gamma_right:.2f}, AP={ap_right:.4f}' if gamma_right else 'Not found'}")
+    print(f"Peak AP: {peak_ap:.4f} at gamma={peak_gamma:.3f}")
+    print(f"Left crossing: {'gamma=' + f'{gamma_left:.3f}, AP={ap_left:.4f}' if gamma_left else 'Not found'}")
+    print(f"Right crossing: {'gamma=' + f'{gamma_right:.3f}, AP={ap_right:.4f}' if gamma_right else 'Not found'}")
     print(f"Iterations: {len(all_results)}")
     print(f"Inference count: {inference_count}")
     print(f"Time: {elapsed_time:.1f}s")
@@ -570,6 +742,7 @@ Examples:
         "gamma_range": list(GAMMA_RANGE),
         "gamma_step": GAMMA_STEP,
         "ap_tolerance": AP_TOLERANCE,
+        "max_root_refinement_iterations": MAX_ROOT_REFINEMENT_ITERATIONS,
         "total_images": len(image_files),
         "processed_images": len(processed_results),
         "skipped_images": len(skipped_images),

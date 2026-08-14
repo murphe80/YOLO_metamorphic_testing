@@ -140,6 +140,7 @@ for dataset in "${DATASETS[@]}"; do
         python3 analysis/visualisation/plot_confidence_change.py \
             --dataset "$dataset" \
             --results_dir "$results_dir" \
+            --gt_path "$gt_path" \
             --output_dir "$analysis_dir/confidence_change"
     fi
 

@@ -102,6 +102,25 @@ def get_model_names(enabled_only: bool = True) -> List[str]:
     return [m["name"] for m in models]
 
 
+def get_default_model_name() -> str:
+    """Get the configured default model name.
+
+    If ``default_model`` is omitted, the first enabled model is used for
+    backwards compatibility. The configured default must itself be enabled.
+    """
+    config = _load_config()
+    enabled_names = get_model_names()
+    if not enabled_names:
+        raise ValueError("No enabled models are defined in config/models.json")
+
+    default_name = config.get("default_model", enabled_names[0])
+    if default_name not in enabled_names:
+        raise ValueError(
+            f"Default model '{default_name}' is not an enabled model in config/models.json"
+        )
+    return default_name
+
+
 def get_model_versions(enabled_only: bool = True) -> List[str]:
     """
     Get list of model versions.

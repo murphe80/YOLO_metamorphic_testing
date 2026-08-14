@@ -21,9 +21,14 @@
 #                          (default: config/transformations.json)
 #                          Supports either one config object per rule or
 #                          a list of config variants per rule.
+#   --images-dir <path>    Override the dataset image directory. This is useful
+#                          for flat, unannotated datasets outside the usual
+#                          data/base_images/<dataset>/images/ layout.
 #   --viz-samples <n>      Save detection visualizations for the first n images
 #                          per model/configuration (default: 5; 0 disables)
 #   --skip-transform       Skip Stage 1 (re-use existing transformed images)
+#   --analysis-only        Resume at Stage 3, re-using existing transformations
+#                          and detections
 #
 # Examples:
 #   bash scripts/run_pipeline.sh
@@ -60,8 +65,10 @@ mkdir -p "$YOLO_CONFIG_DIR"
 DATASETS=()
 MODEL_ARG="all"
 CONFIG_FILE="config/brute_force_transformations.json"
+IMAGES_DIR_OVERRIDE=""
 VIZ_SAMPLES=5
 SKIP_TRANSFORM=false
+ANALYSIS_ONLY=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -79,9 +86,12 @@ while [[ $# -gt 0 ]]; do
         --model=*) MODEL_ARG="${1#*=}"; shift ;;
         --config) CONFIG_FILE="$2"; shift 2 ;;
         --config=*) CONFIG_FILE="${1#*=}"; shift ;;
+        --images-dir) IMAGES_DIR_OVERRIDE="$2"; shift 2 ;;
+        --images-dir=*) IMAGES_DIR_OVERRIDE="${1#*=}"; shift ;;
         --viz-samples) VIZ_SAMPLES="$2"; shift 2 ;;
         --viz-samples=*) VIZ_SAMPLES="${1#*=}"; shift ;;
         --skip-transform) SKIP_TRANSFORM=true; shift ;;
+        --analysis-only) ANALYSIS_ONLY=true; shift ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
@@ -94,6 +104,10 @@ fi
 # analyses cannot overwrite one another. Re-invoking this script keeps the
 # existing single-dataset pipeline unchanged.
 if [ "${#DATASETS[@]}" -gt 1 ]; then
+    if [ -n "$IMAGES_DIR_OVERRIDE" ]; then
+        echo "Error: --images-dir can only be used with one dataset."
+        exit 1
+    fi
     for dataset in "${DATASETS[@]}"; do
         if [ -z "$dataset" ]; then
             echo "Error: Dataset names cannot be empty"
@@ -102,6 +116,9 @@ if [ "${#DATASETS[@]}" -gt 1 ]; then
         args=(--dataset "$dataset" --model "$MODEL_ARG" --config "$CONFIG_FILE" --viz-samples "$VIZ_SAMPLES")
         if [ "$SKIP_TRANSFORM" = true ]; then
             args+=(--skip-transform)
+        fi
+        if [ "$ANALYSIS_ONLY" = true ]; then
+            args+=(--analysis-only)
         fi
         bash "$0" "${args[@]}"
     done
@@ -134,6 +151,10 @@ elif [ "$DATASET" = "train_samples" ]; then
 else
     IMAGES_DIR="data/base_images/$DATASET/images"
     TRANSFORMED_DIR="data/transformed_images/$DATASET"
+fi
+
+if [ -n "$IMAGES_DIR_OVERRIDE" ]; then
+    IMAGES_DIR="$IMAGES_DIR_OVERRIDE"
 fi
 
 RESULTS_BASE="results/$DATASET"
@@ -300,7 +321,12 @@ fi
 # =============================================================================
 # Stage 1 — Generate metamorphic images
 # =============================================================================
-if [ "$SKIP_TRANSFORM" = false ]; then
+if [ "$ANALYSIS_ONLY" = true ]; then
+    echo ""
+    echo "╔══════════════════════════════════════════════╗"
+    echo "║  Stages 1–2: Skipped (--analysis-only)       ║"
+    echo "╚══════════════════════════════════════════════╝"
+elif [ "$SKIP_TRANSFORM" = false ]; then
     echo ""
     echo "╔══════════════════════════════════════════════╗"
     echo "║  Stage 1: Generating metamorphic images      ║"
@@ -343,10 +369,12 @@ fi
 # =============================================================================
 # Stage 2 — Run inference
 # =============================================================================
-echo ""
-echo "╔══════════════════════════════════════════════╗"
-echo "║  Stage 2: Running inference                  ║"
-echo "╚══════════════════════════════════════════════╝"
+if [ "$ANALYSIS_ONLY" = false ]; then
+    echo ""
+    echo "╔══════════════════════════════════════════════╗"
+    echo "║  Stage 2: Running inference                  ║"
+    echo "╚══════════════════════════════════════════════╝"
+fi
 
 run_model() {
     local model_name="$1"
@@ -402,9 +430,11 @@ else
 fi
 
 # Run inference for each model
-for model in $MODEL_LIST; do
-    run_model "$model"
-done
+if [ "$ANALYSIS_ONLY" = false ]; then
+    for model in $MODEL_LIST; do
+        run_model "$model"
+    done
+fi
 
 # =============================================================================
 # Stage 3 — Evaluate (metamorphic comparison: original vs transformed)
@@ -416,10 +446,16 @@ echo "╚═══════════════════════�
 echo ""
 
 RULE_FILTER=$(IFS=,; echo "${RUN_OUTPUT_NAMES[*]}")
-bash analysis/scripts/run_all_analysis_matias_meta.sh \
-    --dataset "$DATASET" \
-    --detections-base "$RESULTS_BASE" \
+analysis_args=(
+    --dataset "$DATASET"
+    --detections-base "$RESULTS_BASE"
+    --images-dir "$IMAGES_DIR"
     --rules "$RULE_FILTER"
+)
+if [ "$MODEL_ARG" != "all" ]; then
+    analysis_args+=(--model "$MODEL_NAME")
+fi
+bash analysis/scripts/run_all_analysis_matias_meta.sh "${analysis_args[@]}"
 
 echo ""
 echo "╔══════════════════════════════════════════════╗"

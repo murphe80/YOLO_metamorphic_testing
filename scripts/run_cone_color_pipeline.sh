@@ -195,6 +195,7 @@ RESULTS_BASE="$PWD/results/$DATASET"
 HIST_SAMPLES_DIR="utils/hist_backprojection"
 TRANSFORM_SCRIPT="utils/cone_colour_class_transformation.py"
 SEGMENT_SCRIPT="utils/extract_cone_regions_gt.py"
+CONE_CLASS_CONFIG="config/cone_classes.json"
 
 DEFAULT_TRANSFORMATIONS=(
     yellow_to_blue
@@ -291,6 +292,10 @@ if [ ! -f "$TRANSFORM_SCRIPT" ] || [ ! -f "$SEGMENT_SCRIPT" ]; then
     echo "Error: Cone-colour transformation utilities are missing."
     exit 1
 fi
+if [ ! -f "$CONE_CLASS_CONFIG" ]; then
+    echo "Error: Cone-class configuration not found: $CONE_CLASS_CONFIG"
+    exit 1
+fi
 
 if [ ! -d "$HIST_SAMPLES_DIR" ]; then
     echo "Error: Histogram samples directory not found: $HIST_SAMPLES_DIR"
@@ -304,6 +309,7 @@ echo "╚═══════════════════════�
 echo "Dataset: $DATASET"
 echo "Images: $IMAGES_DIR"
 echo "Labels: $LABELS_DIR"
+echo "Cone classes: $CONE_CLASS_CONFIG ($DATASET)"
 echo "Transformed images: $TRANSFORMED_BASE"
 echo "Transformations: ${TRANSFORMATIONS[*]}"
 echo "Models: ${MODELS[*]}"
@@ -347,6 +353,8 @@ if [ "$SKIP_TRANSFORM" = false ]; then
             --labels_dir "$LABELS_DIR" \
             --segmented_dir "$SEGMENTED_DIR" \
             --output_dir "$output_dir" \
+            --dataset "$DATASET" \
+            --class-config "$CONE_CLASS_CONFIG" \
             --transformation "$transformation"
 
         image_count=$(find "$output_dir" -maxdepth 1 -type f \

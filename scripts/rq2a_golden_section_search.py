@@ -32,6 +32,11 @@ from ultralytics import YOLO
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.matias_metamorphic import gen_metamorphic
+from utils.model_registry import (
+    get_default_model_name,
+    get_model_by_name,
+    get_model_names,
+)
 from analysis.utils.format_detections import format_detections
 from analysis.coco_eval import evaluate_coco
 
@@ -48,12 +53,9 @@ METHOD = "gamma"
 # Golden-section ratio
 _GSR = (np.sqrt(5) - 1) / 2  # ≈ 0.618
 
-# Model weights paths
-MODEL_WEIGHTS = {
-    "yolov5": "models/yolov5/yolov5_param_kfold.pt",
-    "yolov8": "models/yolov8/yolov8_param_kfold.pt",
-    "yolov12": "models/yolov12/yolov12_param_kfold.pt",
-}
+PROJECT_ROOT = Path(__file__).parent.parent
+AVAILABLE_MODELS = get_model_names()
+DEFAULT_MODEL = get_default_model_name()
 
 # Class names and colors for visualization
 CLASS_NAMES = {
@@ -77,13 +79,19 @@ CLASS_COLORS = {
 
 def load_yolo_model(model_name: str, device: str = "cuda:0"):
     """Load YOLO model."""
-    weights_path = MODEL_WEIGHTS.get(model_name)
-    if not weights_path or not os.path.exists(weights_path):
+    model_config = get_model_by_name(model_name)
+    if model_config is None or model_name not in AVAILABLE_MODELS:
+        raise ValueError(
+            f"Model '{model_name}' is not enabled in config/models.json"
+        )
+
+    weights_path = PROJECT_ROOT / model_config["weights"]
+    if not weights_path.is_file():
         raise FileNotFoundError(f"Model weights not found: {weights_path}")
 
     device = torch.device(device if torch.cuda.is_available() else "cpu")
     print(f"Loading {model_name} from {weights_path} on {device}...")
-    model = YOLO(weights_path)
+    model = YOLO(str(weights_path))
     return model, device
 
 
@@ -203,27 +211,48 @@ def run_yolo_inference(model, image_path: str, output_dir: str, device: str = "c
     return detections_filepath
 
 
-def calculate_map(detections_dir: str, gt_labels_dir: str, img_width: int = 1920, img_height: int = 1080) -> float:
+def calculate_map(
+    detections_dir: str,
+    gt_labels_dir: str,
+    image_name: str,
+    img_width: int = 1920,
+    img_height: int = 1080,
+) -> float:
     """
     Calculate mAP using COCO evaluation.
 
     Args:
-        detections_dir: Directory with detection .txt files
+        detections_dir: Directory with the image's detection .txt file
         gt_labels_dir: Directory with ground truth .txt files (in YOLO format)
+        image_name: Filename of the image being evaluated. Only its matching
+            ground-truth label is included in this per-image evaluation.
         img_width: Image width for denormalizing coordinates
         img_height: Image height for denormalizing coordinates
 
     Returns:
         mAP: Mean Average Precision @ IoU=0.50:0.95
     """
+    gt_label_file = Path(gt_labels_dir) / f"{Path(image_name).stem}.txt"
+    if not gt_label_file.is_file():
+        raise FileNotFoundError(
+            f"Ground-truth label not found for {image_name}: {gt_label_file}"
+        )
+
     with tempfile.TemporaryDirectory() as tmpdir:
         # Format detections to COCO JSON
         det_json = os.path.join(tmpdir, "detections.json")
         gt_json = os.path.join(tmpdir, "ground_truth.json")
 
-        # First format ground truth to establish image IDs (ground truth is in YOLO format)
-        format_detections(gt_labels_dir, gt_json, as_ground_truth=True, is_yolo_format=True,
-                         img_width=img_width, img_height=img_height)
+        # The search scores one image at a time. Restrict the ground truth to
+        # that image so unrelated dataset images are not counted as misses.
+        format_detections(
+            gt_label_file,
+            gt_json,
+            as_ground_truth=True,
+            is_yolo_format=True,
+            img_width=img_width,
+            img_height=img_height,
+        )
 
         # Then format detections using the ground truth file to match image IDs
         format_detections(detections_dir, det_json, gt_coco_file=gt_json, as_ground_truth=False)
@@ -315,7 +344,7 @@ def evaluate_gamma(
     run_yolo_inference(model, transformed_path, detections_dir, device, original_image_name=image_name)
 
     # Calculate AP
-    ap = calculate_map(detections_dir, gt_labels_dir, img_width, img_height)
+    ap = calculate_map(detections_dir, gt_labels_dir, image_name, img_width, img_height)
     print(f"    mAP: {ap:.4f}")
 
     # Store result for visualization
@@ -492,7 +521,9 @@ def golden_section_gamma_search(
     print("Calculating original AP...")
     orig_det_dir = os.path.join(results_dir, "original_detections")
     run_yolo_inference(model, image_path, orig_det_dir, device)
-    original_ap = calculate_map(orig_det_dir, gt_labels_dir, img_width, img_height)
+    original_ap = calculate_map(
+        orig_det_dir, gt_labels_dir, image_name, img_width, img_height
+    )
     print(f"  Original mAP: {original_ap:.4f}")
 
     print(f"\nTarget AP: {target_ap:.2f} ± {AP_TOLERANCE:.2f}")
@@ -636,9 +667,9 @@ Examples:
     parser.add_argument(
         "--model",
         type=str,
-        default="yolov8",
-        choices=["yolov5", "yolov8", "yolov12"],
-        help="YOLO model to use (default: yolov8)"
+        default=DEFAULT_MODEL,
+        choices=AVAILABLE_MODELS,
+        help=f"YOLO model to use (default: {DEFAULT_MODEL})"
     )
     parser.add_argument(
         "--dataset",

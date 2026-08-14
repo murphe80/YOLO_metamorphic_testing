@@ -4,13 +4,13 @@ Generate Venn diagram visualizations showing detection overlap between
 original images, transformed images, and ground truth annotations.
 
 Usage:
-    # Generate all Venn diagrams
+    # Generate one model-comparison grid per transformation
     python3 analysis/visualisation/plot_detection_venn.py
 
     # Custom IoU threshold
     python3 analysis/visualisation/plot_detection_venn.py --iou_threshold 0.7
 
-    # Specific model and transformation
+    # Specific model and transformation (a one-panel grid)
     python3 analysis/visualisation/plot_detection_venn.py --model yolov8 --transformation imgGrayscale
 
     # Custom paths
@@ -19,6 +19,7 @@ Usage:
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Optional
@@ -43,7 +44,9 @@ MODEL_COLORS = {
     'yolov8': '#7b1fa2',  # Purple
     'yolov12': '#388e3c',  # Green
     'yolov26': '#ff9800',  # Orange
+    'yolov26_v2': '#d32f2f',  # Red
 }
+MODEL_ORDER = ['yolov5', 'yolov8', 'yolov12', 'yolov26', 'yolov26_v2']
 
 BASE_TRANSFORMATIONS = [
     'imgStretch', 'imgResolution', 'imgMotionBlur',
@@ -187,7 +190,13 @@ def discover_models(results_dir: Path) -> list:
         original_path = model_dir / "original" / "detections_original_coco.json"
         if original_path.exists():
             models.append(model_dir.name)
-    return models
+    return sorted(
+        models,
+        key=lambda model: (
+            MODEL_ORDER.index(model) if model in MODEL_ORDER else len(MODEL_ORDER),
+            model,
+        ),
+    )
 
 
 def discover_transformations(results_dir: Path, models: list) -> list:
@@ -210,24 +219,22 @@ def discover_transformations(results_dir: Path, models: list) -> list:
     return sorted(transformations)
 
 
-def plot_venn_for_model_transformation(
+def compute_venn_for_model_transformation(
     model: str,
     transformation: str,
     results_dir: Path,
     gt_path: Path,
-    output_dir: Path,
     iou_threshold: float = 0.5,
     brute_force_config: Path = DEFAULT_BRUTE_FORCE_CONFIG
 ) -> dict:
     """
-    Generate a three-circle Venn diagram for one model-transformation pair.
+    Compute three-way overlap statistics for one model-transformation pair.
 
     Args:
         model: Model name (yolov5, yolov8, yolov12, yolov26)
         transformation: Transformation name (e.g., imgGrayscale)
         results_dir: Base results directory
         gt_path: Path to ground truth COCO JSON
-        output_dir: Output directory for PNG files
         iou_threshold: IoU threshold for matching (default: 0.5)
 
     Returns:
@@ -301,12 +308,14 @@ def plot_venn_for_model_transformation(
     metrics = compute_retention_metrics(stats)
     stats.update(metrics)
 
-    # Create three-circle Venn diagram
+    return stats
+
+
+def draw_venn_panel(ax, model: str, stats: dict) -> None:
+    """Draw one model's Venn diagram and metrics on an existing grid axis."""
     # venn3 expects: (Abc, aBc, ABc, abC, AbC, aBC, ABC)
     # where A=Original, B=Transformed, C=GT
     # lowercase=absent, uppercase=present
-    fig, ax = plt.subplots(figsize=(10, 8))
-
     venn = venn3(
         subsets=(
             stats['orig_only'],      # Abc - Original only
@@ -342,12 +351,7 @@ def plot_venn_for_model_transformation(
             linestyle='solid'
         )
 
-    # Add title
-    title = (
-        f"{model.upper()} - {transformation}\n"
-        f"Detection Overlap (IoU ≥ {iou_threshold})"
-    )
-    plt.title(title, fontsize=12, fontweight='bold', pad=20)
+    ax.set_title(model.upper(), fontsize=13, fontweight='bold', pad=12)
 
     # Report all derived metrics below the Venn diagram
     metric_lines = [
@@ -357,25 +361,91 @@ def plot_venn_for_model_transformation(
         f"Detection Loss: {stats['detection_loss_rate']:.1%}",
         f"New Hallucination: {stats['new_hallucination_rate']:.1%}",
     ]
-    fig.subplots_adjust(bottom=0.18)
-    fig.text(
+    ax.text(
         0.5,
-        0.04,
-        " | ".join(metric_lines),
+        -0.10,
+        "\n".join((
+            " | ".join(metric_lines[:2]),
+            " | ".join(metric_lines[2:4]),
+            metric_lines[4],
+        )),
         ha='center',
-        va='bottom',
-        fontsize=10,
-        wrap=True
+        va='top',
+        fontsize=9,
+        transform=ax.transAxes,
     )
 
-    # Save figure
-    output_path = output_dir / f"{model}_{transformation}_venn.png"
-    plt.savefig(output_path, dpi=200, bbox_inches='tight', facecolor='white')
+
+def plot_venn_grid_for_transformation(
+    models: list,
+    transformation: str,
+    results_dir: Path,
+    gt_path: Path,
+    output_dir: Path,
+    iou_threshold: float = 0.5,
+    brute_force_config: Path = DEFAULT_BRUTE_FORCE_CONFIG,
+    columns: int = 3,
+) -> tuple:
+    """Generate one PNG containing a grid of model Venn diagrams."""
+    columns = max(1, min(columns, len(models)))
+    rows = math.ceil(len(models) / columns)
+    fig, _ = plt.subplots(
+        rows,
+        columns,
+        figsize=(6 * columns, 5.5 * rows),
+        squeeze=False,
+    )
+    axes = fig.axes
+    model_stats = {}
+    success_count = 0
+    skip_count = 0
+
+    for ax, model in zip(axes, models):
+        try:
+            stats = compute_venn_for_model_transformation(
+                model,
+                transformation,
+                results_dir,
+                gt_path,
+                iou_threshold,
+                brute_force_config,
+            )
+            draw_venn_panel(ax, model, stats)
+            model_stats[model] = stats
+            success_count += 1
+        except FileNotFoundError as exc:
+            print(f"⚠ Skipping {model}/{transformation}: {exc}")
+            ax.set_title(model.upper(), fontsize=13, fontweight='bold')
+            ax.text(0.5, 0.5, "Data unavailable", ha='center', va='center', fontsize=12)
+            ax.set_axis_off()
+            skip_count += 1
+        except Exception as exc:
+            print(f"✗ Error processing {model}/{transformation}: {exc}")
+            ax.set_title(model.upper(), fontsize=13, fontweight='bold')
+            ax.text(0.5, 0.5, "Could not generate diagram", ha='center', va='center', fontsize=12)
+            ax.set_axis_off()
+            skip_count += 1
+
+    for ax in axes[len(models):]:
+        ax.set_axis_off()
+
+    if success_count == 0:
+        plt.close(fig)
+        return model_stats, success_count, skip_count
+
+    fig.suptitle(
+        f"{transformation}\nDetection Overlap (IoU ≥ {iou_threshold})",
+        fontsize=16,
+        fontweight='bold',
+    )
+    fig.subplots_adjust(top=0.88, bottom=0.09, hspace=0.48, wspace=0.15)
+
+    output_path = output_dir / f"{transformation}_venn.png"
+    fig.savefig(output_path, dpi=200, bbox_inches='tight', facecolor='white')
     plt.close(fig)
+    print(f"✓ Generated grid: {output_path.name} ({success_count} models)")
 
-    print(f"✓ Generated: {output_path.name}")
-
-    return stats
+    return model_stats, success_count, skip_count
 
 
 def main():
@@ -415,13 +485,19 @@ def main():
     parser.add_argument(
         '--model',
         type=str,
-        choices=['yolov5', 'yolov8', 'yolov12', 'yolov26'],
+        choices=['yolov5', 'yolov8', 'yolov12', 'yolov26', 'yolov26_v2'],
         help='Generate for specific model only'
     )
     parser.add_argument(
         '--transformation',
         type=str,
         help='Generate for specific transformation only'
+    )
+    parser.add_argument(
+        '--columns',
+        type=int,
+        default=3,
+        help='Maximum number of model diagrams per grid row (default: 3)'
     )
 
     args = parser.parse_args()
@@ -437,7 +513,7 @@ def main():
     # Define models and transformations
     models = [args.model] if args.model else discover_models(args.results_dir)
     if not models:
-        models = ['yolov5', 'yolov8', 'yolov12', 'yolov26']
+        models = MODEL_ORDER
 
     transformations = [args.transformation] if args.transformation else discover_transformations(
         args.results_dir,
@@ -458,33 +534,29 @@ def main():
     print(f"Output Directory: {args.output_dir}")
     print("=" * 80)
 
-    # Generate Venn diagrams
+    # Generate one model-comparison grid per transformation
     all_stats = {}
     success_count = 0
     skip_count = 0
+    generated_grid_count = 0
 
-    for model in models:
-        for transformation in transformations:
-            try:
-                stats = plot_venn_for_model_transformation(
-                    model,
-                    transformation,
-                    args.results_dir,
-                    args.gt_path,
-                    args.output_dir,
-                    args.iou_threshold,
-                    args.brute_force_config
-                )
-                all_stats[f"{model}_{transformation}"] = stats
-                success_count += 1
-
-            except FileNotFoundError as e:
-                print(f"⚠ Skipping {model}/{transformation}: {e}")
-                skip_count += 1
-
-            except Exception as e:
-                print(f"✗ Error processing {model}/{transformation}: {e}")
-                skip_count += 1
+    for transformation in transformations:
+        transformation_stats, successes, skips = plot_venn_grid_for_transformation(
+            models,
+            transformation,
+            args.results_dir,
+            args.gt_path,
+            args.output_dir,
+            args.iou_threshold,
+            args.brute_force_config,
+            args.columns,
+        )
+        for model, stats in transformation_stats.items():
+            all_stats[f"{model}_{transformation}"] = stats
+        success_count += successes
+        skip_count += skips
+        if successes:
+            generated_grid_count += 1
 
     # Save aggregate statistics
     stats_path = args.output_dir / "venn_statistics.json"
@@ -492,7 +564,7 @@ def main():
         json.dump(all_stats, f, indent=2)
 
     print("=" * 80)
-    print(f"✓ Successfully generated {success_count} Venn diagrams")
+    print(f"✓ Successfully generated {generated_grid_count} Venn diagram grids ({success_count} model panels)")
     if skip_count > 0:
         print(f"⚠ Skipped {skip_count} model-transformation pairs")
     print(f"✓ Saved statistics to: {stats_path}")

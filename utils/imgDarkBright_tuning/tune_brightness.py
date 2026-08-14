@@ -34,15 +34,15 @@ from utils.imgDarkBright_tuning.mean_shift import mean_shift_clustering_variance
 
 import numpy as np
 
-def luminosity_bt_709(image: np.ndarray) -> np.ndarray:
+def luminosity_bt_709(image: np.ndarray) -> float:
     """
     image: H x W x 3 float array (values 0.0–1.0 or 0–255)
-    returns: H x W grayscale luminosity array
+    returns: mean BT.709 luminosity
     """
     # convert to rgb
     image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
     weights = np.array([0.2126, 0.7152, 0.0722])  # BT.709
-    return image @ weights # matrix multiplication (dot product)
+    return float(np.mean(image @ weights))
 
 def extract_value_HSV(image_bgr: np.ndarray) -> np.ndarray:
     """
@@ -58,8 +58,8 @@ def low_high_regions_ratio(image_bgr: np.ndarray) -> float:
     """
     v = extract_value_HSV(image_bgr)
     low_region = v == 0
-    high_region = v == 255
-    return (np.sum(low_region) + np.sum(high_region)) / v.size
+    high_region = v == 1
+    return float((np.sum(low_region) + np.sum(high_region)) / v.size)
 
 def calculate_rms(image_bgr: np.ndarray) -> float:
     """
@@ -77,7 +77,7 @@ def calculate_rms(image_bgr: np.ndarray) -> float:
 
     return rms
 
-def calculate_brightness_scores(image_bgr: np.ndarray) -> tuple[float, float, float, float]:
+def calculate_brightness_scores(image_bgr: np.ndarray) -> dict[str, float]:
     """
     Calculate the brightness scores of the image
     Returns json object with the brightness scores
@@ -93,17 +93,28 @@ def calculate_brightness_scores(image_bgr: np.ndarray) -> tuple[float, float, fl
         "luminosity_709": luminosity_709
     }
 
-def get_confidence_level(image, detections_path):
+def get_confidence_level(image_filename, detections_path):
     """
-    Get the confidence level of the detections in the image
+    Get the average confidence level for an image's detections.
+
+    ``detections_path`` may be either a directory containing one detection
+    file per image or the path to a single detection file.
+
     Returns the average confidence level of the detections in the image
     """
-    # Find .txt detections file for the target input image
-    detections_file = os.path.join(detections_path, image.replace(".jpg", ".txt"))
+    if os.path.isdir(detections_path):
+        image_stem = Path(image_filename).stem
+        detections_file = os.path.join(detections_path, f"{image_stem}.txt")
+    else:
+        detections_file = detections_path
+
     with open(detections_file, "r") as f:
         detections = f.readlines()
+
     # Get the confidence level of the detections (second number on each line)
-    confidence_levels = [float(detection.split(" ")[1]) for detection in detections]
+    confidence_levels = [
+        float(detection.split()[1]) for detection in detections if detection.strip()
+    ]
     return np.mean(confidence_levels)
 
 def tune_brightness(images_path, original_detections_path, target_ap, gt_detections_filepath, output_dir=None):
@@ -136,12 +147,14 @@ def tune_brightness(images_path, original_detections_path, target_ap, gt_detecti
             continue
 
         brightness_scores = calculate_brightness_scores(image)
-        original_confidence_level = get_confidence_level(image, original_detections_path)
+        original_confidence_level = get_confidence_level(image_path, original_detections_path)
         optimal_config, ap_b, ap_y, updated_image_filepath, updated_detections_path = search_brightness(
             image, image_path, target_ap, gt_detections_filepath
         )
         output_image = cv.imread(updated_image_filepath)
-        updated_confidence_level = get_confidence_level(output_image, updated_detections_path)
+        updated_confidence_level = get_confidence_level(
+            updated_image_filepath, updated_detections_path
+        )
         tuned_brightness_scores = calculate_brightness_scores(output_image)
 
         results.append({
@@ -234,7 +247,7 @@ Examples:
             args.images_path = f"data/base_images/{args.dataset}/images"
 
     if args.original_detections_path is None:
-        args.original_detections_path = f"results/{args.model}/original"
+        args.original_detections_path = f"results/{args.dataset}/{args.model}/original"
 
     if args.gt_detections_filepath is None:
         if args.dataset == "fsoco_sample":
