@@ -18,7 +18,7 @@
 #                          --dataset test --dataset train_samples.
 #   --model <v5|v8|v12|all> Which model(s) to run (default: all)
 #   --config <path>        Transformation config file
-#                          (default: config/transformations.json)
+#                          (default: config/brute_force_transformations.json)
 #                          Supports either one config object per rule or
 #                          a list of config variants per rule.
 #   --images-dir <path>    Override the dataset image directory. This is useful
