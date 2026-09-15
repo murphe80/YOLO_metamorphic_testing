@@ -1,6 +1,7 @@
 import cv2 as cv
 import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
+from sklearn.metrics import pairwise_distances_argmin
 
 
 def mean_shift_clustering_variance(
@@ -57,15 +58,13 @@ def mean_shift_clustering_variance(
     ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
     ms.fit(pixels_fit)
 
-    # Predict labels for all pixels using nearest cluster center
+    # Predict labels for all pixels using nearest cluster center.
+    # Uses pairwise_distances_argmin instead of a dense (N, K, 3) broadcast
+    # so memory stays bounded (internally chunked) regardless of image
+    # resolution or number of clusters found -- a naive broadcast can blow
+    # up to tens of GB on high-resolution images with many clusters.
     cluster_centers = ms.cluster_centers_.astype(np.float32)
-
-    # Assign every pixel to nearest cluster center
-    dists = np.linalg.norm(
-        pixels[:, None, :] - cluster_centers[None, :, :],
-        axis=2
-    )
-    labels = np.argmin(dists, axis=1)
+    labels = pairwise_distances_argmin(pixels, cluster_centers)
 
     n_clusters = len(cluster_centers)
 

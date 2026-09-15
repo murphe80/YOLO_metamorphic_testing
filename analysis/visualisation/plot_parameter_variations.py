@@ -2,8 +2,9 @@
 """
 Plot AP and AR vs parameter setting for each metamorphic test rule.
 
-Generates AP and AR line charts per transformation rule, with one line per YOLO
-model, plus a JSON file containing AP and AR for every rule, setting, and model.
+Generates precision and AR line charts per transformation rule, with one line
+per YOLO model, plus a JSON file containing the selected precision metric and
+AR for every rule, setting, and model.
 Parameter values come from config/brute_force_transformations.json; metric values
 are read from analysis/results/<dataset>/<model>/<variant_id>/<comparison>/stats.json.
 AR plots use the COCO AR100 metric and are saved under the ar_plots output
@@ -161,8 +162,9 @@ def collect_rule_metrics(
     models: List[str],
     results_dir: Path,
     comparison: str,
+    precision_metric: str,
 ) -> List[dict]:
-    """Collect AP and AR for every configured setting and selected model."""
+    """Collect the selected precision metric and AR for every setting."""
     settings = []
 
     for variant in variants:
@@ -170,7 +172,13 @@ def collect_rule_metrics(
         model_metrics = {}
         for model in models:
             model_metrics[model] = {
-                "AP": load_metric(results_dir, model, variant_id, comparison, "AP"),
+                precision_metric: load_metric(
+                    results_dir,
+                    model,
+                    variant_id,
+                    comparison,
+                    precision_metric,
+                ),
                 "AR": load_metric(
                     results_dir, model, variant_id, comparison, AR_METRIC
                 ),
@@ -357,6 +365,7 @@ def main():
     metrics_export = {
         "dataset": args.dataset,
         "comparison": args.comparison,
+        "precision_metric": args.metric,
         "models": models,
         "rules": {},
     }
@@ -381,6 +390,7 @@ def main():
                 models,
                 results_dir,
                 args.comparison,
+                args.metric,
             ),
         }
         param_name, series, _ = collect_series(

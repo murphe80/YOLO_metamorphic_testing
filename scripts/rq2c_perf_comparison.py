@@ -379,14 +379,14 @@ Examples:
         "--output-dir",
         type=str,
         default=None,
-        help="Output directory (default: analysis/results/rq2c_brightness_detection_dist)",
+        help="Output directory (default: analysis/results/rq2c/rq2c_brightness_detection_dist_{model})",
     )
 
     args = parser.parse_args()
 
     output_dir = (
         Path(args.output_dir) if args.output_dir
-        else RESULTS_ROOT / "rq2c_brightness_detection_dist"
+        else RESULTS_ROOT / f"rq2c/rq2c_brightness_detection_dist_{args.model}"
     )
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -434,7 +434,7 @@ Examples:
             print(f"  Skip {model}: no complete image records")
             continue
 
-        output_path = output_dir / f"{model}_performance_distribution.png"
+        output_path = output_dir / f"{model}_{chosen_method}_performance_distribution.png"
         if plot_performance_distribution(model, records, output_path):
             print(f"  Saved: {output_path}")
             generated += 1
@@ -448,7 +448,7 @@ Examples:
             "summary": summarize_records(records),
         }
 
-    summary_json = output_dir / "results.json"
+    summary_json = output_dir / f"results_{args.search_method}.json"
     with open(summary_json, "w") as f:
         json.dump(all_model_data, f, indent=2)
     print(f"\nSummary data saved to: {summary_json}")

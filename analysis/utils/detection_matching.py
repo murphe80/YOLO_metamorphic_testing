@@ -89,7 +89,8 @@ def load_detections_by_image(coco_json_path: Path) -> Dict[int, List[Dict]]:
 def match_detection_pairs(
     original_dets: List[Dict],
     transformed_dets: List[Dict],
-    iou_threshold: float = 0.5
+    iou_threshold: float = 0.5,
+    require_category_match: bool = False
 ) -> List[Tuple[int, int]]:
     """
     Match original detections to transformed detections using COCO-style greedy
@@ -98,6 +99,12 @@ def match_detection_pairs(
     Original detections are considered from highest to lowest confidence. Each
     is paired with the unmatched transformed detection having the greatest IoU
     above the threshold. Returned tuples contain indices into the input lists.
+
+    Args:
+        require_category_match: If True, a candidate pair is only eligible when
+            both detections share the same category_id (in addition to passing
+            the IoU threshold). Defaults to False to preserve purely spatial
+            matching for existing callers (e.g. persistent-FP tracking).
     """
     original_sorted = sorted(
         enumerate(original_dets),
@@ -113,6 +120,11 @@ def match_detection_pairs(
 
         for transformed_index, transformed_detection in enumerate(transformed_dets):
             if transformed_index in matched_transformed:
+                continue
+
+            if require_category_match and (
+                transformed_detection.get('category_id') != original_detection.get('category_id')
+            ):
                 continue
 
             iou = compute_iou(
@@ -134,7 +146,8 @@ def match_three_way_per_image(
     original_dets: List[Dict],
     transformed_dets: List[Dict],
     gt_dets: List[Dict],
-    iou_threshold: float = 0.5
+    iou_threshold: float = 0.5,
+    require_category_match: bool = True
 ) -> Dict[str, int]:
     """
     Perform three-way matching of detections for a single image using COCO evaluation approach.
@@ -153,6 +166,13 @@ def match_three_way_per_image(
         transformed_dets: Detections from transformed image
         gt_dets: Ground truth annotations (assumed score=1.0)
         iou_threshold: Minimum IoU to consider a match (default: 0.5)
+        require_category_match: If True (default), a match additionally
+            requires both detections to share the same category_id. Without
+            this, a detection whose predicted class flips after transformation
+            (e.g. a color transform changing a cone's perceived color) is
+            still counted as a retained true positive purely because its box
+            didn't move, which contradicts category-aware evaluation metrics
+            like COCO AP.
 
     Returns:
         Dictionary with counts for each Venn region:
@@ -192,6 +212,9 @@ def match_three_way_per_image(
             if gt_idx in matched_gt:
                 continue
 
+            if require_category_match and gt_det.get('category_id') != orig_det.get('category_id'):
+                continue
+
             iou = compute_iou(orig_det['bbox'], gt_det['bbox'])
             # Use '>' not '>=' for consistency with COCO (coco_eval.py line 286)
             if iou > best_iou:
@@ -212,6 +235,9 @@ def match_three_way_per_image(
             if gt_idx in matched_gt_trans:
                 continue
 
+            if require_category_match and gt_det.get('category_id') != trans_det.get('category_id'):
+                continue
+
             iou = compute_iou(trans_det['bbox'], gt_det['bbox'])
             if iou > best_iou:
                 best_iou = iou
@@ -223,7 +249,10 @@ def match_three_way_per_image(
 
     # Step 3: Match original → transformed
     orig_to_trans.update(
-        match_detection_pairs(original_dets, transformed_dets, iou_threshold)
+        match_detection_pairs(
+            original_dets, transformed_dets, iou_threshold,
+            require_category_match=require_category_match
+        )
     )
 
     # Step 4: Assign to Venn regions based on matches
@@ -290,19 +319,26 @@ def aggregate_three_way_overlap(
     original_coco_path: Path,
     transformed_coco_path: Path,
     gt_coco_path: Path,
-    iou_threshold: float = 0.5
+    iou_threshold: float = 0.5,
+    require_category_match: bool = True
 ) -> Dict[str, float]:
     """
     Compute image-normalized three-way overlap statistics across all images.
 
-    Each image contributes at most 1.0 total weight across the seven Venn
-    regions, so images with many cones do not dominate images with few cones.
+    Each image contributes exactly 1.0 total weight across the seven Venn
+    regions (split proportionally across whichever regions its detections
+    fall into), so images with many cones do not dominate images with few
+    cones.
 
     Args:
         original_coco_path: Path to original detections COCO JSON
         transformed_coco_path: Path to transformed detections COCO JSON
         gt_coco_path: Path to ground truth annotations COCO JSON
         iou_threshold: Minimum IoU to consider a match (default: 0.5)
+        require_category_match: Passed through to match_three_way_per_image;
+            when True (default), matches also require equal category_id so
+            that a detection whose predicted class changes after
+            transformation is not miscounted as a retained true positive.
 
     Returns:
         Dictionary with image-normalized aggregate weights for all 7 Venn regions
@@ -333,16 +369,19 @@ def aggregate_three_way_overlap(
 
         # Match detections for this image
         image_regions = match_three_way_per_image(
-            orig_dets, trans_dets, gt_dets, iou_threshold
+            orig_dets, trans_dets, gt_dets, iou_threshold, require_category_match
         )
 
         image_total = sum(image_regions.values())
         if image_total == 0:
             continue
 
-        # Accumulate normalized per-image region weights
+        # Accumulate normalized per-image region weights. Using the raw
+        # fraction (rather than round()) preserves partial contributions from
+        # images with mixed outcomes instead of collapsing each image to a
+        # single "winning" region and silently dropping ties/near-ties.
         for region, count in image_regions.items():
-            total_regions[region] += round(count / image_total)
+            total_regions[region] += count / image_total
 
     return total_regions
 
@@ -380,11 +419,15 @@ def compute_retention_metrics(regions: Dict[str, float]) -> Dict[str, float]:
     else:
         metrics['fp_consistency_rate'] = 0.0
 
-    # Detection loss: detections in original that disappeared
+    # Detection loss: share of all original detections (TP or FP) that have no
+    # matching transformed detection. This includes lost TPs (orig_gt) and
+    # disappearing FPs (orig_only).
     total_orig = (regions['orig_trans_gt'] + regions['orig_trans'] +
                   regions['orig_gt'] + regions['orig_only'])
     if total_orig > 0:
-        metrics['detection_loss_rate'] = regions['orig_only'] / total_orig
+        metrics['detection_loss_rate'] = (
+            regions['orig_gt'] + regions['orig_only']
+        ) / total_orig
     else:
         metrics['detection_loss_rate'] = 0.0
 

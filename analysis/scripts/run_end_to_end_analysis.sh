@@ -3,7 +3,7 @@
 # Run the complete metamorphic-analysis workflow for one or more datasets.
 #
 # This runs the general metamorphic analysis, cone-colour analysis, confidence
-# change plots, detection-overlap Venn diagrams, and parameter-variation plots.
+# change plots, detection-overlap statistics, and parameter-variation plots.
 #
 # Usage:
 #   bash analysis/scripts/run_end_to_end_analysis.sh
@@ -145,11 +145,12 @@ for dataset in "${DATASETS[@]}"; do
     fi
 
     if (( SKIP_STEPS < 4 )); then
-        echo "[4/5] Detection-overlap Venn diagrams"
-        python3 analysis/visualisation/plot_detection_venn.py \
+        echo "[4/5] Detection-overlap statistics"
+        python3 analysis/utils/calculate_venn_statistics.py \
+            --dataset "$dataset" \
             --results_dir "$results_dir" \
             --gt_path "$gt_path" \
-            --output_dir "$analysis_dir/venn_diagrams"
+            --output_path "$analysis_dir/venn_diagrams/venn_statistics.json"
     fi
 
     if (( SKIP_STEPS < 5 )); then

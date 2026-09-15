@@ -7,8 +7,9 @@ predicts the degradation threshold identified in RQ2, and does the method
 remain consistent across all models?
 
 This script implements step 1 of RQ2.b: for the operational brightness
-thresholds identified in RQ2.a (both the brute-force and golden-section
-searches), compute a battery of brightness scores -- a mix of classic
+thresholds identified in RQ2.a (by default using the brute-force search
+results; pass --search-method golden_section to use the golden-section
+search results instead), compute a battery of brightness scores -- a mix of classic
 methods (linear luminance, HSV/HSI, CIELAB L*, RMS contrast) and a novel
 mean-shift clustering-based separation-to-spread ratio -- on the transformed
 images at both the "left" (brighter) and "right" (darker) crossing gammas.
@@ -23,8 +24,11 @@ predictor. Doing this separately per model checks whether the same method
 remains the most reliable predictor across models.
 
 Usage:
-    # Auto-discover all rq2a_{brute_force,golden_section}_<model> results
+    # Auto-discover all rq2a_brute_force_<model> results (default search method)
     python scripts/rq2b_brightness_calculation.py
+
+    # Use the golden-section search results instead of brute-force
+    python scripts/rq2b_brightness_calculation.py --search-method golden_section
 
     # Restrict to specific models
     python scripts/rq2b_brightness_calculation.py --models yolov8 yolov5
@@ -59,23 +63,30 @@ from utils.imgDarkBright_tuning.brightness_methods import (
 )
 
 PROJECT_ROOT = Path(__file__).parent.parent
-RESULTS_ROOT = PROJECT_ROOT / "analysis" / "results"
-SEARCH_METHODS = ["golden_section", "brute_force"]
+RESULTS_ROOT = PROJECT_ROOT / "analysis" / "results" / "rq2a"
+ALL_SEARCH_METHODS = ["brute_force", "golden_section"]
+
+DEFAULT_SEARCH_METHOD = "brute_force"
 THRESHOLD_SIDES = ["left", "right"]  # left = brighter crossing, right = darker crossing
 
 GAMMA_DIR_PATTERN = re.compile(r"^gamma_([0-9]*\.?[0-9]+)(?:_.*)?$")
 
 
-def discover_results_files(models: List[str]) -> List[Dict]:
+def discover_results_files(models: List[str], search_methods: List[str]) -> List[Dict]:
     """
     Find all available RQ2.a results.json files for the given models.
+
+    Args:
+        models: Models to search for.
+        search_methods: Which RQ2.a search method(s) results to look for
+            (e.g. ["brute_force"] or ["golden_section"]).
 
     Returns:
         List of dicts: {"path": Path, "search_method": str, "model": str}
     """
     discovered = []
     for model in models:
-        for search_method in SEARCH_METHODS:
+        for search_method in search_methods:
             candidate = RESULTS_ROOT / f"rq2a_{search_method}_{model}" / "results.json"
             if candidate.is_file():
                 discovered.append({
@@ -289,7 +300,7 @@ def _stats_for_values(values: List[float]) -> Optional[Dict]:
     }
 
 
-def build_method_statistics(records: List[Dict], models: List[str]) -> Dict:
+def build_method_statistics(records: List[Dict], models: List[str], search_methods: List[str]) -> Dict:
     """
     Compute per-method variance/CV statistics at multiple levels of
     aggregation: overall, per-model, and per-(search_method, model).
@@ -324,10 +335,10 @@ def build_method_statistics(records: List[Dict], models: List[str]) -> Dict:
     statistics = {
         "overall": ranked_stats(None, None),
         "by_model": {model: ranked_stats(None, model) for model in models},
-        "by_search_method": {sm: ranked_stats(sm, None) for sm in SEARCH_METHODS},
+        "by_search_method": {sm: ranked_stats(sm, None) for sm in search_methods},
         "by_search_method_and_model": {
             sm: {model: ranked_stats(sm, model) for model in models}
-            for sm in SEARCH_METHODS
+            for sm in search_methods
         },
     }
     return statistics
@@ -457,23 +468,34 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Auto-discover all available RQ2.a results and score every method
+  # Auto-discover available RQ2.a brute-force results and score every method
   python scripts/rq2b_brightness_calculation.py
 
-  # Restrict to specific models
-  python scripts/rq2b_brightness_calculation.py --models yolov8 yolov5
+  # Use golden-section search results instead
+  python scripts/rq2b_brightness_calculation.py --search-method golden_section
+
+  # Restrict to specific model
+  python scripts/rq2b_brightness_calculation.py --model yolov8 yolov5
 
   # Quick smoke test
   python scripts/rq2b_brightness_calculation.py --num-images 5 --workers 4
         """
     )
     parser.add_argument(
-        "--models",
+        "--model",
         type=str,
         nargs="+",
-        default=None,
-        help="Models to include (default: all enabled models in config/models.json "
-             "that have RQ2.a results available)",
+        default=["yolov8"],
+        help="Model to include (default: yolov8)",
+    )
+    parser.add_argument(
+        "--search-method",
+        type=str,
+        choices=ALL_SEARCH_METHODS,
+        default=DEFAULT_SEARCH_METHOD,
+        help="Which RQ2.a search method's results to use as the source of "
+             f"operational brightness thresholds (default: {DEFAULT_SEARCH_METHOD}). "
+             "Ignored if --results-json is passed explicitly.",
     )
     parser.add_argument(
         "--results-json",
@@ -500,7 +522,7 @@ Examples:
         "--output-dir",
         type=str,
         default=None,
-        help="Output directory (default: analysis/results/rq2b_brightness_scoring)",
+        help="Output directory (default: analysis/results/rq2b/rq2b_brightness_scoring_{search_method}_{model})",
     )
     parser.add_argument(
         "--no-plot",
@@ -511,7 +533,8 @@ Examples:
     args = parser.parse_args()
 
     if args.output_dir is None:
-        output_dir = RESULTS_ROOT / "rq2b_brightness_scoring"
+        results = Path("analysis/results")
+        output_dir = results / f"rq2b/rq2b_brightness_scoring_{args.search_method}_{args.model}"
     else:
         output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -528,15 +551,18 @@ Examples:
                 "model": data.get("model", "unknown"),
             })
         models = sorted(set(entry["model"] for entry in discovered_files))
+        search_methods = sorted(set(entry["search_method"] for entry in discovered_files))
     else:
-        models = args.models if args.models else get_model_names()
-        discovered_files = discover_results_files(models)
+        models = args.model if args.model else get_model_names()
+        search_methods = [args.search_method]
+        discovered_files = discover_results_files(models, search_methods)
         # Restrict `models` to those that actually have discovered results
         models = sorted(set(entry["model"] for entry in discovered_files))
 
     if not discovered_files:
-        print("Error: No RQ2.a results.json files found. Run rq2a_brute_force_search.py "
-              "and/or rq2a_golden_section_search.py first, or pass --results-json explicitly.")
+        print(f"Error: No RQ2.a results.json files found for search method(s) {search_methods}. "
+              "Run rq2a_brute_force_search.py and/or rq2a_golden_section_search.py first, "
+              "or pass --results-json explicitly.")
         sys.exit(1)
 
     print("="*80)
@@ -553,7 +579,7 @@ Examples:
 
     records = compute_score_records(discovered_files, args.num_images, args.workers)
 
-    statistics = build_method_statistics(records, models)
+    statistics = build_method_statistics(records, models, search_methods)
     consistency = compute_cross_model_consistency(statistics, models)
 
     print_summary(statistics, consistency, models)

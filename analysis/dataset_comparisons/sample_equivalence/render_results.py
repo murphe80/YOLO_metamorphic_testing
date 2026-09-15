@@ -14,6 +14,7 @@ from types import SimpleNamespace
 
 from bootstrap_equivalence import (
     ALL_ARMS,
+    ANALYSES,
     REFERENCE_ARM,
     TARGET_ARM,
     TARGET_ARMS,
@@ -42,23 +43,29 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def rebuild_arm_degradations(parameter_rows):
-    values = {}
+def rebuild_analysis_arm_values(parameter_rows):
+    """Reconstruct the per-analysis (arm, model, variant_id, metric) -> value maps."""
+    analysis_arm_values = {analysis_key: {} for analysis_key in ANALYSES}
     for row in parameter_rows:
+        values = analysis_arm_values[row["analysis"]]
         common = (row["model"], row["variant_id"], row["metric"])
         reference_key = (REFERENCE_ARM, *common)
         values[reference_key] = {
-            "point": row["reference_degradation"],
-            "ci_low": row["reference_degradation_ci_low"],
-            "ci_high": row["reference_degradation_ci_high"],
+            "point": row["reference_statistic"],
+            "ci_low": row["reference_statistic_ci_low"],
+            "ci_high": row["reference_statistic_ci_high"],
+            "baseline_point": row["reference_baseline_metric"],
+            "setting_point": row["reference_setting_metric"],
         }
         target_key = (row["target_arm"], *common)
         values[target_key] = {
-            "point": row["target_degradation"],
-            "ci_low": row["target_degradation_ci_low"],
-            "ci_high": row["target_degradation_ci_high"],
+            "point": row["target_statistic"],
+            "ci_low": row["target_statistic_ci_low"],
+            "ci_high": row["target_statistic_ci_high"],
+            "baseline_point": row["target_baseline_metric"],
+            "setting_point": row["target_setting_metric"],
         }
-    return values
+    return analysis_arm_values
 
 
 def main() -> None:
@@ -76,6 +83,13 @@ def main() -> None:
             f"Expected target arms {TARGET_ARMS}; received "
             f"{metadata['target_arms']}."
         )
+    missing_analyses = set(ANALYSES) - set(metadata.get("analyses", {}))
+    if missing_analyses:
+        raise ValueError(
+            f"results.json is missing analyses {sorted(missing_analyses)}; "
+            "it was likely produced by an older script version. Rerun "
+            "bootstrap_equivalence.py to regenerate it."
+        )
 
     source_config = Path(metadata["source_config"])
     config = load_config(source_config, metadata["rules"])
@@ -89,26 +103,27 @@ def main() -> None:
         equivalence_margin=metadata["equivalence_margin"],
     )
     cli_args.output_dir.mkdir(parents=True, exist_ok=True)
-    arm_degradations = rebuild_arm_degradations(data["parameter_results"])
-    expected_keys = {
-        (arm, model, row["variant_id"], metric)
-        for arm in ALL_ARMS
-        for model in metadata["models"]
-        for row in data["parameter_results"]
-        if row["model"] == model
-        for metric in metadata["metrics"]
-        if row["metric"] == metric
-    }
-    missing = expected_keys - set(arm_degradations)
-    if missing:
-        raise ValueError(f"Missing rendered degradation records: {sorted(missing)[:5]}")
 
-    plot_paths = create_response_plots(
-        render_args, config, arm_degradations
-    )
-    summaries = build_summaries(
-        data["parameter_results"], data["auc_results"]
-    )
+    analysis_arm_values = rebuild_analysis_arm_values(data["parameter_results"])
+    for analysis_key in ANALYSES:
+        expected_keys = {
+            (arm, model, row["variant_id"], metric)
+            for arm in ALL_ARMS
+            for model in metadata["models"]
+            for row in data["parameter_results"]
+            if row["analysis"] == analysis_key and row["model"] == model
+            for metric in metadata["metrics"]
+            if row["metric"] == metric
+        }
+        missing = expected_keys - set(analysis_arm_values[analysis_key])
+        if missing:
+            raise ValueError(
+                f"Missing rendered statistic records for {analysis_key!r}: "
+                f"{sorted(missing)[:5]}"
+            )
+
+    plot_paths = create_response_plots(render_args, config, analysis_arm_values)
+    summaries = build_summaries(data["parameter_results"], data["auc_results"])
     image_counts = {
         arm: int(arm_data["image_count"])
         for arm, arm_data in metadata["arms"].items()

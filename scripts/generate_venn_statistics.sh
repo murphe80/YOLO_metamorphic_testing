@@ -1,5 +1,5 @@
 #!/bin/bash
-# Master script to generate all Venn diagram visualizations
+# Calculate detection-overlap statistics for the default test dataset.
 
 set -e
 
@@ -7,18 +7,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 echo "=================================================="
-echo "Venn Diagram Visualization Pipeline"
+echo "Detection-Overlap Statistics Pipeline"
 echo "=================================================="
 echo ""
 
-# Activate venv
 source "$PROJECT_ROOT/venv/bin/activate"
 
 DATASET_NAME="test"
-# Check if data exists
 RESULTS_DIR="$PROJECT_ROOT/results/$DATASET_NAME"
 GT_PATH="$PROJECT_ROOT/data/base_images/$DATASET_NAME/annotations_coco.json"
-
+OUTPUT_PATH="$PROJECT_ROOT/analysis/results/$DATASET_NAME/venn_diagrams/venn_statistics.json"
 
 if [ ! -d "$RESULTS_DIR" ]; then
     echo "ERROR: Results directory not found: $RESULTS_DIR"
@@ -32,18 +30,14 @@ if [ ! -f "$GT_PATH" ]; then
     exit 1
 fi
 
-echo "Step 1: Generating model-comparison Venn diagram grids..."
-echo "-----------------------------------------------"
-python3 "$PROJECT_ROOT/analysis/visualisation/plot_detection_venn.py" \
-    --results_dir "$RESULTS_DIR" \
-    --gt_path "$GT_PATH" \
-    --output_dir "$PROJECT_ROOT/analysis/results/venn_diagrams/$DATASET_NAME"
+python3 "$PROJECT_ROOT/analysis/utils/calculate_venn_statistics.py" \
+    --dataset "$DATASET_NAME" \
+    --results-dir "$RESULTS_DIR" \
+    --gt-path "$GT_PATH" \
+    --output-path "$OUTPUT_PATH"
 
 echo ""
 echo "=================================================="
-echo "✓ All visualizations generated successfully!"
+echo "✓ Statistics generated successfully"
 echo "=================================================="
-echo ""
-echo "Output files:"
-echo "  - Model grids: analysis/results/venn_diagrams/$DATASET_NAME/*_venn.png"
-echo ""
+echo "Output: analysis/results/$DATASET_NAME/venn_diagrams/venn_statistics.json"

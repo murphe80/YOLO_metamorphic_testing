@@ -10,25 +10,44 @@ datasets, it compares two *arms drawn from the same physical test dataset*:
 - ``sample``: a fixed, reproducibly-drawn subset containing
   ``--sample-fraction`` (default 0.5, i.e. 50%) of the test images.
 
-For each model, metamorphic rule, and parameter setting it:
+Two independent analyses are performed for every model, metamorphic rule, and
+parameter setting:
 
-1. recomputes original-vs-transformed COCO AP and AR for each arm;
-2. subtracts the model-specific gamma=1.0 control metric within each arm;
-3. independently bootstraps images within each arm's own population
-   (the full image set for ``full``; the fixed subsample for ``sample``);
-4. estimates the full-minus-sample degradation difference; and
-5. classifies its 90% interval against a +/-0.05 equivalence margin.
+1. ``original_vs_transformed_consistency``: the raw COCO AP/AR bootstrap
+   distribution obtained by treating each model's *original* detections as
+   the reference and the *transformed* detections as the prediction. This
+   asks whether transformed-vs-original consistency is equivalent between
+   the full test set and the subsample.
+2. ``gt_accuracy_degradation``: the paired difference between a model's
+   ``original_vs_gt`` accuracy (its untransformed detections evaluated
+   against real ground truth; a per-model baseline, constant across rules)
+   and its ``transformed_vs_gt`` accuracy (the transformed detections for a
+   given rule/setting evaluated against real ground truth). This asks
+   whether the *cost* of the transformation, measured against real
+   annotations rather than the model's own original predictions, is
+   equivalent between the full test set and the subsample.
 
-For rules with more than one parameter setting, the same calculation is also
-performed on the area under the control-normalised degradation curve (AUC).
+For rules with more than one parameter setting, the same equivalence
+calculation is also performed on the area under each statistic's response
+curve (AUC).
 
 The bootstrap uses exact dataset-level COCO accumulation for each resample.
-Per-image COCO matching is performed once per model/variant against the full
-test dataset; bootstrap samples then duplicate those evaluated image
-clusters before globally ranking detection scores. The ``sample`` arm's
-bootstrap draws are restricted to the fixed subsample of images, so it
-measures the added sampling variability of evaluating on a smaller image
-set, not a comparison between independent datasets.
+Per-image COCO matching is performed once per model/variant/comparison
+against the full test dataset; bootstrap samples then duplicate those
+evaluated image clusters before globally ranking detection scores. The
+``sample`` arm's bootstrap draws are restricted to the fixed subsample of
+images, so it measures the added sampling variability of evaluating on a
+smaller image set, not a comparison between independent datasets.
+
+Point AP/AR values for the ``full`` arm are taken directly from the
+already-computed
+``analysis/results/<dataset>/<model>/<variant_id>/<comparison>/stats.json``
+files (and the per-model ``original_vs_gt/stats.json``) rather than being
+recomputed. The script still recomputes a point estimate from per-image COCO
+entries for the ``full`` arm purely to sanity-check it against the stored
+``stats.json`` value (see ``validate_point_metrics``); recomputation is the
+only option for the ``sample`` arm's point (no ``sample``-arm stats.json
+exists) and for every bootstrap confidence interval.
 """
 
 from __future__ import annotations
@@ -61,6 +80,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG = REPO_ROOT / "config" / "brute_force_transformations.json"
 DEFAULT_RESULTS_ROOT = REPO_ROOT / "results"
 DEFAULT_ANALYSIS_RESULTS_ROOT = REPO_ROOT / "analysis" / "results"
+DEFAULT_DATA_ROOT = REPO_ROOT / "data" / "base_images"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "analysis" / "dataset_comparisons" / "sample_equivalence"
 
 SOURCE_DATASET = "test"
@@ -79,9 +99,48 @@ DEFAULT_RULES = (
     "imgStretch",
 )
 GEOMETRIC_RULES = {"imgResolution", "imgStretch"}
-CONTROL_VARIANT = "imgDarkBright_1"
-CONTROL_GAMMA = 1.0
 METRICS = ("AP", "AR")
+POINT_METRIC_STATS_KEY = {"AP": "AP", "AR": "AR100"}
+
+# Comparison types evaluated per-image via COCOeval.
+COMPARISON_ORIGINAL_VS_TRANSFORMED = "original_vs_transformed"
+COMPARISON_TRANSFORMED_VS_GT = "transformed_vs_gt"
+COMPARISON_ORIGINAL_VS_GT = "original_vs_gt"
+# Sentinel "variant" key used for the per-model, rule-independent original_vs_gt baseline.
+BASELINE_KEY = "original"
+
+# The two equivalence analyses reported. Each is a "setting" statistic
+# (per rule/variant) optionally reduced by a "baseline" statistic (a
+# rule-independent, per-model reference computed the same way in both arms).
+ANALYSIS_CONSISTENCY = "original_vs_transformed_consistency"
+ANALYSIS_GT_ACCURACY = "gt_accuracy_degradation"
+ANALYSES: Dict[str, Dict[str, Optional[str]]] = {
+    ANALYSIS_CONSISTENCY: {
+        "setting_comparison": COMPARISON_ORIGINAL_VS_TRANSFORMED,
+        "baseline_comparison": None,
+        "title": "Original-vs-transformed consistency",
+        "statistic_description": (
+            "raw COCO AP/AR with each model's original detections as the "
+            "reference and the transformed detections as the prediction "
+            "(no baseline subtraction)"
+        ),
+        "plot_suffix": "original_vs_transformed",
+        "ylabel_template": "{metric} (original-vs-transformed consistency)",
+    },
+    ANALYSIS_GT_ACCURACY: {
+        "setting_comparison": COMPARISON_TRANSFORMED_VS_GT,
+        "baseline_comparison": COMPARISON_ORIGINAL_VS_GT,
+        "title": "Ground-truth accuracy degradation from transformation",
+        "statistic_description": (
+            "original_vs_gt AP/AR (untransformed detections vs. real "
+            "ground truth; a per-model baseline constant across rules) "
+            "minus transformed_vs_gt AP/AR (transformed detections vs. "
+            "real ground truth)"
+        ),
+        "plot_suffix": "gt_accuracy_degradation",
+        "ylabel_template": "{metric} degradation vs ground truth (original - transformed)",
+    },
+}
 MODEL_LABELS = {
     "yolov5": "YOLOv5",
     "yolov8": "YOLOv8",
@@ -106,8 +165,9 @@ CLASS_NOT_APPLICABLE = "not_applicable"
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Compare control-normalised metamorphic AP/AR degradation on the "
-            "full test dataset against a fixed fraction subsample of it."
+            "Compare metamorphic original-vs-transformed consistency and "
+            "ground-truth accuracy degradation on the full test dataset "
+            "against a fixed fraction subsample of it."
         )
     )
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -116,7 +176,18 @@ def parse_args() -> argparse.Namespace:
         "--analysis-results-root",
         type=Path,
         default=DEFAULT_ANALYSIS_RESULTS_ROOT,
-        help="Root containing aggregate parameter-variation JSONs used for validation.",
+        help=(
+            "Root containing per-variant stats.json files "
+            "(<root>/<dataset>/<model>/<variant_id>/<comparison>/stats.json "
+            "and <root>/<dataset>/<model>/original_vs_gt/stats.json), used "
+            "as the trusted point AP/AR source for the 'full' arm."
+        ),
+    )
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        default=DEFAULT_DATA_ROOT,
+        help="Root containing <dataset>/annotations_coco.json ground-truth files.",
     )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument(
@@ -155,7 +226,7 @@ def parse_args() -> argparse.Namespace:
         "--seed",
         type=int,
         default=20260810,
-        help="Fixed reproducibility seed (confirmed design: 20260810).",
+        help="Fixed reproducibility seed.",
     )
     parser.add_argument(
         "--workers",
@@ -167,7 +238,7 @@ def parse_args() -> argparse.Namespace:
         "--point-tolerance",
         type=float,
         default=1e-9,
-        help="Maximum accepted difference from existing aggregate AP/AR JSON values.",
+        help="Maximum accepted difference from the stored stats.json AP/AR values.",
     )
     parser.add_argument(
         "--skip-plots",
@@ -238,19 +309,6 @@ def load_config(config_path: Path, selected_rules: Sequence[str]) -> Dict[str, D
             "varying_parameter": parameter,
             "variants": variants,
         }
-
-    brightness = raw.get("imgDarkBright")
-    controls = [
-        item
-        for item in brightness or []
-        if item.get("variant_id") == CONTROL_VARIANT
-        and float(item.get("gamma", math.nan)) == CONTROL_GAMMA
-    ]
-    if len(controls) != 1:
-        raise ValueError(
-            f"Expected exactly one gamma={CONTROL_GAMMA:g} control named "
-            f"{CONTROL_VARIANT!r}."
-        )
     return output
 
 
@@ -273,18 +331,71 @@ def original_path(results_root: Path, dataset: str, model: str) -> Path:
     return results_root / dataset / model / "original" / "detections_original_coco.json"
 
 
+def gt_annotations_path(data_root: Path, dataset: str) -> Path:
+    return data_root / dataset / "annotations_coco.json"
+
+
+def original_gt_detection_path(results_root: Path, dataset: str, model: str) -> Path:
+    return results_root / dataset / model / "original" / "detections_for_gt.json"
+
+
+def transformed_gt_detection_path(
+    results_root: Path,
+    dataset: str,
+    model: str,
+    rule: str,
+    variant_id: str,
+) -> Path:
+    filename = (
+        "detections_for_gt_transformed.json"
+        if rule in GEOMETRIC_RULES
+        else "detections_for_gt.json"
+    )
+    return results_root / dataset / model / variant_id / filename
+
+
+def stats_json_path(
+    analysis_results_root: Path,
+    dataset: str,
+    model: str,
+    variant_id: str,
+    comparison: str,
+) -> Path:
+    return analysis_results_root / dataset / model / variant_id / comparison / "stats.json"
+
+
+def original_vs_gt_stats_path(
+    analysis_results_root: Path, dataset: str, model: str
+) -> Path:
+    return analysis_results_root / dataset / model / "original_vs_gt" / "stats.json"
+
+
+def variant_pairs(config: Mapping[str, Mapping]) -> List[Tuple[str, str]]:
+    return sorted(
+        {
+            (rule, variant["variant_id"])
+            for rule, rule_config in config.items()
+            for variant in rule_config["variants"]
+        }
+    )
+
+
 def validate_inputs(
     results_root: Path,
+    data_root: Path,
     dataset: str,
     models: Sequence[str],
     config: Mapping[str, Mapping],
 ) -> int:
-    required_variants = {
-        (rule, variant["variant_id"])
-        for rule, rule_config in config.items()
-        for variant in rule_config["variants"]
-    }
-    required_variants.add(("imgDarkBright", CONTROL_VARIANT))
+    required_variants = variant_pairs(config)
+
+    gt_coco_path = gt_annotations_path(data_root, dataset)
+    if not gt_coco_path.is_file():
+        raise FileNotFoundError(f"Ground-truth annotations not found: {gt_coco_path}")
+    with gt_coco_path.open() as handle:
+        gt_image_count = len(json.load(handle).get("images", []))
+    if gt_image_count == 0:
+        raise ValueError(f"No images declared in {gt_coco_path}")
 
     model_counts = set()
     for model in models:
@@ -297,16 +408,36 @@ def validate_inputs(
         if image_count == 0:
             raise ValueError(f"No images declared in {original}")
         model_counts.add(image_count)
+
+        original_gt_det = original_gt_detection_path(results_root, dataset, model)
+        if not original_gt_det.is_file():
+            raise FileNotFoundError(
+                f"Original-vs-GT detections not found: {original_gt_det}"
+            )
+
         for rule, variant_id in required_variants:
             path = transformed_path(results_root, dataset, model, rule, variant_id)
             if not path.is_file():
                 raise FileNotFoundError(f"Transformed detections not found: {path}")
+            gt_det_path = transformed_gt_detection_path(
+                results_root, dataset, model, rule, variant_id
+            )
+            if not gt_det_path.is_file():
+                raise FileNotFoundError(
+                    f"Transformed-vs-GT detections not found: {gt_det_path}"
+                )
     if len(model_counts) != 1:
         raise ValueError(
             f"Models in {dataset} do not declare the same number of images: "
             f"{sorted(model_counts)}"
         )
-    return model_counts.pop()
+    image_count = model_counts.pop()
+    if image_count != gt_image_count:
+        raise ValueError(
+            f"Ground-truth image count ({gt_image_count}) does not match "
+            f"per-model original detection image count ({image_count}) for {dataset}."
+        )
+    return image_count
 
 
 def _load_coco_ground_truth(path: Path) -> COCO:
@@ -469,19 +600,18 @@ def _bootstrap_positions(
 
 def evaluate_task(task: Tuple) -> Dict:
     (
-        results_root_string,
         source_dataset,
+        comparison,
         model,
-        rule,
-        variant_id,
+        key,
+        gt_path_string,
+        dt_path_string,
         repetitions,
         base_seed,
         sample_fraction,
     ) = task
-    results_root = Path(results_root_string)
     entries, image_count, _, recall_thresholds = _prepare_category_entries(
-        original_path(results_root, source_dataset, model),
-        transformed_path(results_root, source_dataset, model, rule, variant_id),
+        Path(gt_path_string), Path(dt_path_string)
     )
     populations = _arm_populations(source_dataset, image_count, sample_fraction, base_seed)
 
@@ -502,7 +632,7 @@ def evaluate_task(task: Tuple) -> Dict:
             )
         if not np.isfinite(bootstrap_ap).all() or not np.isfinite(bootstrap_ar).all():
             raise ValueError(
-                f"Non-finite bootstrap metric for {arm}/{model}/{variant_id}."
+                f"Non-finite bootstrap metric for {arm}/{comparison}/{model}/{key}."
             )
         arms[arm] = {
             "image_count": int(len(population)),
@@ -510,9 +640,9 @@ def evaluate_task(task: Tuple) -> Dict:
             "bootstrap": {"AP": bootstrap_ap, "AR": bootstrap_ar},
         }
     return {
+        "comparison": comparison,
         "model": model,
-        "rule": rule,
-        "variant_id": variant_id,
+        "key": key,
         "arms": arms,
     }
 
@@ -521,31 +651,69 @@ def build_tasks(
     args: argparse.Namespace,
     config: Mapping[str, Mapping],
 ) -> List[Tuple]:
-    variant_map = {
-        (rule, variant["variant_id"])
-        for rule, rule_config in config.items()
-        for variant in rule_config["variants"]
-    }
-    variant_map.add(("imgDarkBright", CONTROL_VARIANT))
-    return [
-        (
-            str(args.results_root),
-            args.source_dataset,
-            model,
-            rule,
-            variant_id,
-            args.bootstrap_repetitions,
-            args.seed,
-            args.sample_fraction,
+    pairs = variant_pairs(config)
+    tasks: List[Tuple] = []
+    for model in args.models:
+        for rule, variant_id in pairs:
+            tasks.append(
+                (
+                    args.source_dataset,
+                    COMPARISON_ORIGINAL_VS_TRANSFORMED,
+                    model,
+                    variant_id,
+                    str(original_path(args.results_root, args.source_dataset, model)),
+                    str(
+                        transformed_path(
+                            args.results_root, args.source_dataset, model, rule, variant_id
+                        )
+                    ),
+                    args.bootstrap_repetitions,
+                    args.seed,
+                    args.sample_fraction,
+                )
+            )
+            tasks.append(
+                (
+                    args.source_dataset,
+                    COMPARISON_TRANSFORMED_VS_GT,
+                    model,
+                    variant_id,
+                    str(gt_annotations_path(args.data_root, args.source_dataset)),
+                    str(
+                        transformed_gt_detection_path(
+                            args.results_root, args.source_dataset, model, rule, variant_id
+                        )
+                    ),
+                    args.bootstrap_repetitions,
+                    args.seed,
+                    args.sample_fraction,
+                )
+            )
+        tasks.append(
+            (
+                args.source_dataset,
+                COMPARISON_ORIGINAL_VS_GT,
+                model,
+                BASELINE_KEY,
+                str(gt_annotations_path(args.data_root, args.source_dataset)),
+                str(
+                    original_gt_detection_path(
+                        args.results_root, args.source_dataset, model
+                    )
+                ),
+                args.bootstrap_repetitions,
+                args.seed,
+                args.sample_fraction,
+            )
         )
-        for model in args.models
-        for rule, variant_id in sorted(variant_map)
-    ]
+    return tasks
 
 
-def execute_tasks(tasks: Sequence[Tuple], workers: int) -> Dict[Tuple[str, str, str], Dict]:
-    """Returns raw results keyed by (arm, model, variant_id)."""
-    results: Dict[Tuple[str, str, str], Dict] = {}
+def execute_tasks(
+    tasks: Sequence[Tuple], workers: int
+) -> Dict[Tuple[str, str, str, str], Dict]:
+    """Returns raw results keyed by (comparison, arm, model, key)."""
+    results: Dict[Tuple[str, str, str, str], Dict] = {}
     total = len(tasks)
     started = time.monotonic()
     next_progress = 1
@@ -556,13 +724,13 @@ def execute_tasks(tasks: Sequence[Tuple], workers: int) -> Dict[Tuple[str, str, 
             try:
                 result = future.result()
             except Exception as error:
-                _, source_dataset, model, rule, variant_id = task[0:5]
+                source_dataset, comparison, model, key = task[0:4]
                 raise RuntimeError(
-                    f"Bootstrap task failed for {source_dataset}/{model}/{rule}/{variant_id}"
+                    f"Bootstrap task failed for {source_dataset}/{comparison}/{model}/{key}"
                 ) from error
             for arm, arm_result in result["arms"].items():
-                key = (arm, result["model"], result["variant_id"])
-                results[key] = arm_result
+                lookup_key = (result["comparison"], arm, result["model"], result["key"])
+                results[lookup_key] = arm_result
             percent = int(100 * completed / total)
             if percent >= next_progress or completed == total:
                 elapsed = time.monotonic() - started
@@ -575,50 +743,74 @@ def execute_tasks(tasks: Sequence[Tuple], workers: int) -> Dict[Tuple[str, str, 
     return results
 
 
-def load_expected_metrics(
+def load_trusted_points(
     analysis_results_root: Path,
     dataset: str,
-) -> Dict[Tuple[str, str, str], float]:
-    expected: Dict[Tuple[str, str, str], float] = {}
-    path = (
-        analysis_results_root
-        / dataset
-        / "parameter_variations"
-        / "metrics_original_vs_transformed.json"
-    )
-    if not path.is_file():
-        raise FileNotFoundError(f"Aggregate metrics JSON not found: {path}")
-    with path.open() as handle:
-        data = json.load(handle)
-    if data.get("comparison") != "original_vs_transformed":
-        raise ValueError(f"Unexpected comparison in {path}: {data.get('comparison')}")
-    for rule, rule_data in data["rules"].items():
-        for setting in rule_data["settings"]:
-            variant_id = setting["variant_id"]
-            for model, metrics in setting["models"].items():
-                for metric in METRICS:
-                    expected[(model, variant_id, metric)] = float(metrics[metric])
-    return expected
+    models: Sequence[str],
+    config: Mapping[str, Mapping],
+) -> Dict[Tuple[str, str, str, str], float]:
+    """Load authoritative point AP/AR values from precomputed stats.json files.
+
+    Keyed by (comparison, model, key, metric), where ``key`` is a
+    ``variant_id`` for the per-variant comparisons and ``BASELINE_KEY`` for
+    ``original_vs_gt``.
+    """
+    trusted: Dict[Tuple[str, str, str, str], float] = {}
+    missing: List[str] = []
+    pairs = variant_pairs(config)
+
+    for model in models:
+        for comparison in (COMPARISON_ORIGINAL_VS_TRANSFORMED, COMPARISON_TRANSFORMED_VS_GT):
+            for _, variant_id in pairs:
+                path = stats_json_path(analysis_results_root, dataset, model, variant_id, comparison)
+                if not path.is_file():
+                    missing.append(str(path))
+                    continue
+                with path.open() as handle:
+                    stats = json.load(handle)
+                for metric, stats_key in POINT_METRIC_STATS_KEY.items():
+                    if stats_key not in stats:
+                        raise ValueError(f"{path} is missing key {stats_key!r}.")
+                    trusted[(comparison, model, variant_id, metric)] = float(stats[stats_key])
+
+        path = original_vs_gt_stats_path(analysis_results_root, dataset, model)
+        if not path.is_file():
+            missing.append(str(path))
+        else:
+            with path.open() as handle:
+                stats = json.load(handle)
+            for metric, stats_key in POINT_METRIC_STATS_KEY.items():
+                if stats_key not in stats:
+                    raise ValueError(f"{path} is missing key {stats_key!r}.")
+                trusted[(COMPARISON_ORIGINAL_VS_GT, model, BASELINE_KEY, metric)] = float(
+                    stats[stats_key]
+                )
+
+    if missing:
+        examples = ", ".join(missing[:5])
+        raise FileNotFoundError(
+            f"{len(missing)} stats.json file(s) referenced by the trusted-point "
+            f"lookup are missing, for example: {examples}"
+        )
+    return trusted
 
 
 def validate_point_metrics(
-    raw_results: Mapping[Tuple[str, str, str], Mapping],
-    expected: Mapping[Tuple[str, str, str], float],
+    raw_results: Mapping[Tuple[str, str, str, str], Mapping],
+    trusted_points: Mapping[Tuple[str, str, str, str], float],
     tolerance: float,
 ) -> Dict:
-    """Only the 'full' arm is checked: it matches the existing all-image aggregate."""
+    """Only the 'full' arm is checked: it matches the stored stats.json point values."""
     differences = []
-    missing = []
-    for (arm, model, variant_id), result in raw_results.items():
+    for (comparison, arm, model, key), result in raw_results.items():
         if arm != REFERENCE_ARM:
             continue
         for metric in METRICS:
-            key = (model, variant_id, metric)
-            if key not in expected:
-                missing.append("/".join(key))
+            expected_key = (comparison, model, key, metric)
+            if expected_key not in trusted_points:
                 continue
-            difference = abs(float(result["point"][metric]) - expected[key])
-            differences.append((difference, key))
+            difference = abs(float(result["point"][metric]) - trusted_points[expected_key])
+            differences.append((difference, expected_key))
     max_difference, max_key = max(differences, default=(0.0, None))
     within_tolerance = sum(
         difference <= tolerance for difference, _ in differences
@@ -630,16 +822,44 @@ def validate_point_metrics(
         "maximum_absolute_difference": max_difference,
         "maximum_difference_key": list(max_key) if max_key else None,
         "tolerance": tolerance,
-        "all_within_tolerance": max_difference <= tolerance and not missing,
-        "missing_expected_values": missing,
+        "all_within_tolerance": max_difference <= tolerance,
         "interpretation": (
-            "Only the 'full' arm is checked against the stored aggregate JSON "
-            "(it uses every declared image, like the aggregate computation). "
-            "Differences are expected where the stored aggregate JSON excluded "
-            "images with zero transformed detections. Bootstrap point estimates "
-            "use every declared image."
+            "Only the 'full' arm is checked against the stored per-variant "
+            "stats.json AP/AR values (it uses every declared image, like the "
+            "stored evaluation). The stored stats.json AP/AR values are used "
+            "directly as the reported 'full' arm point estimate in the "
+            "results below; this check confirms the bootstrap's own "
+            "recomputation agrees with them. Differences are expected where "
+            "the stored evaluation excluded images with zero detections."
         ),
     }
+
+
+def resolved_point(
+    raw_results: Mapping[Tuple[str, str, str, str], Mapping],
+    trusted_points: Mapping[Tuple[str, str, str, str], float],
+    comparison: str,
+    arm: str,
+    model: str,
+    key: str,
+    metric: str,
+) -> float:
+    if arm == REFERENCE_ARM:
+        trusted = trusted_points.get((comparison, model, key, metric))
+        if trusted is not None:
+            return trusted
+    return float(raw_results[(comparison, arm, model, key)]["point"][metric])
+
+
+def resolved_bootstrap(
+    raw_results: Mapping[Tuple[str, str, str, str], Mapping],
+    comparison: str,
+    arm: str,
+    model: str,
+    key: str,
+    metric: str,
+) -> np.ndarray:
+    return raw_results[(comparison, arm, model, key)]["bootstrap"][metric]
 
 
 def percentile_interval(values: np.ndarray, confidence_level: float) -> Tuple[float, float]:
@@ -668,27 +888,63 @@ def parameter_value(rule_config: Mapping, variant: Mapping, position: int) -> fl
     return float(value)
 
 
-def degradation_record(
-    raw_results: Mapping[Tuple[str, str, str], Mapping],
+def statistic_record(
+    raw_results: Mapping[Tuple[str, str, str, str], Mapping],
+    trusted_points: Mapping[Tuple[str, str, str, str], float],
+    analysis_key: str,
     arm: str,
     model: str,
     variant_id: str,
     metric: str,
-) -> Tuple[float, np.ndarray, float]:
-    control = raw_results[(arm, model, CONTROL_VARIANT)]
-    setting = raw_results[(arm, model, variant_id)]
-    point = float(control["point"][metric]) - float(setting["point"][metric])
-    bootstrap = control["bootstrap"][metric] - setting["bootstrap"][metric]
-    return point, bootstrap, float(control["point"][metric])
+) -> Dict:
+    """Compute one analysis's per-arm statistic (point + bootstrap array).
+
+    For ``ANALYSIS_CONSISTENCY`` the statistic is the raw setting-comparison
+    AP/AR. For ``ANALYSIS_GT_ACCURACY`` it is baseline-comparison AP/AR minus
+    setting-comparison AP/AR (both evaluated against real ground truth).
+    """
+    spec = ANALYSES[analysis_key]
+    setting_comparison = spec["setting_comparison"]
+    setting_point = resolved_point(
+        raw_results, trusted_points, setting_comparison, arm, model, variant_id, metric
+    )
+    setting_bootstrap = resolved_bootstrap(
+        raw_results, setting_comparison, arm, model, variant_id, metric
+    )
+
+    baseline_comparison = spec["baseline_comparison"]
+    if baseline_comparison is None:
+        return {
+            "point": setting_point,
+            "bootstrap": setting_bootstrap,
+            "baseline_point": None,
+            "setting_point": setting_point,
+        }
+
+    baseline_point = resolved_point(
+        raw_results, trusted_points, baseline_comparison, arm, model, BASELINE_KEY, metric
+    )
+    baseline_bootstrap = resolved_bootstrap(
+        raw_results, baseline_comparison, arm, model, BASELINE_KEY, metric
+    )
+    return {
+        "point": baseline_point - setting_point,
+        "bootstrap": baseline_bootstrap - setting_bootstrap,
+        "baseline_point": baseline_point,
+        "setting_point": setting_point,
+    }
 
 
-def build_parameter_results(
+def build_statistic_results(
     args: argparse.Namespace,
     config: Mapping[str, Mapping],
-    raw_results: Mapping[Tuple[str, str, str], Mapping],
+    analysis_key: str,
+    raw_results: Mapping[Tuple[str, str, str, str], Mapping],
+    trusted_points: Mapping[Tuple[str, str, str, str], float],
 ) -> Tuple[List[Dict], Dict[Tuple[str, str, str, str], Dict]]:
+    spec = ANALYSES[analysis_key]
     rows: List[Dict] = []
-    arm_degradations: Dict[Tuple[str, str, str, str], Dict] = {}
+    arm_values: Dict[Tuple[str, str, str, str], Dict] = {}
 
     for rule, rule_config in config.items():
         for position, variant in enumerate(rule_config["variants"]):
@@ -698,27 +954,24 @@ def build_parameter_results(
             for model in args.models:
                 for metric in METRICS:
                     for arm in ALL_ARMS:
-                        point, bootstrap, control_point = degradation_record(
-                            raw_results, arm, model, variant_id, metric
+                        record = statistic_record(
+                            raw_results, trusted_points, analysis_key, arm, model, variant_id, metric
                         )
                         low, high = percentile_interval(
-                            bootstrap, args.confidence_level
+                            record["bootstrap"], args.confidence_level
                         )
-                        arm_degradations[(arm, model, variant_id, metric)] = {
-                            "point": point,
-                            "bootstrap": bootstrap,
+                        arm_values[(arm, model, variant_id, metric)] = {
+                            "point": record["point"],
+                            "bootstrap": record["bootstrap"],
                             "ci_low": low,
                             "ci_high": high,
-                            "control_point": control_point,
+                            "baseline_point": record["baseline_point"],
+                            "setting_point": record["setting_point"],
                         }
 
-                    reference = arm_degradations[
-                        (REFERENCE_ARM, model, variant_id, metric)
-                    ]
+                    reference = arm_values[(REFERENCE_ARM, model, variant_id, metric)]
                     for target in TARGET_ARMS:
-                        target_value = arm_degradations[
-                            (target, model, variant_id, metric)
-                        ]
+                        target_value = arm_values[(target, model, variant_id, metric)]
                         difference_bootstrap = (
                             reference["bootstrap"] - target_value["bootstrap"]
                         )
@@ -728,6 +981,9 @@ def build_parameter_results(
                         difference = reference["point"] - target_value["point"]
                         rows.append(
                             {
+                                "analysis": analysis_key,
+                                "setting_comparison": spec["setting_comparison"],
+                                "baseline_comparison": spec["baseline_comparison"],
                                 "reference_arm": REFERENCE_ARM,
                                 "target_arm": target,
                                 "model": model,
@@ -737,17 +993,17 @@ def build_parameter_results(
                                 "parameter_value": x_value,
                                 "setting": setting,
                                 "metric": metric,
-                                "control_variant": CONTROL_VARIANT,
-                                "control_gamma": CONTROL_GAMMA,
-                                "reference_control_metric": reference["control_point"],
-                                "target_control_metric": target_value["control_point"],
-                                "reference_degradation": reference["point"],
-                                "reference_degradation_ci_low": reference["ci_low"],
-                                "reference_degradation_ci_high": reference["ci_high"],
-                                "target_degradation": target_value["point"],
-                                "target_degradation_ci_low": target_value["ci_low"],
-                                "target_degradation_ci_high": target_value["ci_high"],
-                                "degradation_difference": difference,
+                                "reference_baseline_metric": reference["baseline_point"],
+                                "target_baseline_metric": target_value["baseline_point"],
+                                "reference_setting_metric": reference["setting_point"],
+                                "target_setting_metric": target_value["setting_point"],
+                                "reference_statistic": reference["point"],
+                                "reference_statistic_ci_low": reference["ci_low"],
+                                "reference_statistic_ci_high": reference["ci_high"],
+                                "target_statistic": target_value["point"],
+                                "target_statistic_ci_low": target_value["ci_low"],
+                                "target_statistic_ci_high": target_value["ci_high"],
+                                "statistic_difference": difference,
                                 "difference_ci_low": low,
                                 "difference_ci_high": high,
                                 "equivalence_margin": args.equivalence_margin,
@@ -756,14 +1012,16 @@ def build_parameter_results(
                                 ),
                             }
                         )
-    return rows, arm_degradations
+    return rows, arm_values
 
 
 def build_auc_results(
     args: argparse.Namespace,
     config: Mapping[str, Mapping],
-    arm_degradations: Mapping[Tuple[str, str, str, str], Mapping],
+    analysis_key: str,
+    arm_values: Mapping[Tuple[str, str, str, str], Mapping],
 ) -> Tuple[List[Dict], Dict[Tuple[str, str, str, str], Dict]]:
+    spec = ANALYSES[analysis_key]
     rows: List[Dict] = []
     arm_auc: Dict[Tuple[str, str, str, str], Dict] = {}
 
@@ -786,7 +1044,7 @@ def build_auc_results(
             for metric in METRICS:
                 for arm in ALL_ARMS:
                     values = [
-                        arm_degradations[
+                        arm_values[
                             (arm, model, variant["variant_id"], metric)
                         ]
                         for variant in ordered_variants
@@ -820,6 +1078,9 @@ def build_auc_results(
                     )
                     rows.append(
                         {
+                            "analysis": analysis_key,
+                            "setting_comparison": spec["setting_comparison"],
+                            "baseline_comparison": spec["baseline_comparison"],
                             "reference_arm": REFERENCE_ARM,
                             "target_arm": target,
                             "model": model,
@@ -860,42 +1121,46 @@ def count_classifications(rows: Iterable[Mapping]) -> Dict[str, int]:
     }
 
 
-def build_summaries(parameter_rows: Sequence[Mapping], auc_rows: Sequence[Mapping]) -> Dict:
-    def grouped(rows: Sequence[Mapping], fields: Sequence[str]) -> List[Dict]:
-        groups: Dict[Tuple, List[Mapping]] = defaultdict(list)
-        for row in rows:
-            groups[tuple(row[field] for field in fields)].append(row)
-        output = []
-        for key, group in sorted(groups.items()):
-            record = {field: value for field, value in zip(fields, key)}
-            record["total"] = len(group)
-            record["counts"] = count_classifications(group)
-            record["equivalent_proportion"] = (
-                record["counts"][CLASS_EQUIVALENT] / len(group) if group else 0.0
-            )
-            output.append(record)
-        return output
+def _grouped(rows: Sequence[Mapping], fields: Sequence[str]) -> List[Dict]:
+    groups: Dict[Tuple, List[Mapping]] = defaultdict(list)
+    for row in rows:
+        groups[tuple(row[field] for field in fields)].append(row)
+    output = []
+    for key, group in sorted(groups.items()):
+        record = {field: value for field, value in zip(fields, key)}
+        record["total"] = len(group)
+        record["counts"] = count_classifications(group)
+        record["equivalent_proportion"] = (
+            record["counts"][CLASS_EQUIVALENT] / len(group) if group else 0.0
+        )
+        output.append(record)
+    return output
 
-    return {
-        "parameter_overall": count_classifications(parameter_rows),
-        "parameter_by_target_metric": grouped(
-            parameter_rows, ("target_arm", "metric")
-        ),
-        "parameter_by_target_metric_model": grouped(
-            parameter_rows, ("target_arm", "metric", "model")
-        ),
-        "parameter_by_target_metric_rule": grouped(
-            parameter_rows, ("target_arm", "metric", "rule")
-        ),
-        "auc_overall": count_classifications(auc_rows),
-        "auc_by_target_metric": grouped(auc_rows, ("target_arm", "metric")),
-        "auc_by_target_metric_model": grouped(
-            auc_rows, ("target_arm", "metric", "model")
-        ),
-        "auc_by_target_metric_rule": grouped(
-            auc_rows, ("target_arm", "metric", "rule")
-        ),
-    }
+
+def build_summaries(parameter_rows: Sequence[Mapping], auc_rows: Sequence[Mapping]) -> Dict:
+    summaries: Dict[str, Dict] = {}
+    for analysis_key in ANALYSES:
+        p_rows = [row for row in parameter_rows if row["analysis"] == analysis_key]
+        a_rows = [row for row in auc_rows if row["analysis"] == analysis_key]
+        summaries[analysis_key] = {
+            "parameter_overall": count_classifications(p_rows),
+            "parameter_by_target_metric": _grouped(p_rows, ("target_arm", "metric")),
+            "parameter_by_target_metric_model": _grouped(
+                p_rows, ("target_arm", "metric", "model")
+            ),
+            "parameter_by_target_metric_rule": _grouped(
+                p_rows, ("target_arm", "metric", "rule")
+            ),
+            "auc_overall": count_classifications(a_rows),
+            "auc_by_target_metric": _grouped(a_rows, ("target_arm", "metric")),
+            "auc_by_target_metric_model": _grouped(
+                a_rows, ("target_arm", "metric", "model")
+            ),
+            "auc_by_target_metric_rule": _grouped(
+                a_rows, ("target_arm", "metric", "rule")
+            ),
+        }
+    return summaries
 
 
 def format_rule(rule: str) -> str:
@@ -917,109 +1182,111 @@ def format_parameter(parameter: Optional[str]) -> str:
 def create_response_plots(
     args: argparse.Namespace,
     config: Mapping[str, Mapping],
-    arm_degradations: Mapping[Tuple[str, str, str, str], Mapping],
+    analysis_arm_values: Mapping[str, Mapping[Tuple[str, str, str, str], Mapping]],
 ) -> List[str]:
     plot_dir = args.output_dir / "plots"
     plot_dir.mkdir(parents=True, exist_ok=True)
     output_paths: List[str] = []
 
-    for rule, rule_config in config.items():
-        variants = rule_config["variants"]
-        x_values = np.asarray(
-            [parameter_value(rule_config, variant, index) for index, variant in enumerate(variants)]
-        )
-        for metric in METRICS:
-            fig, axes = plt.subplots(3, 2, figsize=(14, 14), squeeze=False)
-            flat_axes = axes.ravel()
-            for model_index, model in enumerate(args.models):
-                axis = flat_axes[model_index]
-                if len(variants) == 1:
-                    positions = np.arange(len(ALL_ARMS))
-                    points = []
-                    lows = []
-                    highs = []
-                    for arm in ALL_ARMS:
-                        value = arm_degradations[
-                            (arm, model, variants[0]["variant_id"], metric)
-                        ]
-                        points.append(value["point"])
-                        lows.append(value["point"] - value["ci_low"])
-                        highs.append(value["ci_high"] - value["point"])
-                    axis.errorbar(
-                        positions,
-                        points,
-                        yerr=np.asarray([lows, highs]),
-                        fmt="o",
-                        capsize=4,
-                        color="#333333",
-                    )
-                    axis.set_xticks(
-                        positions, [ARM_LABELS[arm] for arm in ALL_ARMS], rotation=15
-                    )
-                else:
-                    for arm in ALL_ARMS:
-                        values = [
-                            arm_degradations[
-                                (arm, model, variant["variant_id"], metric)
+    for analysis_key, arm_values in analysis_arm_values.items():
+        spec = ANALYSES[analysis_key]
+        for rule, rule_config in config.items():
+            variants = rule_config["variants"]
+            x_values = np.asarray(
+                [parameter_value(rule_config, variant, index) for index, variant in enumerate(variants)]
+            )
+            for metric in METRICS:
+                fig, axes = plt.subplots(3, 2, figsize=(14, 14), squeeze=False)
+                flat_axes = axes.ravel()
+                for model_index, model in enumerate(args.models):
+                    axis = flat_axes[model_index]
+                    if len(variants) == 1:
+                        positions = np.arange(len(ALL_ARMS))
+                        points = []
+                        lows = []
+                        highs = []
+                        for arm in ALL_ARMS:
+                            value = arm_values[
+                                (arm, model, variants[0]["variant_id"], metric)
                             ]
-                            for variant in variants
-                        ]
-                        point = np.asarray([value["point"] for value in values])
-                        low = np.asarray([value["ci_low"] for value in values])
-                        high = np.asarray([value["ci_high"] for value in values])
-                        axis.plot(
-                            x_values,
-                            point,
-                            marker="o",
-                            linewidth=1.8,
-                            markersize=4,
-                            label=ARM_LABELS[arm],
-                            color=ARM_COLORS[arm],
+                            points.append(value["point"])
+                            lows.append(value["point"] - value["ci_low"])
+                            highs.append(value["ci_high"] - value["point"])
+                        axis.errorbar(
+                            positions,
+                            points,
+                            yerr=np.asarray([lows, highs]),
+                            fmt="o",
+                            capsize=4,
+                            color="#333333",
                         )
-                        axis.fill_between(
-                            x_values,
-                            low,
-                            high,
-                            alpha=0.14,
-                            color=ARM_COLORS[arm],
+                        axis.set_xticks(
+                            positions, [ARM_LABELS[arm] for arm in ALL_ARMS], rotation=15
                         )
-                    axis.set_xlabel(format_parameter(rule_config["varying_parameter"]))
-                axis.axhline(0.0, color="#666666", linestyle="--", linewidth=0.8)
-                axis.set_ylabel(f"Control-normalised {metric} degradation")
-                axis.set_title(MODEL_LABELS.get(model, model))
-                axis.grid(alpha=0.25, linestyle=":")
+                    else:
+                        for arm in ALL_ARMS:
+                            values = [
+                                arm_values[
+                                    (arm, model, variant["variant_id"], metric)
+                                ]
+                                for variant in variants
+                            ]
+                            point = np.asarray([value["point"] for value in values])
+                            low = np.asarray([value["ci_low"] for value in values])
+                            high = np.asarray([value["ci_high"] for value in values])
+                            axis.plot(
+                                x_values,
+                                point,
+                                marker="o",
+                                linewidth=1.8,
+                                markersize=4,
+                                label=ARM_LABELS[arm],
+                                color=ARM_COLORS[arm],
+                            )
+                            axis.fill_between(
+                                x_values,
+                                low,
+                                high,
+                                alpha=0.14,
+                                color=ARM_COLORS[arm],
+                            )
+                        axis.set_xlabel(format_parameter(rule_config["varying_parameter"]))
+                    axis.axhline(0.0, color="#666666", linestyle="--", linewidth=0.8)
+                    axis.set_ylabel(spec["ylabel_template"].format(metric=metric))
+                    axis.set_title(MODEL_LABELS.get(model, model))
+                    axis.grid(alpha=0.25, linestyle=":")
 
-            for unused_index in range(len(args.models), len(flat_axes)):
-                flat_axes[unused_index].axis("off")
-            handles, labels = flat_axes[0].get_legend_handles_labels()
-            if handles:
-                fig.legend(
-                    handles,
-                    labels,
-                    loc="upper center",
-                    bbox_to_anchor=(0.5, 0.965),
-                    ncol=3,
-                    framealpha=0.9,
+                for unused_index in range(len(args.models), len(flat_axes)):
+                    flat_axes[unused_index].axis("off")
+                handles, labels = flat_axes[0].get_legend_handles_labels()
+                if handles:
+                    fig.legend(
+                        handles,
+                        labels,
+                        loc="upper center",
+                        bbox_to_anchor=(0.5, 0.965),
+                        ncol=3,
+                        framealpha=0.9,
+                    )
+                fig.suptitle(
+                    f"{format_rule(rule)}: {metric} \u2014 {spec['title']}",
+                    fontsize=15,
+                    fontweight="bold",
+                    y=0.995,
                 )
-            fig.suptitle(
-                f"{format_rule(rule)}: {metric} degradation relative to gamma=1.0 control",
-                fontsize=15,
-                fontweight="bold",
-                y=0.995,
-            )
-            fig.subplots_adjust(
-                left=0.07,
-                right=0.98,
-                bottom=0.055,
-                top=0.91,
-                hspace=0.38,
-                wspace=0.12,
-            )
-            filename = f"{rule}_{metric.lower()}_degradation.png"
-            path = plot_dir / filename
-            fig.savefig(path, dpi=150, bbox_inches="tight", facecolor="white")
-            plt.close(fig)
-            output_paths.append(str(path.relative_to(args.output_dir)))
+                fig.subplots_adjust(
+                    left=0.07,
+                    right=0.98,
+                    bottom=0.055,
+                    top=0.91,
+                    hspace=0.38,
+                    wspace=0.12,
+                )
+                filename = f"{rule}_{metric.lower()}_{spec['plot_suffix']}.png"
+                path = plot_dir / filename
+                fig.savefig(path, dpi=150, bbox_inches="tight", facecolor="white")
+                plt.close(fig)
+                output_paths.append(str(path.relative_to(args.output_dir)))
     return output_paths
 
 
@@ -1041,109 +1308,21 @@ def class_short(classification: str) -> str:
     }[classification]
 
 
-def write_markdown_report(
+def _render_analysis_section(
     args: argparse.Namespace,
     config: Mapping[str, Mapping],
+    analysis_key: str,
     parameter_rows: Sequence[Mapping],
     auc_rows: Sequence[Mapping],
     summaries: Mapping,
-    validation: Mapping,
-    image_counts: Mapping[str, int],
     plot_paths: Sequence[str],
-) -> Path:
-    report_path = args.output_dir / "REPORT.md"
-    confidence_percent = int(round(args.confidence_level * 100))
+) -> List[str]:
+    spec = ANALYSES[analysis_key]
     sample_percent = int(round(args.sample_fraction * 100))
-    lines = [
-        "# Test-set sample-size metamorphic consistency equivalence",
-        "",
-        "## Research question",
-        "",
-        (
-            f"If only {sample_percent}% of the test dataset were used for "
-            "metamorphic assessment, would the observed parameter-dependent "
-            "consistency patterns be equivalent to using the full test dataset?"
-        ),
-        "",
-        "## Design",
-        "",
-        (
-            f"The analysis covers {len(args.models)} models, {len(config)} rules, "
-            f"and {sum(len(value['variants']) for value in config.values())} settings, "
-            f"drawn entirely from the `{args.source_dataset}` dataset "
-            f"({image_counts[REFERENCE_ARM]} images)."
-        ),
-        "",
-        (
-            f"The `{TARGET_ARM}` arm uses a single fixed, reproducibly-drawn "
-            f"subsample containing {image_counts[TARGET_ARM]} images "
-            f"({sample_percent}% of {image_counts[REFERENCE_ARM]}, rounded to the "
-            "nearest image). The same subsample is reused across every model, "
-            "rule, and setting."
-        ),
-        "",
-        (
-            "AP and AR are COCO original-vs-transformed consistency metrics: each "
-            "model's original predictions act as the reference, rather than labelled "
-            "ground truth. Every rule is normalised against the same gamma=1.0 "
-            f"control (`{CONTROL_VARIANT}`)."
-        ),
-        "",
-        (
-            f"Each arm is independently resampled {args.bootstrap_repetitions:,} "
-            "times with replacement from within its own population: the `full` arm "
-            f"resamples from all {image_counts[REFERENCE_ARM]} images, while the "
-            f"`{TARGET_ARM}` arm resamples only from its "
-            f"{image_counts[TARGET_ARM]}-image subsample. Results use percentile "
-            f"{confidence_percent}% confidence intervals and a symmetric "
-            f"+/-{args.equivalence_margin:.2f} equivalence margin. No p-values or "
-            "multiple-testing corrections are used."
-        ),
-        "",
-        "Classification rules:",
-        "",
-        (
-            f"- **Equivalent:** the complete {confidence_percent}% interval lies "
-            f"within [-{args.equivalence_margin:.2f}, +{args.equivalence_margin:.2f}]."
-        ),
-        (
-            "- **Meaningfully different:** the complete interval lies beyond one "
-            "equivalence boundary."
-        ),
-        "- **Inconclusive:** the interval overlaps an equivalence boundary.",
-        "",
-        (
-            f"A positive difference means full-dataset degradation is greater than "
-            f"the {sample_percent}% subsample; a negative difference means the "
-            "subsample degradation is greater."
-        ),
-        "",
-        "## Validation",
-        "",
-        (
-            f"The implementation recomputed {validation['values_checked']:,} point "
-            "AP/AR values for the `full` arm over every declared image and compared "
-            "them with the existing aggregate JSON for the source dataset. "
-            f"{validation['values_within_tolerance']:,} values agreed within "
-            f"{validation['tolerance']:.1g}; "
-            f"{validation['values_different_from_stored_json']:,} differed because "
-            "the stored evaluation omitted images with zero transformed detections."
-        ),
-        "",
-    ]
-    if validation["maximum_difference_key"]:
-        lines.extend(
-            [
-                (
-                    f"The maximum stored-versus-recomputed discrepancy was "
-                    f"{validation['maximum_absolute_difference']:.3g} at "
-                    f"`{'/'.join(validation['maximum_difference_key'])}`. The bootstrap "
-                    "uses the recomputed all-image values; it does not reproduce the "
-                    "biased detection-positive-only subset."
-                ),
-                "",
-            ]
-        )
+    confidence_percent = int(round(args.confidence_level * 100))
+    lines: List[str] = [f"## {spec['title']}", ""]
+    lines.append(f"Statistic: {spec['statistic_description']}.")
+    lines.append("")
 
     parameter_counts = summaries["parameter_overall"]
     auc_counts = summaries["auc_overall"]
@@ -1164,25 +1343,25 @@ def write_markdown_report(
         ):
             fully_equivalent_auc_models.append(MODEL_LABELS.get(model, model))
 
-    lines.extend(
-        [
-            "## Key findings",
-            "",
-            (
-                f"- At parameter level, {parameter_counts[CLASS_EQUIVALENT]:,} of "
-                f"{parameter_total:,} comparisons ({parameter_counts[CLASS_EQUIVALENT] / parameter_total:.1%}) "
-                f"were equivalent, {parameter_counts[CLASS_INCONCLUSIVE]:,} were "
-                f"inconclusive, and {parameter_counts[CLASS_DIFFERENT]:,} were "
-                "meaningfully different."
-            ),
-            (
-                f"- At rule-curve level, {auc_counts[CLASS_EQUIVALENT]} of "
-                f"{auc_total} AUC comparisons were equivalent; "
-                f"{auc_counts[CLASS_INCONCLUSIVE]} were inconclusive and "
-                f"{auc_counts[CLASS_DIFFERENT]} were meaningfully different."
-            ),
-        ]
-    )
+    if parameter_total:
+        equivalent_share = parameter_counts[CLASS_EQUIVALENT] / parameter_total
+        key_finding_line = (
+            f"- At parameter level, {parameter_counts[CLASS_EQUIVALENT]:,} of "
+            f"{parameter_total:,} comparisons ({equivalent_share:.1%}) "
+            f"were equivalent, {parameter_counts[CLASS_INCONCLUSIVE]:,} were "
+            f"inconclusive, and {parameter_counts[CLASS_DIFFERENT]:,} were "
+            "meaningfully different."
+        )
+    else:
+        key_finding_line = "- No parameter-level comparisons were computed."
+    lines.extend(["### Key findings", "", key_finding_line])
+    if auc_total:
+        lines.append(
+            f"- At rule-curve level, {auc_counts[CLASS_EQUIVALENT]} of "
+            f"{auc_total} AUC comparisons were equivalent; "
+            f"{auc_counts[CLASS_INCONCLUSIVE]} were inconclusive and "
+            f"{auc_counts[CLASS_DIFFERENT]} were meaningfully different."
+        )
     if fully_equivalent_auc_models:
         lines.append(
             "- Every AUC comparison was equivalent for "
@@ -1198,14 +1377,8 @@ def write_markdown_report(
             )
             + "."
         )
-    lines.extend(
-        [
-            "",
-            "## Parameter-level overview",
-            "",
-        ]
-    )
 
+    lines.extend(["", "### Parameter-level overview", ""])
     overview_rows = []
     for summary in summaries["parameter_by_target_metric"]:
         counts = summary["counts"]
@@ -1226,17 +1399,18 @@ def write_markdown_report(
             overview_rows,
         )
     )
-    lines.extend(["", "## Rule-level AUC results", ""])
+
+    lines.extend(["", "### Rule-level AUC results", ""])
     lines.append(
-        "AUC uses the complete configured parameter range with its axis scaled to 0-1. Because the response is degradation, a higher AUC means lower consistency across the rule. Grayscale has one setting and therefore has no AUC result."
+        "AUC uses the complete configured parameter range with its axis scaled to 0-1. "
+        "Rules with a single setting (Grayscale) have no AUC result."
     )
     lines.append("")
-
     for target in TARGET_ARMS:
         for metric in METRICS:
             lines.extend(
                 [
-                    f"### {metric}: full test set vs {sample_percent}% subsample",
+                    f"#### {metric}: full test set vs {sample_percent}% subsample",
                     "",
                 ]
             )
@@ -1263,7 +1437,7 @@ def write_markdown_report(
             )
             lines.append("")
 
-    lines.extend(["## Sample-size equivalence summary", ""])
+    lines.extend(["### Sample-size equivalence summary", ""])
     model_auc = {
         (item["target_arm"], item["metric"], item["model"]): item
         for item in summaries["auc_by_target_metric_model"]
@@ -1275,13 +1449,16 @@ def write_markdown_report(
         total = 0
         for target in TARGET_ARMS:
             for metric in METRICS:
-                summary = model_auc[(target, metric, model)]
+                summary = model_auc.get((target, metric, model))
+                if summary is None:
+                    cells.append("n/a")
+                    continue
                 equivalent = summary["counts"][CLASS_EQUIVALENT]
                 cells.append(f"{equivalent}/{summary['total']}")
                 total_equivalent += equivalent
                 total += summary["total"]
         transfer_rows.append(
-            [MODEL_LABELS.get(model, model), *cells, f"{total_equivalent}/{total}"]
+            [MODEL_LABELS.get(model, model), *cells, f"{total_equivalent}/{total}" if total else "n/a"]
         )
     lines.extend(
         markdown_table(
@@ -1292,15 +1469,15 @@ def write_markdown_report(
     lines.extend(
         [
             "",
-            "Counts show equivalent rule-level AUC comparisons out of the five rules with numeric parameter curves.",
+            "Counts show equivalent rule-level AUC comparisons out of the rules with numeric parameter curves.",
             "",
-            "## Largest parameter-level differences",
+            "### Largest parameter-level differences",
             "",
         ]
     )
     largest = sorted(
         parameter_rows,
-        key=lambda row: abs(float(row["degradation_difference"])),
+        key=lambda row: abs(float(row["statistic_difference"])),
         reverse=True,
     )[:25]
     lines.extend(
@@ -1313,7 +1490,7 @@ def write_markdown_report(
                     MODEL_LABELS.get(row["model"], row["model"]),
                     format_rule(row["rule"]),
                     row["variant_id"],
-                    f"{row['degradation_difference']:+.3f}",
+                    f"{row['statistic_difference']:+.3f}",
                     f"[{row['difference_ci_low']:+.3f}, {row['difference_ci_high']:+.3f}]",
                     class_short(row["classification"]),
                 ]
@@ -1322,21 +1499,155 @@ def write_markdown_report(
         )
     )
 
-    if plot_paths:
-        lines.extend(["", "## Response curves", ""])
+    relevant_plots = [
+        path for path in plot_paths if path.endswith(f"_{spec['plot_suffix']}.png")
+    ]
+    if relevant_plots:
+        lines.extend(["", "### Response curves", ""])
         for rule in config:
-            lines.extend([f"### {format_rule(rule)}", ""])
-            for metric in METRICS:
-                relative = f"plots/{rule}_{metric.lower()}_degradation.png"
-                if relative in plot_paths:
-                    lines.append(f"![{format_rule(rule)} {metric} degradation]({relative})")
-                    lines.append("")
+            rule_plots = [
+                f"plots/{rule}_{metric.lower()}_{spec['plot_suffix']}.png" for metric in METRICS
+            ]
+            rule_plots = [path for path in rule_plots if path in relevant_plots]
+            if not rule_plots:
+                continue
+            lines.extend([f"#### {format_rule(rule)}", ""])
+            for metric, relative in zip(METRICS, rule_plots):
+                lines.append(f"![{format_rule(rule)} {metric} {spec['plot_suffix']}]({relative})")
+                lines.append("")
+
+    lines.append("")
+    return lines
+
+
+def write_markdown_report(
+    args: argparse.Namespace,
+    config: Mapping[str, Mapping],
+    parameter_rows: Sequence[Mapping],
+    auc_rows: Sequence[Mapping],
+    summaries: Mapping,
+    validation: Mapping,
+    image_counts: Mapping[str, int],
+    plot_paths: Sequence[str],
+) -> Path:
+    report_path = args.output_dir / "REPORT.md"
+    confidence_percent = int(round(args.confidence_level * 100))
+    sample_percent = int(round(args.sample_fraction * 100))
+    lines = [
+        "# Test-set sample-size metamorphic consistency equivalence",
+        "",
+        "## Research question",
+        "",
+        (
+            f"If only {sample_percent}% of the test dataset were used for "
+            "metamorphic assessment, would (a) the observed original-vs-transformed "
+            "consistency and (b) the observed ground-truth accuracy degradation "
+            "caused by each transformation be equivalent to using the full test dataset?"
+        ),
+        "",
+        "## Design",
+        "",
+        (
+            f"The analysis covers {len(args.models)} models, {len(config)} rules, "
+            f"and {sum(len(value['variants']) for value in config.values())} settings, "
+            f"drawn entirely from the `{args.source_dataset}` dataset "
+            f"({image_counts[REFERENCE_ARM]} images)."
+        ),
+        "",
+        (
+            f"The `{TARGET_ARM}` arm uses a single fixed, reproducibly-drawn "
+            f"subsample containing {image_counts[TARGET_ARM]} images "
+            f"({sample_percent}% of {image_counts[REFERENCE_ARM]}, rounded to the "
+            "nearest image). The same subsample is reused across every model, "
+            "rule, setting, and analysis below."
+        ),
+        "",
+        "Two independent statistics are tested for equivalence between the two arms:",
+        "",
+    ]
+    for analysis_key, spec in ANALYSES.items():
+        lines.append(f"- **{spec['title']}** ({analysis_key}): {spec['statistic_description']}.")
+    lines.extend(
+        [
+            "",
+            (
+                f"Each arm is independently resampled {args.bootstrap_repetitions:,} "
+                "times with replacement from within its own population: the `full` arm "
+                f"resamples from all {image_counts[REFERENCE_ARM]} images, while the "
+                f"`{TARGET_ARM}` arm resamples only from its "
+                f"{image_counts[TARGET_ARM]}-image subsample. Results use percentile "
+                f"{confidence_percent}% confidence intervals and a symmetric "
+                f"+/-{args.equivalence_margin:.2f} equivalence margin. No p-values or "
+                "multiple-testing corrections are used."
+            ),
+            "",
+            (
+                "Point AP/AR values reported for the `full` arm are read directly from "
+                "the existing `analysis/results/<dataset>/<model>/<variant_id>/<comparison>/"
+                "stats.json` files (and the per-model `original_vs_gt/stats.json`), not "
+                "recomputed; only the `sample` arm's point and both arms' bootstrap "
+                "confidence intervals are computed by this script (see Validation)."
+            ),
+            "",
+            "Classification rules:",
+            "",
+            (
+                f"- **Equivalent:** the complete {confidence_percent}% interval lies "
+                f"within [-{args.equivalence_margin:.2f}, +{args.equivalence_margin:.2f}]."
+            ),
+            (
+                "- **Meaningfully different:** the complete interval lies beyond one "
+                "equivalence boundary."
+            ),
+            "- **Inconclusive:** the interval overlaps an equivalence boundary.",
+            "",
+            (
+                f"A positive difference means the full-dataset statistic is greater than "
+                f"the {sample_percent}% subsample; a negative difference means the "
+                "subsample statistic is greater."
+            ),
+            "",
+            "## Validation",
+            "",
+            (
+                f"The implementation recomputed {validation['values_checked']:,} point "
+                "AP/AR values for the `full` arm over every declared image and compared "
+                "them with the stored per-variant `stats.json` files. "
+                f"{validation['values_within_tolerance']:,} values agreed within "
+                f"{validation['tolerance']:.1g}; "
+                f"{validation['values_different_from_stored_json']:,} differed."
+            ),
+            "",
+        ]
+    )
+    if validation["maximum_difference_key"]:
+        lines.extend(
+            [
+                (
+                    f"The maximum stored-versus-recomputed discrepancy was "
+                    f"{validation['maximum_absolute_difference']:.3g} at "
+                    f"`{'/'.join(validation['maximum_difference_key'])}`. Reported `full` "
+                    "arm points use the stored stats.json values, not this recomputation."
+                ),
+                "",
+            ]
+        )
+
+    for analysis_key in ANALYSES:
+        p_rows = [row for row in parameter_rows if row["analysis"] == analysis_key]
+        a_rows = [row for row in auc_rows if row["analysis"] == analysis_key]
+        lines.extend(
+            _render_analysis_section(
+                args, config, analysis_key, p_rows, a_rows, summaries[analysis_key], plot_paths
+            )
+        )
 
     lines.extend(
         [
             "## Interpretation cautions",
             "",
-            "- Equivalence concerns metamorphic consistency, not absolute ground-truth detection accuracy.",
+            "- Original-vs-transformed consistency concerns metamorphic consistency, not absolute ground-truth detection accuracy.",
+            "- Ground-truth accuracy degradation concerns real detection accuracy loss and is directly comparable across rules on the same AP/AR scale.",
             (
                 f"- Unlike a comparison between independent datasets, the `{TARGET_ARM}` "
                 f"arm's images are a strict subset of the `{REFERENCE_ARM}` arm's images, "
@@ -1345,7 +1656,6 @@ def write_markdown_report(
                 "fewer images, not generalisation across distinct datasets."
             ),
             "- Images are the resampling units. No sequence/rosbag metadata was available to model temporal clustering.",
-            "- The shared gamma=1.0 control was requested for every rule; rule-specific identity settings were not substituted.",
             "- Parameter-level intervals are estimation-only and are not adjusted for multiple comparisons.",
             "- AUC can be equivalent even when individual settings are inconclusive or different; consult the parameter records in `results.json`.",
             "",
@@ -1369,7 +1679,7 @@ def main() -> None:
     config = load_config(args.config, args.rules)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     source_image_count = validate_inputs(
-        args.results_root, args.source_dataset, args.models, config
+        args.results_root, args.data_root, args.source_dataset, args.models, config
     )
 
     print("Sample-size equivalence bootstrap analysis", flush=True)
@@ -1377,6 +1687,7 @@ def main() -> None:
     print(f"Sample fraction: {args.sample_fraction:.0%}", flush=True)
     print(f"Models: {', '.join(args.models)}", flush=True)
     print(f"Rules: {', '.join(config)}", flush=True)
+    print(f"Analyses: {', '.join(ANALYSES)}", flush=True)
     print(
         f"Bootstrap: {args.bootstrap_repetitions:,} repetitions, "
         f"{args.confidence_level:.0%} intervals, +/-{args.equivalence_margin:.2f} margin",
@@ -1385,7 +1696,7 @@ def main() -> None:
     print(f"Workers: {args.workers}", flush=True)
 
     tasks = build_tasks(args, config)
-    print(f"COCO model/variant evaluations: {len(tasks)}", flush=True)
+    print(f"COCO model/variant/comparison evaluations: {len(tasks)}", flush=True)
     raw_results = execute_tasks(tasks, args.workers)
 
     sample_image_count = int(
@@ -1395,25 +1706,35 @@ def main() -> None:
     )
     image_counts = {REFERENCE_ARM: source_image_count, TARGET_ARM: sample_image_count}
 
-    expected = load_expected_metrics(args.analysis_results_root, args.source_dataset)
-    validation = validate_point_metrics(raw_results, expected, args.point_tolerance)
+    trusted_points = load_trusted_points(
+        args.analysis_results_root, args.source_dataset, args.models, config
+    )
+    validation = validate_point_metrics(raw_results, trusted_points, args.point_tolerance)
     print(
-        "Aggregate JSON audit (full arm only): "
+        "stats.json audit (full arm only): "
         f"{validation['values_within_tolerance']}/{validation['values_checked']} "
         "values agree with all-image recomputation; maximum discrepancy "
         f"{validation['maximum_absolute_difference']:.3g}",
         flush=True,
     )
 
-    parameter_rows, arm_degradations = build_parameter_results(
-        args, config, raw_results
-    )
-    auc_rows, _ = build_auc_results(args, config, arm_degradations)
+    parameter_rows: List[Dict] = []
+    auc_rows: List[Dict] = []
+    analysis_arm_values: Dict[str, Dict] = {}
+    for analysis_key in ANALYSES:
+        rows, arm_values = build_statistic_results(
+            args, config, analysis_key, raw_results, trusted_points
+        )
+        parameter_rows.extend(rows)
+        analysis_arm_values[analysis_key] = arm_values
+        auc_analysis_rows, _ = build_auc_results(args, config, analysis_key, arm_values)
+        auc_rows.extend(auc_analysis_rows)
+
     summaries = build_summaries(parameter_rows, auc_rows)
 
     plot_paths: List[str] = []
     if not args.skip_plots:
-        plot_paths = create_response_plots(args, config, arm_degradations)
+        plot_paths = create_response_plots(args, config, analysis_arm_values)
 
     output = {
         "metadata": {
@@ -1428,10 +1749,20 @@ def main() -> None:
             "models": list(args.models),
             "rules": list(config),
             "metrics": list(METRICS),
-            "comparison": "original_vs_transformed",
-            "normalisation": "gamma_1_control_minus_setting",
-            "control_variant": CONTROL_VARIANT,
-            "control_gamma": CONTROL_GAMMA,
+            "analyses": {
+                analysis_key: {
+                    "title": spec["title"],
+                    "setting_comparison": spec["setting_comparison"],
+                    "baseline_comparison": spec["baseline_comparison"],
+                    "statistic_description": spec["statistic_description"],
+                }
+                for analysis_key, spec in ANALYSES.items()
+            },
+            "point_source": {
+                "full_arm": "stats_json",
+                "sample_arm": "recomputed_bootstrap_point",
+                "stats_json_root": str(args.analysis_results_root),
+            },
             "bootstrap_unit": "individual_image",
             "bootstrap_repetitions": args.bootstrap_repetitions,
             "bootstrap_seed": args.seed,
@@ -1452,8 +1783,9 @@ def main() -> None:
             },
             "workers": args.workers,
             "source_config": str(args.config),
-            "source_aggregate_root": str(args.analysis_results_root),
+            "source_analysis_results_root": str(args.analysis_results_root),
             "source_detection_root": str(args.results_root),
+            "source_data_root": str(args.data_root),
         },
         "validation": validation,
         "parameter_results": parameter_rows,

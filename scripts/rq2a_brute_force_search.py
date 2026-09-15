@@ -30,6 +30,11 @@ from ultralytics import YOLO
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.matias_metamorphic import gen_metamorphic
+from utils.model_registry import (
+    get_default_model_name,
+    get_model_by_name,
+    get_model_names,
+)
 from analysis.utils.format_detections import format_detections
 from analysis.coco_eval import evaluate_coco
 
@@ -42,12 +47,9 @@ BRIGHTNESS_CONSTANT = 0
 BRIGHTNESS_MULTIPLIER = 1.0
 METHOD = "gamma"
 
-# Model weights paths
-MODEL_WEIGHTS = {
-    "yolov5": "models/yolov5/yolov5_param_kfold.pt",
-    "yolov8": "models/yolov8/yolov8_param_kfold.pt",
-    "yolov12": "models/yolov12/yolov12_param_kfold.pt",
-}
+PROJECT_ROOT = Path(__file__).parent.parent
+AVAILABLE_MODELS = get_model_names()
+DEFAULT_MODEL = get_default_model_name()
 
 # Class names and colors for visualization
 CLASS_NAMES = {
@@ -69,15 +71,41 @@ CLASS_COLORS = {
 }
 
 
+def atomic_json_dump(data: Dict, path: str) -> None:
+    """Write JSON atomically so an interruption cannot corrupt a checkpoint."""
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = output_path.with_suffix(output_path.suffix + ".tmp")
+    with open(temporary_path, "w") as f:
+        json.dump(data, f, indent=2)
+    os.replace(temporary_path, output_path)
+
+
+def load_json(path: str) -> Optional[Dict]:
+    """Load a JSON object, returning None when it is missing or invalid."""
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else None
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+
+
 def load_yolo_model(model_name: str, device: str = "cuda:0"):
     """Load YOLO model."""
-    weights_path = MODEL_WEIGHTS.get(model_name)
-    if not weights_path or not os.path.exists(weights_path):
+    model_config = get_model_by_name(model_name)
+    if model_config is None or model_name not in AVAILABLE_MODELS:
+        raise ValueError(
+            f"Model '{model_name}' is not enabled in config/models.json"
+        )
+
+    weights_path = PROJECT_ROOT / model_config["weights"]
+    if not weights_path.is_file():
         raise FileNotFoundError(f"Model weights not found: {weights_path}")
 
     device = torch.device(device if torch.cuda.is_available() else "cpu")
     print(f"Loading {model_name} from {weights_path} on {device}...")
-    model = YOLO(weights_path)
+    model = YOLO(str(weights_path))
     return model, device
 
 
@@ -301,15 +329,31 @@ def evaluate_gamma(
     all_results: List[Tuple[float, float]],
     img_width: int,
     img_height: int,
+    directory_name: Optional[str] = None,
 ) -> float:
     """Evaluate AP for one gamma value and record the result."""
-    transform_dir = os.path.join(results_dir, f"gamma_{gamma:.3f}_{label}")
+    transform_dir = os.path.join(
+        results_dir,
+        directory_name or f"gamma_{gamma:.3f}_{label}",
+    )
+    detections_dir = os.path.join(transform_dir, "detections")
+    detection_file = os.path.join(detections_dir, f"{Path(image_name).stem}.txt")
+
+    # Older interrupted runs do not have a cache. Recover their completed
+    # evaluations directly from the detection files already on disk.
+    if os.path.isfile(detection_file):
+        ap = calculate_map(
+            detections_dir, gt_labels_dir, image_name, img_width, img_height
+        )
+        all_results.append((float(gamma), float(ap)))
+        print(f"  ↻ Recovered gamma={gamma:.3f}, mAP={ap:.4f}")
+        return ap
+
     transformed_path = apply_gamma_transformation(image, gamma, image_name, transform_dir)
 
     if transformed_path is None:
         raise RuntimeError(f"Failed to apply gamma transformation at gamma={gamma:.3f}")
 
-    detections_dir = os.path.join(transform_dir, "detections")
     run_yolo_inference(
         model,
         transformed_path,
@@ -435,7 +479,13 @@ def brute_force_gamma_search(
     # Calculate original AP
     print("Calculating original AP...")
     orig_det_dir = os.path.join(results_dir, "original_detections")
-    run_yolo_inference(model, image_path, orig_det_dir, device)
+    original_detection = os.path.join(
+        orig_det_dir, f"{Path(image_name).stem}.txt"
+    )
+    if not os.path.isfile(original_detection):
+        run_yolo_inference(model, image_path, orig_det_dir, device)
+    else:
+        print("  ↻ Reusing existing original detection")
     original_ap = calculate_map(
         orig_det_dir, gt_labels_dir, image_name, img_width, img_height
     )
@@ -487,33 +537,22 @@ def brute_force_gamma_search(
     for i, gamma in enumerate(gamma_values):
         print(f"\n[Iteration {i+1}/{len(gamma_values)}] gamma={gamma:.2f}")
 
-        # Apply gamma transformation
-        transform_dir = os.path.join(results_dir, f"gamma_{gamma:.2f}")
-        transformed_path = apply_gamma_transformation(image, gamma, image_name, transform_dir)
-
-        if transformed_path is None:
-            print(f"  ⚠ Failed to apply transformation")
-            continue
-
-        # Run inference (pass original image name for proper ground truth matching)
-        detections_dir = os.path.join(transform_dir, "detections")
-        run_yolo_inference(model, transformed_path, detections_dir, device, original_image_name=image_name)
-        inference_count += 1
-
-        # Calculate AP
-        ap = calculate_map(
-            detections_dir, gt_labels_dir, image_name, img_width, img_height
+        ap = evaluate_gamma(
+            gamma,
+            image,
+            image_name,
+            gt_labels_dir,
+            model,
+            device,
+            results_dir,
+            "grid",
+            all_results,
+            img_width,
+            img_height,
+            directory_name=f"gamma_{gamma:.2f}",
         )
         grid_results.append((float(gamma), float(ap)))
-        all_results.append((float(gamma), float(ap)))
         print(f"  mAP: {ap:.4f}")
-
-        # Save visualization for whole number gamma values
-        if gamma == int(gamma) and 1 <= gamma <= 5:
-            img_name_stem = Path(image_name).stem
-            detection_file = os.path.join(detections_dir, f"{img_name_stem}.txt")
-            vis_output_path = os.path.join(transform_dir, f"{img_name_stem}_annotated.png")
-            draw_detections_on_image(transformed_path, detection_file, vis_output_path)
 
         # Track peak
         if ap > peak_ap:
@@ -604,6 +643,159 @@ def brute_force_gamma_search(
     }
 
 
+def build_final_results(
+    model_name: str,
+    dataset: str,
+    target_ap: float,
+    image_files: List[Path],
+    results: List[Dict],
+    failed_images: List[Dict],
+) -> Dict:
+    skipped_images = [r for r in results if r.get("skipped", False)]
+    processed_results = [r for r in results if not r.get("skipped", False)]
+    return {
+        "method": "brute_force",
+        "model": model_name,
+        "dataset": dataset,
+        "target_ap": target_ap,
+        "gamma_range": list(GAMMA_RANGE),
+        "gamma_step": GAMMA_STEP,
+        "ap_tolerance": AP_TOLERANCE,
+        "max_root_refinement_iterations": MAX_ROOT_REFINEMENT_ITERATIONS,
+        "total_images": len(image_files),
+        "completed_images": len(results),
+        "processed_images": len(processed_results),
+        "skipped_images": len(skipped_images),
+        "failed_images": len(failed_images),
+        "results": processed_results,
+        "skipped": skipped_images,
+        "failures": failed_images,
+        "summary": {
+            "avg_gamma_left": float(np.mean([r["gamma_left"] for r in processed_results if r["gamma_left"]])) if any(r.get("gamma_left") for r in processed_results) else None,
+            "avg_gamma_right": float(np.mean([r["gamma_right"] for r in processed_results if r["gamma_right"]])) if any(r.get("gamma_right") for r in processed_results) else None,
+            "avg_peak_gamma": float(np.mean([r["peak_gamma"] for r in processed_results if r["peak_gamma"]])) if any(r.get("peak_gamma") for r in processed_results) else None,
+            "avg_iterations": float(np.mean([r["iterations"] for r in processed_results])) if processed_results else 0,
+            "avg_inference_count": float(np.mean([r["inference_count"] for r in processed_results])) if processed_results else 0,
+            "total_time_seconds": float(sum(r["time_seconds"] for r in results)),
+            "avg_time_per_image": float(np.mean([r["time_seconds"] for r in processed_results])) if processed_results else 0,
+        },
+    }
+
+
+def run_model(
+    model_name: str,
+    args: argparse.Namespace,
+    image_files: List[Path],
+    gt_labels_dir: str,
+    output_dir: str,
+) -> None:
+    os.makedirs(output_dir, exist_ok=True)
+    output_json = os.path.join(output_dir, "results.json")
+    if os.path.isfile(output_json):
+        print(
+            f"↻ Skipping {model_name}: aggregate results already exist at "
+            f"{output_json}"
+        )
+        return
+
+    results: List[Dict] = []
+
+    for img_path in image_files:
+        image_checkpoint = load_json(
+            os.path.join(output_dir, img_path.stem, "results.json")
+        )
+        if (
+            image_checkpoint
+            and image_checkpoint.get("method") == "brute_force"
+            and image_checkpoint.get("model") == model_name
+            and image_checkpoint.get("dataset") == args.dataset
+            and image_checkpoint.get("target_ap") == args.target_ap
+            and image_checkpoint.get("gamma_range") == list(GAMMA_RANGE)
+            and image_checkpoint.get("gamma_step") == GAMMA_STEP
+            and isinstance(image_checkpoint.get("result"), dict)
+        ):
+            results.append(image_checkpoint["result"])
+
+    if results:
+        print(f"↻ Resuming {model_name}: {len(results)} completed images found")
+
+    completed_names = {result["image_name"] for result in results}
+    failed_images: List[Dict] = []
+    model, device = load_yolo_model(model_name, args.device)
+
+    print("=" * 60)
+    print("RQ2.a: Brute Force Gamma Search Configuration")
+    print("=" * 60)
+    print(f"Model: {model_name}")
+    print(f"Dataset: {args.dataset}")
+    print(f"Images to process: {len(image_files)}")
+    print(f"Already completed: {len(completed_names)}")
+    print(f"Target AP: {args.target_ap}")
+    print(f"Gamma range: [{GAMMA_RANGE[0]}, {GAMMA_RANGE[1]}]")
+    print(f"Gamma step: {GAMMA_STEP}")
+    print(f"AP tolerance: {AP_TOLERANCE}")
+    print(f"Device: {device}")
+    print(f"Output: {output_dir}")
+    print("=" * 60)
+
+    for img_path in image_files:
+        if img_path.name in completed_names:
+            print(f"↻ Skipping completed image: {img_path.name}")
+            continue
+        try:
+            result = brute_force_gamma_search(
+                str(img_path),
+                gt_labels_dir,
+                model,
+                device,
+                args.target_ap,
+                os.path.join(output_dir, img_path.stem),
+            )
+            atomic_json_dump(
+                {
+                    "method": "brute_force",
+                    "model": model_name,
+                    "dataset": args.dataset,
+                    "target_ap": args.target_ap,
+                    "gamma_range": list(GAMMA_RANGE),
+                    "gamma_step": GAMMA_STEP,
+                    "result": result,
+                },
+                os.path.join(output_dir, img_path.stem, "results.json"),
+            )
+            results.append(result)
+        except Exception as e:
+            error_msg = f"Failed to process {img_path.name}: {e}"
+            print(f"\n❌ ERROR: {error_msg}")
+            import traceback
+            traceback.print_exc()
+            failed_images.append({"image": img_path.name, "error": str(e)})
+
+    final_results = build_final_results(
+        model_name,
+        args.dataset,
+        args.target_ap,
+        image_files,
+        results,
+        failed_images,
+    )
+    atomic_json_dump(final_results, output_json)
+
+    print(f"\n{'='*60}")
+    print("RQ2.a: Brute Force Search Complete")
+    print(f"{'='*60}")
+    print(f"Total images: {len(image_files)}")
+    print(f"Processed: {final_results['processed_images']}")
+    print(f"Skipped (AP < target): {final_results['skipped_images']}")
+    print(f"Failed: {len(failed_images)}")
+    print(f"Results saved to: {output_json}")
+    print(f"{'='*60}")
+
+    del model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="RQ2.a: Brute Force Gamma Search",
@@ -618,15 +810,18 @@ Examples:
 
   # Different target AP
   python scripts/rq2a_brute_force_search.py --model yolov8 --target-ap 0.6
+
+  # Run every enabled model sequentially
+  python scripts/rq2a_brute_force_search.py --model all
         """
     )
 
     parser.add_argument(
         "--model",
         type=str,
-        default="yolov8",
-        choices=["yolov5", "yolov8", "yolov12"],
-        help="YOLO model to use (default: yolov8)"
+        default=DEFAULT_MODEL,
+        choices=AVAILABLE_MODELS + ["all"],
+        help=f"YOLO model to use, or 'all' (default: {DEFAULT_MODEL})"
     )
     parser.add_argument(
         "--dataset",
@@ -643,8 +838,8 @@ Examples:
     parser.add_argument(
         "--target-ap",
         type=float,
-        default=0.7,
-        help="Target AP threshold (default: 0.7)"
+        default=0.5,
+        help="Target AP threshold (default: 0.5)"
     )
     parser.add_argument(
         "--device",
@@ -656,7 +851,10 @@ Examples:
         "--output-dir",
         type=str,
         default=None,
-        help="Output directory (default: analysis/results/rq2a_brute_force_<model>)"
+        help=(
+            "Output directory. With --model all, model-specific directories "
+            "are created beneath it."
+        )
     )
 
     args = parser.parse_args()
@@ -664,11 +862,6 @@ Examples:
     # Set up paths
     images_dir = f"data/base_images/{args.dataset}/images"
     gt_labels_dir = f"data/base_images/{args.dataset}/labels"
-
-    if args.output_dir is None:
-        args.output_dir = f"analysis/results/rq2a_brute_force_{args.model}"
-
-    os.makedirs(args.output_dir, exist_ok=True)
 
     # Validate paths
     if not os.path.exists(images_dir):
@@ -679,9 +872,6 @@ Examples:
         print(f"Error: Ground truth labels not found: {gt_labels_dir}")
         sys.exit(1)
 
-    # Load model
-    model, device = load_yolo_model(args.model, args.device)
-
     # Get image files
     image_files = sorted(Path(images_dir).glob("*.png")) + sorted(Path(images_dir).glob("*.jpg"))
     if args.num_images:
@@ -691,99 +881,19 @@ Examples:
         print(f"Error: No images found in {images_dir}")
         sys.exit(1)
 
-    # Print configuration
-    print("="*60)
-    print("RQ2.a: Brute Force Gamma Search Configuration")
-    print("="*60)
-    print(f"Model: {args.model}")
-    print(f"Dataset: {args.dataset}")
-    print(f"Images to process: {len(image_files)}")
-    print(f"Target AP: {args.target_ap}")
-    print(f"Gamma range: [{GAMMA_RANGE[0]}, {GAMMA_RANGE[1]}]")
-    print(f"Gamma step: {GAMMA_STEP}")
-    print(f"AP tolerance: {AP_TOLERANCE}")
-    print(f"Device: {device}")
-    print(f"Output: {args.output_dir}")
-    print("="*60)
-
-    # Process images
-    results = []
-    failed_images = []
-
-    for img_path in image_files:
-        try:
-            result = brute_force_gamma_search(
-                str(img_path),
-                gt_labels_dir,
-                model,
-                device,
-                args.target_ap,
-                os.path.join(args.output_dir, img_path.stem),
+    model_names = AVAILABLE_MODELS if args.model == "all" else [args.model]
+    for model_name in model_names:
+        if args.output_dir is None:
+            output_dir = (
+                f"analysis/results/rq2a/rq2a_brute_force_{model_name}"
             )
-            results.append(result)
-        except Exception as e:
-            error_msg = f"Failed to process {img_path.name}: {e}"
-            print(f"\n❌ ERROR: {error_msg}")
-            import traceback
-            traceback.print_exc()
-            failed_images.append({'image': img_path.name, 'error': str(e)})
-
-    # Separate skipped and processed results
-    skipped_images = [r for r in results if r.get('skipped', False)]
-    processed_results = [r for r in results if not r.get('skipped', False)]
-
-    # Save results
-    output_json = os.path.join(args.output_dir, "results.json")
-    final_results = {
-        "method": "brute_force",
-        "model": args.model,
-        "dataset": args.dataset,
-        "target_ap": args.target_ap,
-        "gamma_range": list(GAMMA_RANGE),
-        "gamma_step": GAMMA_STEP,
-        "ap_tolerance": AP_TOLERANCE,
-        "max_root_refinement_iterations": MAX_ROOT_REFINEMENT_ITERATIONS,
-        "total_images": len(image_files),
-        "processed_images": len(processed_results),
-        "skipped_images": len(skipped_images),
-        "failed_images": len(failed_images),
-        "results": processed_results,
-        "skipped": skipped_images,
-        "failures": failed_images,
-        "summary": {
-            "avg_gamma_left": float(np.mean([r['gamma_left'] for r in processed_results if r['gamma_left']])) if any(r.get('gamma_left') for r in processed_results) else None,
-            "avg_gamma_right": float(np.mean([r['gamma_right'] for r in processed_results if r['gamma_right']])) if any(r.get('gamma_right') for r in processed_results) else None,
-            "avg_peak_gamma": float(np.mean([r['peak_gamma'] for r in processed_results if r['peak_gamma']])) if any(r.get('peak_gamma') for r in processed_results) else None,
-            "avg_iterations": float(np.mean([r['iterations'] for r in processed_results])) if processed_results else 0,
-            "avg_inference_count": float(np.mean([r['inference_count'] for r in processed_results])) if processed_results else 0,
-            "total_time_seconds": float(sum(r['time_seconds'] for r in results)),
-            "avg_time_per_image": float(np.mean([r['time_seconds'] for r in processed_results])) if processed_results else 0,
-        }
-    }
-
-    with open(output_json, 'w') as f:
-        json.dump(final_results, f, indent=2)
-
-    # Print summary
-    print(f"\n{'='*60}")
-    print("RQ2.a: Brute Force Search Complete")
-    print(f"{'='*60}")
-    print(f"Total images: {len(image_files)}")
-    print(f"Processed: {len(processed_results)}")
-    print(f"Skipped (AP < target): {len(skipped_images)}")
-    print(f"Failed: {len(failed_images)}")
-    if processed_results:
-        if final_results['summary']['avg_gamma_left']:
-            print(f"Average left crossing gamma: {final_results['summary']['avg_gamma_left']:.2f}")
-        if final_results['summary']['avg_gamma_right']:
-            print(f"Average right crossing gamma: {final_results['summary']['avg_gamma_right']:.2f}")
-        if final_results['summary']['avg_peak_gamma']:
-            print(f"Average peak gamma: {final_results['summary']['avg_peak_gamma']:.2f}")
-        print(f"Average iterations: {final_results['summary']['avg_iterations']:.0f}")
-        print(f"Average time per image: {final_results['summary']['avg_time_per_image']:.1f}s")
-    print(f"Total time: {final_results['summary']['total_time_seconds']:.1f}s")
-    print(f"\nResults saved to: {output_json}")
-    print(f"{'='*60}")
+        elif args.model == "all":
+            output_dir = os.path.join(
+                args.output_dir, f"rq2a_brute_force_{model_name}"
+            )
+        else:
+            output_dir = args.output_dir
+        run_model(model_name, args, image_files, gt_labels_dir, output_dir)
 
 
 if __name__ == "__main__":

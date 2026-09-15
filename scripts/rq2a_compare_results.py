@@ -6,8 +6,8 @@ Loads results from both search methods and generates comparison report.
 
 Usage:
     python scripts/rq2a_compare_results.py \
-        --brute-force analysis/results/rq2a_brute_force_yolov8/results.json \
-        --golden-section analysis/results/rq2a_golden_section_yolov8/results.json
+        --brute-force analysis/results/rq2a/rq2a_brute_force_yolov5/results.json \
+        --golden-section analysis/results/rq2a/rq2a_golden_section_yolov5/results.json
 """
 
 import json
@@ -159,7 +159,7 @@ def print_comparison_report(bf_results, gs_results, comparisons, summary):
     print(f"\n{'='*80}\n")
 
 
-def plot_comparison(comparisons, summary, output_dir):
+def plot_comparison(comparisons, summary, output_dir, model_name):
     """Generate comparison plots."""
 
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
@@ -173,7 +173,7 @@ def plot_comparison(comparisons, summary, output_dir):
     ax.plot([0, max_iter], [0, max_iter], 'r--', label='Equal')
     ax.set_xlabel('Brute Force Iterations')
     ax.set_ylabel('Golden-Section Iterations')
-    ax.set_title(f'Iteration Comparison\nAvg Reduction: {summary["avg_iteration_reduction"]*100:.1f}%')
+    ax.set_title(f'{model_name} Iteration Comparison\nAvg Reduction: {summary["avg_iteration_reduction"]*100:.1f}%')
     ax.legend()
     ax.grid(True, alpha=0.3)
 
@@ -240,7 +240,7 @@ def plot_comparison(comparisons, summary, output_dir):
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    output_path = Path(output_dir) / 'rq2a_comparison.png'
+    output_path = Path(output_dir) / model_name / 'rq2a_comparison.png'
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     print(f"Plots saved to: {output_path}")
 
@@ -265,8 +265,8 @@ def main():
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="analysis/results",
-        help="Output directory for comparison report and plots"
+        default="analysis/results/rq2a/rq2a_comparison",
+        help="Output directory for comparison report and plots (default: analysis/results/rq2a_comparison)"
     )
 
     args = parser.parse_args()
@@ -286,12 +286,12 @@ def main():
 
     comparisons, summary = result
 
+    # Save comparison JSON
+    output_json = Path(args.output_dir) / bf_results['model'] / 'rq2a_comparison.json'
+    output_json.parent.mkdir(parents=True, exist_ok=True)
+
     # Print report
     print_comparison_report(bf_results, gs_results, comparisons, summary)
-
-    # Save comparison JSON
-    output_json = Path(args.output_dir) / 'rq2a_comparison.json'
-    output_json.parent.mkdir(parents=True, exist_ok=True)
 
     comparison_data = {
         'brute_force_file': args.brute_force,
@@ -307,7 +307,7 @@ def main():
 
     # Generate plots
     print("\nGenerating plots...")
-    plot_comparison(comparisons, summary, args.output_dir)
+    plot_comparison(comparisons, summary, args.output_dir, bf_results['model'])
 
 
 if __name__ == "__main__":

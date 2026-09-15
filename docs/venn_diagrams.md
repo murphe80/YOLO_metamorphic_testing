@@ -1,6 +1,6 @@
-# Venn Diagram Visualization
+# Detection-Overlap Statistics
 
-This generates three-circle Venn diagrams showing the overlap between:
+This analysis calculates the overlap between:
 
 - Original image detections
 - Transformed image detections  
@@ -8,7 +8,7 @@ This generates three-circle Venn diagrams showing the overlap between:
 
 ## Purpose
 
-The Venn diagrams visualize 7 distinct regions:
+The statistics contain 7 distinct overlap regions:
 
 1. **Original ∩ Transformed ∩ GT**: True positives maintained after transformation
 2. **Original ∩ Transformed**: Consistent false positives
@@ -24,7 +24,9 @@ The Venn diagrams visualize 7 distinct regions:
 
 Cone detections are matched across Original, Transformed, and Ground Truth using **Intersection over Union (IoU)** as the similarity metric.
 
-**Matching Rule**: Two detections match if their IoU ≥ threshold of 0.5
+**Matching Rule**: Two detections match if their IoU ≥ threshold of 0.5 AND they share the same `category_id` (pass `--ignore_category` to match on IoU alone, matching pre-category-aware behavior).
+
+Category-aware matching matters most for color-based transformations (e.g. `imgColorWheel`, `imgGrayscale`): a cone detected in roughly the same place before and after the transform, but reclassified to a different color/category, is counted as a **lost original TP + a new hallucination**, not as a retained TP. This keeps `tp_retention_rate` consistent with category-aware evaluation metrics like COCO AP, instead of showing near-100% retention purely because bounding boxes didn't move.
 
 - IoU = 1.0: Perfect match (identical boxes)
 - IoU = 0.5: Moderate overlap (standard COCO threshold)
@@ -77,7 +79,7 @@ This implementation differs from the standard `pycocotools` COCO evaluation in s
 | **IoU Thresholds**     | Single threshold (default: 0.5)             | Multiple thresholds [0.5:0.95]        |
 | **Metrics**            | TP retention, new TP rate, detection loss, new hallucination rate | AP, AP50, AP75, AR                    |
 | **Confidence Use**     | Match priority only                         | Match priority + P-R curves           |
-| **Category**           | Ignored (all cones treated equally)         | Per-category evaluation               |
+| **Category**           | Category-aware by default (`--ignore_category` reverts to legacy spatial-only matching) | Per-category evaluation |
 | **Output**             | Image-normalized Venn region weights, CSV statistics | AP/AR scores, precision-recall curves |
 
 
@@ -95,32 +97,33 @@ The matching logic is in `analysis/utils/detection_matching.py`:
 
 ## Usage
 
-### 1. Generate Individual Venn Diagrams
+### 1. Generate Detection-Overlap Statistics
 
-Generate Venn diagrams for all model-transformation combinations:
+Calculate statistics for all model-transformation combinations:
 
 ```bash
-python3 analysis/visualisation/plot_detection_venn.py
+python3 analysis/utils/calculate_venn_statistics.py --dataset test
 ```
 
-Output: `analysis/results/venn_diagrams/[model]_[transformation]_venn.png`
+Output: `analysis/results/test/venn_diagrams/venn_statistics.json`
 
 Options:
 
-- `--iou_threshold 0.7`: Change IoU threshold (default: 0.5)
-- `--model yolov8`: Generate for specific model only
-- `--transformation imgGrayscale`: Generate for specific transformation only
-- `--results_dir results`: Custom results directory
-- `--gt_path data/.../annotations_coco.json`: Custom ground truth path
+- `--iou-threshold 0.7`: Change IoU threshold (default: 0.5)
+- `--model yolov8`: Calculate a specific model only
+- `--transformation imgGrayscale`: Calculate a specific transformation only
+- `--results-dir results/test`: Custom results directory
+- `--gt-path data/.../annotations_coco.json`: Custom ground truth path
+- `--output-path analysis/results/test/venn_diagrams/venn_statistics.json`: Custom output file
 
 Example:
 
 ```bash
 # Only YOLOv8 with stricter IoU threshold
-python3 analysis/visualisation/plot_detection_venn.py --model yolov8 --iou_threshold 0.7
+python3 analysis/utils/calculate_venn_statistics.py --model yolov8 --iou-threshold 0.7
 
 # Single transformation across all models
-python3 analysis/visualisation/plot_detection_venn.py --transformation imgGrayscale
+python3 analysis/utils/calculate_venn_statistics.py --transformation imgGrayscale
 ```
 
 ### 3. Export Statistics to CSV
@@ -227,6 +230,15 @@ Measures how many of the true positives from the original image are still detect
 
 Measures overall consistency between original and transformed detections (includes both TPs and FPs).
 
+### Detection Loss Rate
+
+```
+(orig_gt + orig_only) / (orig_trans_gt + orig_trans + orig_gt + orig_only)
+```
+
+Measures the share of all original detections, whether true or false positives,
+that have no matching detection after transformation.
+
 ### Metamorphic TP Consistency
 
 ```
@@ -250,9 +262,9 @@ Of the true positives detected in original, what proportion are still detected a
 
 ## Next Steps
 
-After generating visualizations:
+After generating the statistics:
 
 1. **Compare across models**: Which model has highest TP retention for each transformation?
 2. **Identify weak transformations**: Which transformations cause most detection loss?
 3. **Answer RQ1.b**: Establish patterns on when to use one model over another
-4. **Integrate into dashboard**: Add Venn diagrams to `dashboard/dashboard.html`
+4. **Create metric charts**: Run `analysis/visualisation/plot_venn_metrics.py`
