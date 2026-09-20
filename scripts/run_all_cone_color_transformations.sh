@@ -44,13 +44,13 @@ elif [ "$DATASET" = "test" ]; then
     FSOCO_DIR="data/base_images/test"
     IMAGES_DIR="$FSOCO_DIR/images"
     LABELS_DIR="$FSOCO_DIR/labels"
-    SEGMENTED_DIR="$FSOCO_DIR/segmented_images/segmented_images_good"
+    SEGMENTED_DIR="$FSOCO_DIR/segmented_images/segmented_images"
     OUTPUT_BASE_DIR="data/transformed_images/fsoco_test_cone_color"
 else
     FSOCO_DIR="data/base_images/$DATASET"
     IMAGES_DIR="$FSOCO_DIR/images"
     LABELS_DIR="$FSOCO_DIR/labels"
-    SEGMENTED_DIR="$FSOCO_DIR/segmented_images/segmented_images_good"
+    SEGMENTED_DIR="$FSOCO_DIR/segmented_images/segmented_images"
     OUTPUT_BASE_DIR="data/transformed_images/${DATASET}_cone_color"
 fi
 
@@ -125,7 +125,6 @@ TRANSFORMATIONS=(
     "blue_to_yellow"
     "yellow_to_orange"
     "blue_to_orange"
-    "swap_sides"
 )
 
 echo "======================================"
@@ -182,14 +181,12 @@ if [ ${#CONE_COLOR_RESULTS[@]} -gt 0 ]; then
     echo "======================================"
     echo "Running COCO evaluation on cone color results"
     echo "======================================"
-    source "$(dirname "$0")/../analysis/scripts/run_analysis_cone_color.sh"
+    source "$(dirname "$0")/../analysis/scripts/run_cone_colour_analysis.sh"
     echo ""
-    echo "COCO metrics saved under analysis/results/<model>/cone_color/"
+    echo "COCO metrics saved under analysis/results/rq1/$DATASET/<model>/<transformation>/"
 else
     echo "No cone color detection results found under $RESULTS_BASE/<model>/cone_color."
     echo "Run YOLO inference on the transformed images, then run COCO eval with:"
-    echo "  bash analysis/scripts/run_analysis_cone_color.sh"
+    echo "  bash analysis/scripts/run_cone_colour_analysis.sh"
     echo ""
 fi
-
-

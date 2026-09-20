@@ -31,19 +31,13 @@
       "other_cone",
       "unknown_cone"
     ],
-    "val": [
+    "fsoco_sample": [
       "yellow_cone",
       "orange_cone",
       "large_orange_cone",
       "blue_cone",
       "other_cone",
       "unknown_cone"
-    ],
-    "comp_labelled": [
-      "yellow_cone",
-      "blue_cone",
-      "orange_cone",
-      "large_orange_cone"
     ]
   },
   "transformations": {
@@ -70,18 +64,6 @@
     "orange_to_yellow": {
       "source": "orange_cone",
       "target": "yellow_cone"
-    },
-    "swap_sides": {
-      "pairs": [
-        {
-          "source": "yellow_cone",
-          "target": "blue_cone"
-        },
-        {
-          "source": "blue_cone",
-          "target": "yellow_cone"
-        }
-      ]
     }
   }
 }

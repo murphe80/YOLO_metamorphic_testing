@@ -1,57 +1,31 @@
-# Metamorphic Testing Dashboard
+# Research dashboard
 
-Dashboard for visualizing and comparing metamorphic testing results across YOLO models 
-
-## Quick Start
-
-### 1. Generate the Manifest
-
-First, generate the manifest file that indexes all available models and tests:
+From the project root, run:
 
 ```bash
-cd dashboard
-python3 generate_manifest.py
+python3 dashboard/serve.py
 ```
 
-This scans the `../analysis/results` directory and creates `manifest.json` with available models and tests, including brute-force variant directories such as `imgResolution_3` when analysis stats exist for them.
+Open **http://127.0.0.1:8080**. Requires Python 3.9+; no packages, frontend build, internet connection, or model weights are needed. Use `--port 8081` if the default port is occupied. The server binds to localhost by default.
 
-### 2. Start the Dashboard
+Choose **Paper results** (`analysis/original_results`) or **My experiments** (`analysis/results`). Refresh after generating or updating analysis outputs. Both sources use the same views and remain separate. Analysis files are read only; the dashboard neither runs experiments nor rewrites results. Source paths embedded in archived JSON are not followed.
 
-Launch the local web server:
+- **Model robustness:** an expandable original-image baseline and an “Explore a transformation” section with parameter response, detection overlap, confidence and cone-colour figures. Dataset, comparison and AP/AR selectors focus the view. Use the transformation selector to choose what to inspect.
+- **Brightness tuning:** search efficiency and threshold agreement, brightness-score validation, and original/transformed accuracy distributions. Model and available search-method selectors reveal the existing figures.
+- **Fewer test runs:** actual sample fraction and image counts, equivalence outcomes, and full-versus-sample response curves with uncertainty. AP/AR and consistency/degradation selectors keep the two analyses distinct.
+
+Figures are reused directly from analysis outputs and link to their original resolution. The dashboard creates a response chart from metrics when an RQ1 plot is absent. Missing stages and empty local results are shown explicitly. Run the corresponding `end_to_end_scripts/run_rq1_analysis.sh`, `run_rq2.sh`, or `run_rq3.sh` workflow to generate outputs (see the project README for prerequisites and options).
+
+## Interpretation
+
+Missing, non-finite and COCO `-1` metrics are unavailable, not zero. AP uses COCO AP@[.50:.95]; AR uses `AR100` (or exported `AR`). Detection consistency is not ground-truth accuracy. Baseline scores refer to the selected dataset, not an external COCO benchmark.
+
+Raw `stats.json` values take precedence over metric exports; exported settings provide the historical parameter labels when available. For raw-only results, labels use the current transformation config. RQ2 summary cards use saved matched-image comparison statistics; mean per-image speedup differs from the ratio of mean runtimes. Holdout validation is shown only where it exists, independently of the selected scoring search method. RQ3 classifications and metadata come directly from the saved bootstrap results, including the actual sample fraction and validation discrepancies. Inconclusive outcomes are not evidence of a difference. The dashboard does not infer failure-image overlap, train/test generalisation, or subsumption from aggregate statistics.
+
+The loader scans known analysis-output paths, avoiding RQ2's large per-image inference directories. No generated manifest is required. For RQ2/RQ3, outputs should retain the pipeline's standard directory layout. Distinct local reruns should be archived outside the active `analysis/results` tree before replacement if they need preserving; the dashboard presents that tree as the current experiment set.
+
+## Verification
 
 ```bash
-python3 serve.py
+python3 -m unittest discover -s dashboard -p 'test_*.py'
 ```
-
-The dashboard will automatically open in your browser at `http://localhost:8000/dashboard/dashboard.html`
-
-**Note:** The server runs from the project root directory to access both dashboard files and analysis results.
-
-### Alternative: Manual Server
-
-If you prefer to use Python's built-in HTTP server directly:
-
-```bash
-cd ..  # Go to project root
-python3 -m http.server 8000
-```
-
-Then open `http://localhost:8000/dashboard/dashboard.html` in your browser.
-
-## Dashboard Features
-
-### Metric Comparison
-- Compare multiple metrics (AP, AP50, AP75, etc.) across models
-- Interactive charts showing performance across different comparison types
-- Dropdown filters for model, test, and comparison type selection
-
-### Comparison Types
-- **Original vs Transformed**: Compare model performance on original images vs metamorphic transformations
-- **Transformed vs Ground Truth**: Evaluate transformed images against ground truth annotations
-- **Original vs Ground Truth**: Baseline performance of original images against ground truth (no test selection needed)
-
-### Supported Metamorphic Tests
-- **General transformations**: Grayscale, Motion Blur, Stretch, Resolution, Color Wheel, Dark/Bright, including brute-force variants such as `imgStretch_4`
-- **Cone color transformations**: Yellow→Blue, Blue→Yellow, Blue→Orange, Yellow→Orange
-- **Label transformations**: Label removal with different backgrounds (avg, black, white)
-
