@@ -1,8 +1,8 @@
 # YOLO Metamorphic Testing
 
-Evaluates YOLO detection robustness under brightness, blur, resolution, stretch, grayscale, hue and cone-colour transformations. The repository contains experiment runners, COCO-style evaluation, archived research results and a local dashboard.
+Evaluates YOLO detection robustness under various metamorphic tests including brightness, blur, resolution, stretch, grayscale, hue and cone-colour transformations.
 
-The model registry currently enables `yolov5`, `yolov8`, `yolov12`, `yolov26` and `yolov26_v2`. Registered weights and datasets must be available locally to run inference.
+The model registry currently enables `yolov5`, `yolov8`, `yolov12`, and `yolov26_v2`. Registered weights and datasets must be available locally to run inference.
 
 ## Inspect the research results
 
@@ -12,9 +12,8 @@ From the repository root:
 python3 dashboard/serve.py
 ```
 
-Open **http://127.0.0.1:8080** and select **Paper results**. Viewing the dashboard requires Python 3.9+ and its standard library; no model weights, GPU, dependency installation or manifest generation is needed.
+Open **http://127.0.0.1:8080**. Viewing the dashboard requires Python 3.9+ and its standard library
 
-The dashboard reads archived analysis from `analysis/original_results/` and local experiments from `analysis/results/`. These are separate sources. See [inspecting research paper results](docs/research_paper_results.md) and [running the dashboard](docs/running_dashboard.md).
 
 ## Documentation
 
@@ -47,13 +46,12 @@ After preparing images, labels and weights, the main entry points are:
 bash end_to_end_scripts/run_rq1.sh --dataset test --model v8
 
 # RQ2: both brightness searches, scoring and performance distributions
-bash end_to_end_scripts/run_rq2.sh --dataset test --models yolov8 --num-images 10
+bash end_to_end_scripts/run_rq2.sh --dataset test --models yolov8 
 
 # RQ3: bootstrap equivalence using existing test detections and RQ1 metrics
-bash end_to_end_scripts/run_rq3.sh --models yolov8 --bootstrap-repetitions 20 --workers 2
+bash end_to_end_scripts/run_rq3.sh --models yolov8 
 ```
 
-The limited RQ2/RQ3 commands are smoke experiments, not the published configurations. Read the [prerequisites and current execution limitations](docs/running_end_to_end.md) before running them: some inference adapters still reference a renamed visualization module, and not every analysis tool accepts every dataset supported by the experiment wrappers.
 
 ## Research questions and evidence
 
@@ -86,4 +84,3 @@ dashboard/                 Standard-library server and static frontend
 docs/                      Workflow guides
 ```
 
-Reruns reuse standard output locations. Archive earlier local runs if they need preserving; keep paper archives separate from new experiment outputs.
