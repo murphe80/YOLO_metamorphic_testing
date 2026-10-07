@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-YOLOv26 object detection script
-Compatible with Ultralytics YOLOv26 (.pt) models.
+YOLOv26_v2 object detection script
+Loads the retained YOLOv26_v2 (.pt) weights with Ultralytics.
 """
 
 import os
@@ -13,13 +13,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import cv2
 import torch
 from ultralytics import YOLO
-from utils.visualise import visualize_detections as visualise
+from utils.visualise_detections import visualize_detections as visualise
 
 
 def load_model(weights, device="cuda:0"):
-    """Load YOLOv26 model."""
+    """Load YOLOv26_v2 model."""
     device = torch.device(device if torch.cuda.is_available() else "cpu")
-    print(f"Loading YOLOv26 model from {weights} on {device}...")
+    print(f"Loading YOLOv26_v2 model from {weights} on {device}...")
     model = YOLO(weights)
     print("Model loaded successfully.")
     return model, device
@@ -43,7 +43,7 @@ def run_inference(model, image_path, conf_thres=0.25, iou_thres=0.45, device="cu
 
 
 def extract_detections(result):
-    """Convert YOLOv26 result to structured data."""
+    """Convert YOLOv26_v2 result to structured data."""
     detections = []
     boxes = result.boxes
 
@@ -68,13 +68,13 @@ def extract_detections(result):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="YOLOv26 Object Detection")
-    parser.add_argument("--weights", type=str, required=True, help="Path to YOLOv26 .pt weights file")
+    parser = argparse.ArgumentParser(description="YOLOv26_v2 Object Detection")
+    parser.add_argument("--weights", type=str, required=True, help="Path to YOLOv26_v2 .pt weights file")
     parser.add_argument("--image", type=str, required=True, help="Path to input image")
     parser.add_argument("--conf_thres", type=float, default=0.25, help="Confidence threshold")
     parser.add_argument("--iou_thres", type=float, default=0.45, help="IoU threshold")
     parser.add_argument("--device", type=str, default="cuda:0", help="Torch device")
-    parser.add_argument("--output-subdir", type=str, default="original", help="Subdirectory under results/yolov26/ (e.g. original, imgColorWheel)")
+    parser.add_argument("--output-subdir", type=str, default="original", help="Subdirectory under results/yolov26_v2/ (e.g. original, imgColorWheel)")
     parser.add_argument("--save-viz", action="store_true", help="Save detection visualization image (skip by default to save time)")
 
     args = parser.parse_args()
@@ -93,7 +93,7 @@ def main():
 
     # Get image filename for output (per-transform directory)
     img_path = os.path.splitext(os.path.basename(args.image))
-    results_dir = os.path.join("./results/yolov26", args.output_subdir)
+    results_dir = os.path.join("./results/yolov26_v2", args.output_subdir)
     os.makedirs(results_dir, exist_ok=True)
 
     detections = extract_detections(result)
@@ -110,7 +110,7 @@ def main():
 
     if args.save_viz:
         visualise(img, detections, show_plot=False,
-                  output_path=os.path.join(results_dir, f"{img_path[0]}{img_path[1]}"), model="v26")
+                  output_path=os.path.join(results_dir, f"{img_path[0]}{img_path[1]}"), model="v26_v2")
 
 
 if __name__ == "__main__":

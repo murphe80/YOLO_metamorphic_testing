@@ -17,7 +17,7 @@ class DashboardTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.roots = {'paper': self.root / 'original_results', 'local': self.root / 'results'}
+        self.roots = {'paper': self.root / 'results', 'local': self.root / 'other_results'}
         for path in self.roots.values():
             path.mkdir()
 
@@ -41,6 +41,30 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual((row['AP'], row['AR']), (.7, .8))
         self.assertEqual(row['setting'], {'gamma': 42})
         self.assertEqual(build('local', self.roots)['datasets'], {})
+
+    def test_nested_rq2_outputs_preserve_validation_datasets(self):
+        root = self.roots['paper']
+        for dataset, accuracy in [('val', .8), ('competition_dataset', .6)]:
+            folder = root / 'rq2/rq2b/validation' / dataset / 'yolov8'
+            self.write(folder / 'validation_results.json', {
+                'metrics': {'score': {'balanced_accuracy': .1}}})
+            (folder / 'brightness_validation.png').write_bytes(b'unfiltered figure')
+            folder = folder / 'filtered_ap_0.1'
+            self.write(folder / 'validation_results.json', {
+                'metrics': {'score': {'balanced_accuracy': accuracy}}})
+            (folder / 'brightness_validation.png').write_bytes(b'figure')
+        distribution = 'rq2/rq2c/performance_distributions/yolov26/yolov26_v2_golden_section_performance_distribution.png'
+        path = root / distribution
+        path.parent.mkdir(parents=True)
+        path.write_bytes(b'figure')
+        result = build('paper', self.roots)
+        self.assertIn(distribution, result['figures'])
+        for dataset, accuracy in [('val', .8), ('competition_dataset', .6)]:
+            validation = result['validation'][dataset]['yolov8']
+            self.assertEqual(validation['metrics']['score']['balanced_accuracy'], accuracy)
+            self.assertIn('/filtered_ap_0.1/', validation['figure'])
+            self.assertIn(validation['figure'], result['figures'])
+            self.assertNotIn(validation['figure'].replace('/filtered_ap_0.1', ''), result['figures'])
 
     def test_missing_metrics_are_not_zero(self):
         self.assertEqual(metric_values({'AP': -1, 'AR100': float('nan')}), {'AP': None, 'AR': None})
@@ -79,7 +103,7 @@ class DashboardTests(unittest.TestCase):
             base = f'http://127.0.0.1:{server.server_port}'
             try:
                 with urlopen(base + '/') as response:
-                    self.assertIn(b'Research dashboard', response.read())
+                    self.assertIn(b'Results dashboard', response.read())
                 with urlopen(base + '/results/paper/allowed.json') as response:
                     self.assertEqual(json.load(response), {'ok': True})
                 for route in ('/results/paper/%2e%2e/secret.json', '/results/paper/escape.json',

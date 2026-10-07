@@ -6,7 +6,10 @@ Output is AP (Average Precision) and AR (Average Recall) metrics using COCO eval
 import argparse
 import json
 import tempfile
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
@@ -209,7 +212,19 @@ def main():
         )
     )
 
+    parser.add_argument("--color-wheel-variant", help="Reviewed hue variant; evaluate each source class separately")
     args = parser.parse_args()
+
+    if args.color_wheel_variant:
+        from analysis.utils.color_wheel import evaluate_files
+        result = evaluate_files(args.gt, args.dt, args.color_wheel_variant, args.image_dir)
+        if args.stats_out:
+            path = Path(args.stats_out)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(result, indent=2) + "\n")
+        else:
+            print(json.dumps(result, indent=2))
+        return
 
     # Run evaluation
     stats = evaluate_coco(args.gt, args.dt, args.iou_type, args.image_dir)

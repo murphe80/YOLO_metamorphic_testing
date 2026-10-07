@@ -307,6 +307,11 @@ process_rule_analysis() {
         --output_file "${rule_path}/detections_coco.json" \
         --image_dir "$SOURCE_IMAGES_DIR"
 
+    local -a color_wheel_args=()
+    if [ "$base_rule_name" = "imgColorWheel" ]; then
+        color_wheel_args=(--color-wheel-variant "$rule_name")
+    fi
+
     # Comparison 1: Original detections vs Transformed detections (metamorphic testing)
     echo "Comparing original vs $rule_name (metamorphic)..."
 
@@ -335,7 +340,7 @@ process_rule_analysis() {
             --gt "$base_det" \
             --dt "$DT_FILE" \
             --image-dir "$SOURCE_IMAGES_DIR" \
-            --stats-out "${stats_dir_base}/original_vs_transformed/stats.json"
+            --stats-out "${stats_dir_base}/original_vs_transformed/stats.json" "${color_wheel_args[@]}"
     fi
 
 
@@ -374,7 +379,7 @@ process_rule_analysis() {
             --gt "$GT_COCO" \
             --dt "$DT_GT_FILE" \
             --image-dir "$SOURCE_IMAGES_DIR" \
-            --stats-out "${stats_dir_base}/transformed_vs_gt/stats.json" 2>&1 | grep -v "Warning: No matching image" || true
+            --stats-out "${stats_dir_base}/transformed_vs_gt/stats.json" "${color_wheel_args[@]}" 2>&1 | grep -v "Warning: No matching image" || true
     fi
 }
 
@@ -408,6 +413,15 @@ prepare_original_detections() {
             --dt "${original_results}/detections_for_gt.json" \
             --image-dir "$SOURCE_IMAGES_DIR" \
             --stats-out "${stats_dir_base}/original_vs_gt/stats.json" 2>&1 | grep -v "Warning: No matching image" || true
+        if should_process_rule imgColorWheel; then
+            # Source-specific baselines for downstream colour-shift comparisons.
+            python3 analysis/coco_eval.py \
+                --gt "$GT_COCO" \
+                --dt "${original_results}/detections_for_gt.json" \
+                --image-dir "$SOURCE_IMAGES_DIR" \
+                --color-wheel-variant imgColorWheel_0 \
+                --stats-out "${stats_dir_base}/original_vs_gt/color_wheel_stats.json"
+        fi
     fi
 
     BASE_DET="$base_det"

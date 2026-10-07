@@ -42,7 +42,7 @@ Reruns write to standard paths. The RQ1 base runner explicitly clears selected `
 bash end_to_end_scripts/run_rq1.sh --dataset test --model v8
 ```
 
-This runs base transformations and inference, cone-colour transformations and inference, then the seven-stage analysis workflow. `--model` accepts a registry **version** (`v5`, `v8`, `v12`, `v26`, `v26_v2`) or `all`. This limits experiment inference; the final analysis wrapper scans available results rather than accepting a model filter.
+This runs base transformations and inference, cone-colour transformations and inference, then the seven-stage analysis workflow. `--model` accepts a registry **version** (`v5`, `v8`, `v12`, `v26_v2`) or `all`. This limits experiment inference; the final analysis wrapper scans available results rather than accepting a model filter.
 
 | Option | Meaning |
 | --- | --- |

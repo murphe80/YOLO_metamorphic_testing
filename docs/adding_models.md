@@ -1,6 +1,6 @@
 # Adding a model
 
-Models are registered in [config/models.json](../config/models.json). The current entries are `yolov5`, `yolov8`, `yolov12`, `yolov26` and `yolov26_v2`; YOLOv26 is already integrated. Use a new name for another architecture or weights variant.
+Models are registered in [config/models.json](../config/models.json). The current entries are `yolov5`, `yolov8`, `yolov12` and `yolov26_v2`. Use a new name for another architecture or weights variant.
 
 ## 1. Add weights and an inference adapter
 

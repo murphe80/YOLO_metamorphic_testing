@@ -135,14 +135,14 @@ Two additional programs are not invoked by `run_rq2.sh`:
 | `scripts/rq2/rq2a_visualize_gamma_search.py` | Visualize saved gamma-search traces; inspect `--help` for model/method and image selection |
 | `scripts/rq2/rq2b_validate_brightness_method.py` | Validate learned brightness thresholds on separate labelled holdout data |
 
-For holdout validation:
+For brightness validation on `val`:
 
 ```bash
 python3 scripts/rq2/rq2b_validate_brightness_method.py \
-  --model yolov8 --num-images 10
+  --dataset val --model yolov8 --num-images 10
 ```
 
-This requires the RQ2b results and holdout inputs, including an `annotations_coco.json` file and its referenced images under `images/`. Defaults are `data/base_images/comp_labelled` and `results/competition_labelled`; override with `--holdout-root`, `--detections-root` and `--rq2b-results` as needed. It runs additional inference; it is not just a report renderer.
+This requires the RQ2b results and holdout inputs, including an `annotations_coco.json` file and its referenced images under `images/`. `--dataset val` selects `data/base_images/val` and `results/val/<model>/original`. The default dataset is `comp_labelled`, retaining `data/base_images/comp_labelled` and `results/competition_labelled` as inputs; override with `--holdout-root`, `--detections-root` and `--rq2b-results` as needed. All results, plots, reports, and sample images are saved under `analysis/results/rq2/rq2b/validation/<dataset>/<model>/`. `--output-dir` overrides the base validation directory, with `<dataset>/<model>/` still appended. It runs additional inference; it is not just a report renderer. Only originals with per-image AP ≥ 0.5 are eligible. Each eligible original is transformed at every RQ2a brute-force gamma value (`0.01, 0.11, …, 19.91, 20`; 201 evaluations). All transformed AP and brightness scores are retained and plotted, including AP ≥ 0.5, without interpolation or early stopping. The report includes acceptance rates for successful transformations separately from originals. Existing validation results must be regenerated to reflect this full sweep.
 
 ## Run RQ3 analysis directly
 

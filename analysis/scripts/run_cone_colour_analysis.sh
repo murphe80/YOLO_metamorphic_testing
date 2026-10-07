@@ -21,6 +21,7 @@
 #   analysis/results/rq1/<dataset>/<model>/<transformation>/
 #       original_vs_transformed/stats.json
 #       transformed_vs_gt/stats.json
+#   analysis/results/rq1/<dataset>/confidence_change/cone_colour.png
 # =============================================================================
 
 set -euo pipefail
@@ -194,6 +195,7 @@ else
 fi
 echo ""
 
+CONFIDENCE_READY=false
 for model in "${MODELS[@]}"; do
     model_results="$RESULTS_BASE/$model"
     original_results="$model_results/original"
@@ -210,6 +212,13 @@ for model in "${MODELS[@]}"; do
         --output_file "$original_coco" \
         --as_ground_truth \
         --image_dir "$IMAGES_DIR"
+
+    if [ -f "$GT_COCO" ]; then
+        python3 analysis/utils/format_detections.py \
+            --detection_dir "$original_results" \
+            --output_file "$original_results/detections_for_gt.json" \
+            --gt_coco "$GT_COCO"
+    fi
 
     for transformation in "${TRANSFORMATIONS[@]}"; do
         transformed_results="$model_results/$transformation"
@@ -272,12 +281,26 @@ for model in "${MODELS[@]}"; do
                 --dt "$transformed_for_gt" \
                 --image-dir "$IMAGES_DIR" \
                 --stats-out "$stats_base/transformed_vs_gt/stats.json"
+            CONFIDENCE_READY=true
         fi
     done
 
     echo ""
     echo "✓ Completed cone-colour analysis for $model"
 done
+
+if [ "$CONFIDENCE_READY" = true ]; then
+    echo "Generating combined cone-colour confidence plot."
+    python3 analysis/visualisation/plot_confidence_change.py \
+        --dataset "$DATASET" \
+        --results_dir "$RESULTS_BASE" \
+        --gt_path "$GT_COCO" \
+        --output_dir "$ANALYSIS_BASE/confidence_change" \
+        --models "${MODELS[@]}" \
+        --rules "${TRANSFORMATIONS[@]}"
+else
+    echo "Skipping confidence plot: no cone-colour results evaluated against ground truth."
+fi
 
 echo ""
 echo "Analysis results: $ANALYSIS_BASE/<model>/<transformation>/"

@@ -9,7 +9,7 @@ const pct = v => Number.isFinite(v) ? `${(100*v).toFixed(1)}%` : '—';
 const unique = a => [...new Set(a)].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
 const valid = Number.isFinite;
 let data, request=0;
-const state = {source:'paper',rq:'1',dataset:'',metric:'AP',comparison:'original_vs_transformed',rule:'imgDarkBright',evidence:'response',stage:'search',model:'',method:'brute_force',analysis:'original_vs_transformed_consistency'};
+const state = {source:'paper',rq:'1',dataset:'',validationDataset:'',metric:'AP',comparison:'original_vs_transformed',rule:'imgDarkBright',evidence:'response',stage:'search',model:'',method:'brute_force',analysis:'original_vs_transformed_consistency'};
 function select(id, title, values, selected, labels={}) {
   return `<label>${E(title)}<select id="${id}">${values.map(v=>`<option value="${E(v)}" ${v===selected?'selected':''}>${E(labels[v] || nice(v))}</option>`).join('')}</select></label>`;
 }
@@ -62,7 +62,7 @@ function rq2(){
   let html=intro('02','Can we find brightness failures faster?','Follow the evidence from search efficiency to brightness scoring and the resulting accuracy distribution.');
   html+=tabs({search:'2a · Search efficiency',scoring:'2b · Brightness scoring',distribution:'2c · Accuracy distribution'},'stage');
   let figures=data.figures.filter(p=>p.startsWith('rq2/'));
-  const models=state.stage==='search'?unique([...Object.keys(data.comparisons),...Object.keys(data.search)]):state.stage==='scoring'?unique([...Object.keys(data.validation),...figures.filter(p=>p.includes('/brightness_scoring/')).map(p=>p.split('/')[4])]):unique(figures.filter(p=>p.includes('/performance_distributions/')).map(p=>p.split('/').pop().replace(/_(brute_force|golden_section)_performance_distribution\.png$/,'')));
+  const models=state.stage==='search'?unique([...Object.keys(data.comparisons),...Object.keys(data.search)]):state.stage==='scoring'?unique([...Object.values(data.validation).flatMap(group=>Object.keys(group)),...figures.filter(p=>p.includes('/brightness_scoring/')).map(p=>p.split('/')[4])]):unique(figures.filter(p=>p.includes('/performance_distributions/')).map(p=>p.split('/').pop().replace(/_(brute_force|golden_section)_performance_distribution\.png$/,'')));
   keep('model',models);
   if(!models.length)return html+empty('No results for this question yet','Generate this analysis stage, then refresh to explore its results.');
   html+=`<div class="filters">${select('model','Model',models,state.model)}`;
@@ -80,15 +80,21 @@ function rq2(){
     const runs=data.search[state.model]||{};
     html+=`<details><summary>Search coverage & source</summary>${Object.entries(runs).map(([method,r])=>`<p>${E(nice(method))} · ${E(r.dataset)} · target AP ${num(r.target_ap,2)} · ${E(r.processed_images ?? '—')} processed · ${E(r.skipped_images ?? '—')} skipped · ${E(r.failed_images ?? '—')} failed. <a href="${url(`rq2/rq2a/${method}/${state.model}/results.json`)}" target="_blank" rel="noopener">Results ↗</a></p>`).join('')}<p>Comparison statistics come from the saved matched-image summary, whose coverage can differ from the complete search runs.</p></details>`;
   }else if(state.stage==='scoring'){
-    const v=data.validation[state.model];
+    const validationDatasets=Object.keys(data.validation).filter(dataset=>data.validation[dataset][state.model]);
+    keep('validationDataset',validationDatasets);
+    if(validationDatasets.length)html+=`<div class="filters">${select('validationDataset','Validation dataset',validationDatasets,state.validationDataset)}</div>`;
+    const v=data.validation[state.validationDataset]?.[state.model];
     if(v){
       const metrics=Object.entries(v.metrics).filter(([,x])=>valid(x.balanced_accuracy)).sort((a,b)=>b[1].balanced_accuracy-a[1].balanced_accuracy);
       const best=metrics[0];
       html+=cards([[best?nice(best[0]):'—','Highest balanced accuracy','Among methods validated for this model'],[best?pct(best[1].balanced_accuracy):'—','Balanced accuracy','Mean failure recall and original acceptance'],[v.holdout_summary.eligible_originals ?? '—','Eligible holdout originals',`${v.holdout_summary.selected_transformed_failures ?? '—'} transformed failures`]]);
-      html+=`<section class="panel"><h2>Does the score identify failures?</h2><p class="note">Holdout validation · failure threshold AP ${num(v.ap_threshold,2)}. Validation uses its saved operating ranges and is independent of the search-method selector.</p>${figure(`rq2/rq2b/validation/${state.model}/brightness_validation.png`,`${nice(state.model)} · brightness validation`)}</section>`;
+      html+=`<section class="panel"><h2>Does the score identify failures?</h2><p class="note">Holdout validation · failure threshold AP ${num(v.ap_threshold,2)}. Validation uses its saved operating ranges and is independent of the search-method selector.</p>${figure(v.figure,`${nice(state.model)} · brightness validation`)}</section>`;
     }else html+=`<p class="warning">No holdout validation is available for this model. Boundary-score variation alone does not establish predictive reliability.</p>`;
     html+=`<section class="panel"><h2>Which scores are consistent at the boundaries?</h2><p class="note">Compare the spread at bright and dark failure thresholds. Scores can use different scales.</p>${figure(`rq2/rq2b/brightness_scoring/${state.method}/${state.model}/method_comparison.png`,`${nice(state.model)} · ${nice(state.method)} · brightness scores`)}</section>`;
-  }else html+=`<section class="panel"><h2>How does accuracy shift at the boundaries?</h2><p class="note">Original images versus the bright and dark operational boundaries, for the selected search method.</p>${figure(`rq2/rq2c/performance_distributions/${state.model}_${state.method}_performance_distribution.png`,`${nice(state.model)} · ${nice(state.method)} · accuracy distribution`)}</section>`;
+  }else {
+    const distributionPath=figures.find(p=>p.includes('/performance_distributions/')&&p.endsWith(`/${state.model}_${state.method}_performance_distribution.png`));
+    html+=`<section class="panel"><h2>How does accuracy shift at the boundaries?</h2><p class="note">Original images versus the bright and dark operational boundaries, for the selected search method.</p>${figure(distributionPath,`${nice(state.model)} · ${nice(state.method)} · accuracy distribution`)}</section>`;
+  }
   return html;
 }
 function rq3(){
@@ -117,7 +123,7 @@ function rq3(){
 function render(){
   if(!data)return;
   $('#main').innerHTML=({'1':rq1,'2':rq2,'3':rq3}[state.rq])()+(data.warnings.length?`<details><summary>${data.warnings.length} unreadable result file(s)</summary>${data.warnings.map(x=>`<p>${E(x)}</p>`).join('')}</details>`:'');
-  for(const key of ['dataset','metric','comparison','rule','model','method','analysis'])bind(key,key);
+  for(const key of ['dataset','validationDataset','metric','comparison','rule','model','method','analysis'])bind(key,key);
   document.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{state[b.dataset.key]=b.dataset.value;render();});
   document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.rq===state.rq);b.setAttribute('aria-pressed',String(b.dataset.rq===state.rq));});
 }
@@ -131,7 +137,6 @@ async function load(){
     data=result;$('#provenance').textContent=data.root+' · loaded '+new Date().toLocaleTimeString();render();
   }catch(error){if(current===request)$('#main').innerHTML=empty('Unable to load results',error.message);}
 }
-$('#source').onchange=()=>{state.source=$('#source').value;load();};
 $('#refresh').onclick=load;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{state.rq=b.dataset.rq;render();});
 load();

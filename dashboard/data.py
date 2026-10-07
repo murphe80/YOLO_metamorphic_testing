@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
-ROOTS = {'paper': PROJECT / 'analysis/original_results', 'local': PROJECT / 'analysis/results'}
+ROOTS = {'paper': PROJECT / 'analysis/results'}
 
 
 def clean(value):
@@ -47,7 +47,8 @@ def build(source, roots=None):
         'rq1/*/parameter_variations/*/*.png', 'rq1/*/detection_overlap_metrics/plots/*.png',
         'rq1/*/confidence_change/*.png', 'rq1/*/cone_colour_analysis/*.png',
         'rq2/rq2a/comparison/*/*.png', 'rq2/rq2b/brightness_scoring/*/*/*.png',
-        'rq2/rq2b/validation/*/*.png', 'rq2/rq2c/performance_distributions/*.png',
+        'rq2/rq2c/performance_distributions/*.png',
+        'rq2/rq2c/performance_distributions/*/*.png',
         'rq3/sample_equivalence/plots/*.png',
     ):
         figures.update(relative(p) for p in root.glob(pattern) if p.is_file())
@@ -89,9 +90,17 @@ def build(source, roots=None):
     for p in sorted(root.glob('rq2/rq2a/comparison/*/comparison.json')):
         comparisons[p.parent.name] = load(p).get('summary', {})
     validation = {}
-    for p in sorted(root.glob('rq2/rq2b/validation/*/validation_results.json')):
+    validation_root = root / 'rq2/rq2b/validation'
+    for p in sorted([*validation_root.glob('*/filtered_ap_0.1/validation_results.json'),
+                     *validation_root.glob('*/*/filtered_ap_0.1/validation_results.json')]):
         d = load(p)
-        validation[p.parent.name] = {k: d.get(k, {}) for k in ('metrics', 'holdout_summary', 'ap_threshold')}
+        model_dir = p.parent.parent
+        dataset = model_dir.parent.name if model_dir.parent != validation_root else 'default'
+        validation.setdefault(dataset, {})[model_dir.name] = {
+            **{k: d.get(k, {}) for k in ('metrics', 'holdout_summary', 'ap_threshold')},
+            'figure': relative(p.parent / 'brightness_validation.png'),
+        }
+        figures.update(relative(f) for f in p.parent.glob('*.png') if f.is_file())
     search = {}
     for p in sorted(root.glob('rq2/rq2a/*/*/results.json')):
         d = load(p)
