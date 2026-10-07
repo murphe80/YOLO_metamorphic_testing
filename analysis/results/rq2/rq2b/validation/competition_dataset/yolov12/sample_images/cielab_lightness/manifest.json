@@ -1,0 +1,179 @@
+{
+  "method": "cielab_lightness",
+  "available": true,
+  "lower": 9.01966113618442,
+  "upper": 59.856505331514185,
+  "samples_per_category": 5,
+  "category_pool_sizes": {
+    "too_dark": 11368,
+    "in_range": 3104,
+    "out_of_range": 11844
+  },
+  "samples": [
+    {
+      "file": "too_dark__000011_8ce4d081-frame_002108_1721555097769386027__dark__gamma-20.0000__ap-0.000.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "000011_8ce4d081-frame_002108_1721555097769386027.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 20.0,
+      "ap": 0.0,
+      "brightness_score": 0.09102681279182434
+    },
+    {
+      "file": "too_dark__000072_375629b8-frame_002328_1721555114062651728__dark__gamma-16.8100__ap-0.000.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "000072_375629b8-frame_002328_1721555114062651728.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 16.810000000000002,
+      "ap": 0.0,
+      "brightness_score": 0.7277928590774536
+    },
+    {
+      "file": "too_dark__000069_fa6d8d3c-frame_002282_1721555110437743906__dark__gamma-9.4100__ap-0.000.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "000069_fa6d8d3c-frame_002282_1721555110437743906.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 9.41,
+      "ap": 0.0,
+      "brightness_score": 1.6446477174758911
+    },
+    {
+      "file": "too_dark__000052_9e12f26e-frame_002222_1721555106258466804__dark__gamma-5.9100__ap-0.077.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "000052_9e12f26e-frame_002222_1721555106258466804.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 5.91,
+      "ap": 0.07656765676567656,
+      "brightness_score": 3.681750774383545
+    },
+    {
+      "file": "too_dark__000157_5e4c4b7b-frame_001838_1721555077909677402__dark__gamma-4.9100__ap-0.000.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "000157_5e4c4b7b-frame_001838_1721555077909677402.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 4.91,
+      "ap": 0.0,
+      "brightness_score": 9.018503189086914
+    },
+    {
+      "file": "in_range__000074_0b0b986c-frame_001202_1721555031035155410__dark__gamma-7.0100__ap-0.000.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "000074_0b0b986c-frame_001202_1721555031035155410.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 7.01,
+      "ap": 0.0,
+      "brightness_score": 9.019782066345215
+    },
+    {
+      "file": "in_range__000148_54021bf8-frame_001827_1721555077172555927__dark__gamma-4.2100__ap-0.000.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "000148_54021bf8-frame_001827_1721555077172555927.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 4.21,
+      "ap": 0.0,
+      "brightness_score": 12.59465503692627
+    },
+    {
+      "file": "in_range__000187_42b73e27-frame_002067_1721555094994090894__dark__gamma-3.6100__ap-0.000.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "000187_42b73e27-frame_002067_1721555094994090894.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 3.61,
+      "ap": 0.0,
+      "brightness_score": 18.735288619995117
+    },
+    {
+      "file": "in_range__000054_7313a741-frame_002217_1721555105901244873__dark__gamma-1.3100__ap-0.538.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "000054_7313a741-frame_002217_1721555105901244873.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 1.31,
+      "ap": 0.53761786892975,
+      "brightness_score": 31.264127731323242
+    },
+    {
+      "file": "in_range__000190_a0347c78-frame_002097_1721555097027639719__bright__gamma-0.6100__ap-0.850.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "000190_a0347c78-frame_002097_1721555097027639719.png",
+      "kind": "transformed",
+      "side": "bright",
+      "gamma": 0.6100000000000001,
+      "ap": 0.8495049504950495,
+      "brightness_score": 59.81659698486328
+    },
+    {
+      "file": "out_of_range__000011_8ce4d081-frame_002108_1721555097769386027__dark__gamma-20.0000__ap-0.000.jpg",
+      "category": "out_of_range",
+      "range_side": "below",
+      "source_image": "000011_8ce4d081-frame_002108_1721555097769386027.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 20.0,
+      "ap": 0.0,
+      "brightness_score": 0.09102681279182434
+    },
+    {
+      "file": "out_of_range__000155_92791f8d-frame_001843_1721555078294553415__dark__gamma-18.5100__ap-0.000.jpg",
+      "category": "out_of_range",
+      "range_side": "below",
+      "source_image": "000155_92791f8d-frame_001843_1721555078294553415.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 18.51,
+      "ap": 0.0,
+      "brightness_score": 0.7525956034660339
+    },
+    {
+      "file": "out_of_range__000054_7313a741-frame_002217_1721555105901244873__dark__gamma-8.2100__ap-0.000.jpg",
+      "category": "out_of_range",
+      "range_side": "below",
+      "source_image": "000054_7313a741-frame_002217_1721555105901244873.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 8.21,
+      "ap": 0.0,
+      "brightness_score": 1.7656128406524658
+    },
+    {
+      "file": "out_of_range__000149_1c41f05e-frame_001799_1721555075028686188__dark__gamma-15.5100__ap-0.000.jpg",
+      "category": "out_of_range",
+      "range_side": "below",
+      "source_image": "000149_1c41f05e-frame_001799_1721555075028686188.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 15.51,
+      "ap": 0.0,
+      "brightness_score": 4.048985481262207
+    },
+    {
+      "file": "out_of_range__000143_8d7dca83-frame_001764_1721555072488452212__bright__gamma-0.0100__ap-0.000.jpg",
+      "category": "out_of_range",
+      "range_side": "above",
+      "source_image": "000143_8d7dca83-frame_001764_1721555072488452212.png",
+      "kind": "transformed",
+      "side": "bright",
+      "gamma": 0.01,
+      "ap": 0.0,
+      "brightness_score": 98.93743133544922
+    }
+  ]
+}

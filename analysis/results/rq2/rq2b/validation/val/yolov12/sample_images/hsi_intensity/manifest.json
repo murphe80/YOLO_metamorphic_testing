@@ -1,0 +1,179 @@
+{
+  "method": "hsi_intensity",
+  "available": true,
+  "lower": 0.08637330557960655,
+  "upper": 0.5921319543189788,
+  "samples_per_category": 5,
+  "category_pool_sizes": {
+    "too_dark": 33575,
+    "in_range": 13900,
+    "out_of_range": 33974
+  },
+  "samples": [
+    {
+      "file": "too_dark__prom_00046__dark__gamma-20.0000__ap-0.000.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "prom_00046.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 20.0,
+      "ap": 0.0,
+      "brightness_score": 0.0005978289742984497
+    },
+    {
+      "file": "too_dark__prom_00119__dark__gamma-13.0100__ap-0.101.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "prom_00119.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 13.01,
+      "ap": 0.10099009900990097,
+      "brightness_score": 0.011329251424277376
+    },
+    {
+      "file": "too_dark__mms_00135__dark__gamma-9.4100__ap-0.039.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "mms_00135.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 9.41,
+      "ap": 0.0386138613861386,
+      "brightness_score": 0.03188647479336761
+    },
+    {
+      "file": "too_dark__amz_01851__dark__gamma-8.4100__ap-0.663.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "amz_01851.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 8.41,
+      "ap": 0.6628300330033003,
+      "brightness_score": 0.050939105639026025
+    },
+    {
+      "file": "too_dark__gfr_00608__dark__gamma-4.1100__ap-0.784.jpg",
+      "category": "too_dark",
+      "range_side": "below",
+      "source_image": "gfr_00608.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 4.11,
+      "ap": 0.7844884488448844,
+      "brightness_score": 0.08636845737487545
+    },
+    {
+      "file": "in_range__mms_00062__dark__gamma-16.5100__ap-0.000.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "mms_00062.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 16.51,
+      "ap": 0.0,
+      "brightness_score": 0.08639514517987994
+    },
+    {
+      "file": "in_range__mms_00431__dark__gamma-6.0100__ap-0.000.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "mms_00431.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 6.01,
+      "ap": 0.0,
+      "brightness_score": 0.11730855916641734
+    },
+    {
+      "file": "in_range__ka_00708__dark__gamma-3.1100__ap-0.368.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "ka_00708.png",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 3.11,
+      "ap": 0.36757425742574257,
+      "brightness_score": 0.16893017375664432
+    },
+    {
+      "file": "in_range__BME_01407__original__gamma-1.0000__ap-0.947.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "BME_01407.jpg",
+      "kind": "original",
+      "side": "original",
+      "gamma": 1.0,
+      "ap": 0.947112211221122,
+      "brightness_score": 0.2640711186257034
+    },
+    {
+      "file": "in_range__prom_00257__bright__gamma-0.1100__ap-0.801.jpg",
+      "category": "in_range",
+      "range_side": "inside",
+      "source_image": "prom_00257.jpg",
+      "kind": "transformed",
+      "side": "bright",
+      "gamma": 0.11,
+      "ap": 0.800990099009901,
+      "brightness_score": 0.5914497308786634
+    },
+    {
+      "file": "out_of_range__prom_00046__dark__gamma-20.0000__ap-0.000.jpg",
+      "category": "out_of_range",
+      "range_side": "below",
+      "source_image": "prom_00046.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 20.0,
+      "ap": 0.0,
+      "brightness_score": 0.0005978289742984497
+    },
+    {
+      "file": "out_of_range__prom_00052__dark__gamma-9.8100__ap-0.071.jpg",
+      "category": "out_of_range",
+      "range_side": "below",
+      "source_image": "prom_00052.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 9.81,
+      "ap": 0.07095709570957096,
+      "brightness_score": 0.01153053153556423
+    },
+    {
+      "file": "out_of_range__BME_00556__dark__gamma-7.3100__ap-0.236.jpg",
+      "category": "out_of_range",
+      "range_side": "below",
+      "source_image": "BME_00556.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 7.3100000000000005,
+      "ap": 0.23564356435643563,
+      "brightness_score": 0.03242675398351342
+    },
+    {
+      "file": "out_of_range__mms_00369__dark__gamma-10.5100__ap-0.000.jpg",
+      "category": "out_of_range",
+      "range_side": "below",
+      "source_image": "mms_00369.jpg",
+      "kind": "transformed",
+      "side": "dark",
+      "gamma": 10.51,
+      "ap": 0.0,
+      "brightness_score": 0.051747594900788695
+    },
+    {
+      "file": "out_of_range__prom_00308__bright__gamma-0.0100__ap-0.105.jpg",
+      "category": "out_of_range",
+      "range_side": "above",
+      "source_image": "prom_00308.jpg",
+      "kind": "transformed",
+      "side": "bright",
+      "gamma": 0.01,
+      "ap": 0.10480905233380482,
+      "brightness_score": 0.8742992240006656
+    }
+  ]
+}

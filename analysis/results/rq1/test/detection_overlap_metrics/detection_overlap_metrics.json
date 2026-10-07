@@ -1,0 +1,5094 @@
+{
+  "yolov5_blue_to_orange": {
+    "orig_trans_gt": 151.45674238360124,
+    "orig_trans": 4.878531292045442,
+    "orig_gt": 78.00993131771996,
+    "trans_gt": 0.4203878906918554,
+    "orig_only": 4.336923125468567,
+    "trans_only": 34.11503964302465,
+    "gt_only": 89.7824443474482,
+    "tp_retention_rate": 0.6600380784738293,
+    "fp_consistency_rate": 0.11258886836668565,
+    "detection_loss_rate": 0.34500636931722695,
+    "new_hallucination_rate": 0.17873376807896976,
+    "new_tp_rate": 0.0046604732940315
+  },
+  "yolov8_blue_to_orange": {
+    "orig_trans_gt": 154.31995255103692,
+    "orig_trans": 5.745170647327679,
+    "orig_gt": 77.85928656282873,
+    "trans_gt": 0.5771795947320597,
+    "orig_only": 3.98141773300109,
+    "trans_only": 32.92987544704361,
+    "gt_only": 87.58711746402987,
+    "tp_retention_rate": 0.6646587056621162,
+    "fp_consistency_rate": 0.13468464405718134,
+    "detection_loss_rate": 0.3383163818068581,
+    "new_hallucination_rate": 0.1701167789009003,
+    "new_tp_rate": 0.006546636382155542
+  },
+  "yolov12_blue_to_orange": {
+    "orig_trans_gt": 156.68860884994092,
+    "orig_trans": 5.098935626286195,
+    "orig_gt": 75.01339801596512,
+    "trans_gt": 0.5821574969459336,
+    "orig_only": 3.8187209189758176,
+    "trans_only": 31.514748197658776,
+    "gt_only": 90.2834308942275,
+    "tp_retention_rate": 0.6762505468527169,
+    "fp_consistency_rate": 0.12611012524994458,
+    "detection_loss_rate": 0.3276212667633631,
+    "new_hallucination_rate": 0.16254396971954735,
+    "new_tp_rate": 0.00640679829683999
+  },
+  "yolov26_v2_blue_to_orange": {
+    "orig_trans_gt": 172.2068079449178,
+    "orig_trans": 9.606083826399983,
+    "orig_gt": 94.33949931353713,
+    "trans_gt": 1.40410832245761,
+    "orig_only": 10.866444966295504,
+    "trans_only": 39.66846445505846,
+    "gt_only": 34.90859117133356,
+    "tp_retention_rate": 0.6460671307591539,
+    "fp_consistency_rate": 0.1597260588435449,
+    "detection_loss_rate": 0.36654717762524686,
+    "new_hallucination_rate": 0.17797690188256832,
+    "new_tp_rate": 0.03866714240558424
+  },
+  "yolov5_blue_to_yellow": {
+    "orig_trans_gt": 177.94247913760472,
+    "orig_trans": 5.501960199185391,
+    "orig_gt": 62.20888814317389,
+    "trans_gt": 0.6243026806693841,
+    "orig_only": 4.512939425005841,
+    "trans_only": 20.20810657836035,
+    "gt_only": 92.00132383600034,
+    "tp_retention_rate": 0.740959675359912,
+    "fp_consistency_rate": 0.18204543129534506,
+    "detection_loss_rate": 0.26670993013428634,
+    "new_hallucination_rate": 0.09892509463147198,
+    "new_tp_rate": 0.006740064322879684
+  },
+  "yolov8_blue_to_yellow": {
+    "orig_trans_gt": 179.75812788344516,
+    "orig_trans": 6.172297928842632,
+    "orig_gt": 63.315989927082796,
+    "trans_gt": 0.7069836517897156,
+    "orig_only": 3.8350131560557803,
+    "trans_only": 20.18010318997038,
+    "gt_only": 89.03148426281348,
+    "tp_retention_rate": 0.7395198201380021,
+    "fp_consistency_rate": 0.20446593645422315,
+    "detection_loss_rate": 0.26533358601703433,
+    "new_hallucination_rate": 0.09757444101808953,
+    "new_tp_rate": 0.00787826746120175
+  },
+  "yolov12_blue_to_yellow": {
+    "orig_trans_gt": 173.61159816919175,
+    "orig_trans": 5.041040072444053,
+    "orig_gt": 66.03428191635739,
+    "trans_gt": 0.8324762231965727,
+    "orig_only": 3.970761635469783,
+    "trans_only": 22.640818924118793,
+    "gt_only": 90.86902305922172,
+    "tp_retention_rate": 0.7244505856191461,
+    "fp_consistency_rate": 0.15926138094684306,
+    "detection_loss_rate": 0.2815317952251075,
+    "new_hallucination_rate": 0.11201342917512241,
+    "new_tp_rate": 0.009078109188081522
+  },
+  "yolov26_v2_blue_to_yellow": {
+    "orig_trans_gt": 198.0310528881241,
+    "orig_trans": 10.045656736475324,
+    "orig_gt": 77.77071242715026,
+    "trans_gt": 1.2976396503558356,
+    "orig_only": 10.569270969887262,
+    "trans_only": 30.006472322653835,
+    "gt_only": 35.27919500535353,
+    "tp_retention_rate": 0.718019526313586,
+    "fp_consistency_rate": 0.1984468373201276,
+    "detection_loss_rate": 0.2980263442537939,
+    "new_hallucination_rate": 0.12535036066128005,
+    "new_tp_rate": 0.03547708987314691
+  },
+  "yolov5_imgColorWheel_0": {
+    "variant_id": "imgColorWheel_0",
+    "hue_rotation": 0,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 228.70244700570925,
+        "orig_trans": 5.8787616284932005,
+        "orig_gt": 0.0,
+        "trans_gt": 0.1111111111111111,
+        "orig_only": 0.10263157894736842,
+        "trans_only": 1.6348221670802316,
+        "gt_only": 82.57022650865879,
+        "tp_retention_rate": 1.0,
+        "fp_consistency_rate": 0.7718743942247146,
+        "detection_loss_rate": 0.0004373184743106047,
+        "new_hallucination_rate": 0.006917623400558274,
+        "new_tp_rate": 0.0013438475272628315
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 64.45729548229548,
+        "orig_trans": 3.2905594405594405,
+        "orig_gt": 0.06666666666666667,
+        "trans_gt": 0.0,
+        "orig_only": 0.15,
+        "trans_only": 3.3095238095238098,
+        "gt_only": 45.725954600954616,
+        "tp_retention_rate": 0.9989667921118552,
+        "fp_consistency_rate": 0.48748427517821463,
+        "detection_loss_rate": 0.0031879377887075603,
+        "new_hallucination_rate": 0.04657537146125767,
+        "new_tp_rate": 0.0
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "orig_trans_gt": 197.43065159008077,
+        "orig_trans": 6.2278686654300595,
+        "orig_gt": 0.0,
+        "trans_gt": 0.14761904761904762,
+        "orig_only": 0.07792207792207792,
+        "trans_only": 2.0769230769230766,
+        "gt_only": 76.03901554202493,
+        "tp_retention_rate": 1.0,
+        "fp_consistency_rate": 0.7429418203883753,
+        "detection_loss_rate": 0.00038246509573653726,
+        "new_hallucination_rate": 0.010087877326640638,
+        "new_tp_rate": 0.0019375976956345757
+      }
+    }
+  },
+  "yolov8_imgColorWheel_0": {
+    "variant_id": "imgColorWheel_0",
+    "hue_rotation": 0,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 230.8824979764977,
+        "orig_trans": 6.473116332019264,
+        "orig_gt": 0.2837301587301587,
+        "trans_gt": 0.2254901960784314,
+        "orig_only": 0.07142857142857142,
+        "trans_only": 0.12239422084623322,
+        "gt_only": 80.94134254439955,
+        "tp_retention_rate": 0.9987726141442937,
+        "fp_consistency_rate": 0.9709277693014292,
+        "detection_loss_rate": 0.0014940792359500912,
+        "new_hallucination_rate": 0.000514902900051985,
+        "new_tp_rate": 0.0027781076144662627
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 67.60833194583194,
+        "orig_trans": 2.9220709845709845,
+        "orig_gt": 0.09090909090909091,
+        "trans_gt": 0.2,
+        "orig_only": 0.0,
+        "trans_only": 0.6386904761904761,
+        "gt_only": 44.53999750249751,
+        "tp_retention_rate": 0.9986571623327394,
+        "fp_consistency_rate": 0.8206309287413223,
+        "detection_loss_rate": 0.0012872755873135928,
+        "new_hallucination_rate": 0.008949118528826247,
+        "new_tp_rate": 0.004470272936176079
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "orig_trans_gt": 198.8906429238898,
+        "orig_trans": 6.694282382432013,
+        "orig_gt": 0.049754299754299756,
+        "trans_gt": 0.3055555555555555,
+        "orig_only": 0.0,
+        "trans_only": 0.14515329375930988,
+        "gt_only": 73.914611544609,
+        "tp_retention_rate": 0.9997499034864278,
+        "fp_consistency_rate": 0.9787770072515484,
+        "detection_loss_rate": 0.00024195480961485452,
+        "new_hallucination_rate": 0.0007045057732569841,
+        "new_tp_rate": 0.004116880458422978
+      }
+    }
+  },
+  "yolov12_imgColorWheel_0": {
+    "variant_id": "imgColorWheel_0",
+    "hue_rotation": 0,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 229.37580431175766,
+        "orig_trans": 6.018864521052795,
+        "orig_gt": 0.5764713421253669,
+        "trans_gt": 0.1771019677996422,
+        "orig_only": 0.0,
+        "trans_only": 0.02857142857142857,
+        "gt_only": 82.82318642869313,
+        "tp_retention_rate": 0.9974930826821081,
+        "fp_consistency_rate": 0.9952754475104107,
+        "detection_loss_rate": 0.0024429739234128516,
+        "new_hallucination_rate": 0.00012127074307742539,
+        "new_tp_rate": 0.002133751234135781
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 64.80061050061049,
+        "orig_trans": 2.503210678210678,
+        "orig_gt": 0.1,
+        "trans_gt": 0.1,
+        "orig_only": 0.0,
+        "trans_only": 2.6761904761904765,
+        "gt_only": 46.819988344988346,
+        "tp_retention_rate": 0.9984591824448392,
+        "fp_consistency_rate": 0.4833011777980539,
+        "detection_loss_rate": 0.0014835954141932362,
+        "new_hallucination_rate": 0.0381876431380287,
+        "new_tp_rate": 0.002131287826943403
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "orig_trans_gt": 197.1881728886559,
+        "orig_trans": 7.112699784603284,
+        "orig_gt": 0.3867243867243867,
+        "trans_gt": 0.11458333333333333,
+        "orig_only": 0.0,
+        "trans_only": 0.10918114143920596,
+        "gt_only": 76.08863846524389,
+        "tp_retention_rate": 0.9980426441210021,
+        "fp_consistency_rate": 0.9848818967582956,
+        "detection_loss_rate": 0.0018893396193959782,
+        "new_hallucination_rate": 0.0005338287991200902,
+        "new_tp_rate": 0.001503654709458396
+      }
+    }
+  },
+  "yolov26_v2_imgColorWheel_0": {
+    "variant_id": "imgColorWheel_0",
+    "hue_rotation": 0,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 275.449670304111,
+        "orig_trans": 12.641415321220485,
+        "orig_gt": 0.22189102564102564,
+        "trans_gt": 0.4065934065934066,
+        "orig_only": 1.2589785013698056,
+        "trans_only": 2.771265705847624,
+        "gt_only": 27.250185735216597,
+        "tp_retention_rate": 0.9991950891685356,
+        "fp_consistency_rate": 0.7582577667002626,
+        "detection_loss_rate": 0.005113994986951527,
+        "new_hallucination_rate": 0.009514456504597755,
+        "new_tp_rate": 0.014701401219158632
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 85.06388611388611,
+        "orig_trans": 9.277031302031304,
+        "orig_gt": 0.0,
+        "trans_gt": 0.0,
+        "orig_only": 1.0666666666666667,
+        "trans_only": 3.021717171717172,
+        "gt_only": 22.570698745698742,
+        "tp_retention_rate": 1.0,
+        "fp_consistency_rate": 0.694107231580025,
+        "detection_loss_rate": 0.011180103520317296,
+        "new_hallucination_rate": 0.03103569644058236,
+        "new_tp_rate": 0.0
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "orig_trans_gt": 235.04298630586018,
+        "orig_trans": 14.70306250936861,
+        "orig_gt": 0.0,
+        "trans_gt": 0.0786610139551316,
+        "orig_only": 1.6911120598191534,
+        "trans_only": 2.3888174657736725,
+        "gt_only": 28.095360645223177,
+        "tp_retention_rate": 1.0,
+        "fp_consistency_rate": 0.7827859630670815,
+        "detection_loss_rate": 0.006725784104202298,
+        "new_hallucination_rate": 0.009471408973952489,
+        "new_tp_rate": 0.0027919696700277803
+      }
+    }
+  },
+  "yolov5_imgColorWheel_1": {
+    "variant_id": "imgColorWheel_1",
+    "hue_rotation": 20,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "yellow",
+        "mapping": "orange \u2192 yellow",
+        "key": "orange_to_yellow",
+        "exclusion_reason": "Orange-to-yellow mapping excluded from analysis by user request."
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 219.55719266951075,
+        "orig_trans": 3.70273011413279,
+        "orig_gt": 4.8704233003918755,
+        "trans_gt": 2.9573306630175162,
+        "orig_only": 1.7014476206084348,
+        "trans_only": 11.737494234549438,
+        "gt_only": 78.47338139778927,
+        "tp_retention_rate": 0.9782984670610009,
+        "fp_consistency_rate": 0.2160075236981689,
+        "detection_loss_rate": 0.02859426372247611,
+        "new_hallucination_rate": 0.0493265814148589,
+        "new_tp_rate": 0.0363171411396868
+      }
+    }
+  },
+  "yolov8_imgColorWheel_1": {
+    "variant_id": "imgColorWheel_1",
+    "hue_rotation": 20,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "yellow",
+        "mapping": "orange \u2192 yellow",
+        "key": "orange_to_yellow",
+        "exclusion_reason": "Orange-to-yellow mapping excluded from analysis by user request."
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 223.29820701930686,
+        "orig_trans": 4.447148569985854,
+        "orig_gt": 4.268948497404043,
+        "trans_gt": 2.777042020281926,
+        "orig_only": 1.7010917859753503,
+        "trans_only": 8.231823221328028,
+        "gt_only": 77.2757388857179,
+        "tp_retention_rate": 0.981240928693286,
+        "fp_consistency_rate": 0.3092579212938487,
+        "detection_loss_rate": 0.025544060805612764,
+        "new_hallucination_rate": 0.034478231181337755,
+        "new_tp_rate": 0.034690138042085074
+      }
+    }
+  },
+  "yolov12_imgColorWheel_1": {
+    "variant_id": "imgColorWheel_1",
+    "hue_rotation": 20,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "yellow",
+        "mapping": "orange \u2192 yellow",
+        "key": "orange_to_yellow",
+        "exclusion_reason": "Orange-to-yellow mapping excluded from analysis by user request."
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 223.4674564383081,
+        "orig_trans": 3.916613340527414,
+        "orig_gt": 2.935201136377271,
+        "trans_gt": 2.3565582812076498,
+        "orig_only": 1.9414502943996834,
+        "trans_only": 8.91898329426122,
+        "gt_only": 79.46373721491875,
+        "tp_retention_rate": 0.9870354828524528,
+        "fp_consistency_rate": 0.2650470935969714,
+        "detection_loss_rate": 0.020996453491487422,
+        "new_hallucination_rate": 0.03737114647781966,
+        "new_tp_rate": 0.028801634935664778
+      }
+    }
+  },
+  "yolov26_v2_imgColorWheel_1": {
+    "variant_id": "imgColorWheel_1",
+    "hue_rotation": 20,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "yellow",
+        "mapping": "orange \u2192 yellow",
+        "key": "orange_to_yellow",
+        "exclusion_reason": "Orange-to-yellow mapping excluded from analysis by user request."
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 259.7662130874053,
+        "orig_trans": 8.063612971145767,
+        "orig_gt": 6.923578967826934,
+        "trans_gt": 2.2009693361709672,
+        "orig_only": 6.112264706127646,
+        "trans_only": 17.108014974277406,
+        "gt_only": 24.825345957046018,
+        "tp_retention_rate": 0.9740388302286687,
+        "fp_consistency_rate": 0.25775606191213657,
+        "detection_loss_rate": 0.0464130902376564,
+        "new_hallucination_rate": 0.05958099134105925,
+        "new_tp_rate": 0.08143801003917699
+      }
+    }
+  },
+  "yolov5_imgColorWheel_2": {
+    "variant_id": "imgColorWheel_2",
+    "hue_rotation": 40,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "highly saturated blue",
+        "mapping": "blue \u2192 highly saturated blue",
+        "key": "blue_to_highly_saturated_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "orange \u2192 green",
+        "key": "orange_to_green"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov8_imgColorWheel_2": {
+    "variant_id": "imgColorWheel_2",
+    "hue_rotation": 40,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "highly saturated blue",
+        "mapping": "blue \u2192 highly saturated blue",
+        "key": "blue_to_highly_saturated_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "orange \u2192 green",
+        "key": "orange_to_green"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov12_imgColorWheel_2": {
+    "variant_id": "imgColorWheel_2",
+    "hue_rotation": 40,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "highly saturated blue",
+        "mapping": "blue \u2192 highly saturated blue",
+        "key": "blue_to_highly_saturated_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "orange \u2192 green",
+        "key": "orange_to_green"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov26_v2_imgColorWheel_2": {
+    "variant_id": "imgColorWheel_2",
+    "hue_rotation": 40,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "highly saturated blue",
+        "mapping": "blue \u2192 highly saturated blue",
+        "key": "blue_to_highly_saturated_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "orange \u2192 green",
+        "key": "orange_to_green"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov5_imgColorWheel_3": {
+    "variant_id": "imgColorWheel_3",
+    "hue_rotation": 60,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "blue \u2192 pink",
+        "key": "blue_to_pink"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "orange \u2192 cyan",
+        "key": "orange_to_cyan"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "yellow \u2192 cyan",
+        "key": "yellow_to_cyan"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov8_imgColorWheel_3": {
+    "variant_id": "imgColorWheel_3",
+    "hue_rotation": 60,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "blue \u2192 pink",
+        "key": "blue_to_pink"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "orange \u2192 cyan",
+        "key": "orange_to_cyan"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "yellow \u2192 cyan",
+        "key": "yellow_to_cyan"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov12_imgColorWheel_3": {
+    "variant_id": "imgColorWheel_3",
+    "hue_rotation": 60,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "blue \u2192 pink",
+        "key": "blue_to_pink"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "orange \u2192 cyan",
+        "key": "orange_to_cyan"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "yellow \u2192 cyan",
+        "key": "yellow_to_cyan"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov26_v2_imgColorWheel_3": {
+    "variant_id": "imgColorWheel_3",
+    "hue_rotation": 60,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "blue \u2192 pink",
+        "key": "blue_to_pink"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "orange \u2192 cyan",
+        "key": "orange_to_cyan"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "yellow \u2192 cyan",
+        "key": "yellow_to_cyan"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov5_imgColorWheel_4": {
+    "variant_id": "imgColorWheel_4",
+    "hue_rotation": 80,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green/teal",
+        "mapping": "orange \u2192 green/teal",
+        "key": "orange_to_green/teal",
+        "exclusion_reason": "Unreliable orange-to-blue mapping: transformed orange cones often appear green/teal rather than blue."
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_orange": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "orig_trans_gt": 153.58244258347364,
+        "orig_trans": 0.3849206349206349,
+        "orig_gt": 49.81627824660152,
+        "trans_gt": 1.9704428930705267,
+        "orig_only": 4.342196228290296,
+        "trans_only": 49.0407834770433,
+        "gt_only": 72.8629359366002,
+        "tp_retention_rate": 0.7550806708945854,
+        "fp_consistency_rate": 0.007158930002562471,
+        "detection_loss_rate": 0.26021985100525996,
+        "new_hallucination_rate": 0.23924832137586685,
+        "new_tp_rate": 0.026331069422315927
+      },
+      "yellow_to_blue": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue",
+        "orig_trans_gt": 182.08232073230474,
+        "orig_trans": 3.499757345269113,
+        "orig_gt": 7.270713956977248,
+        "trans_gt": 2.7393646023037133,
+        "orig_only": 2.1487552987552987,
+        "trans_only": 25.27380317168607,
+        "gt_only": 71.98528489270379,
+        "tp_retention_rate": 0.9616023373012843,
+        "fp_consistency_rate": 0.11317901822511678,
+        "detection_loss_rate": 0.04830458724326079,
+        "new_hallucination_rate": 0.11832568216078136,
+        "new_tp_rate": 0.036659450674127764
+      }
+    }
+  },
+  "yolov8_imgColorWheel_4": {
+    "variant_id": "imgColorWheel_4",
+    "hue_rotation": 80,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green/teal",
+        "mapping": "orange \u2192 green/teal",
+        "key": "orange_to_green/teal",
+        "exclusion_reason": "Unreliable orange-to-blue mapping: transformed orange cones often appear green/teal rather than blue."
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_orange": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "orig_trans_gt": 157.62461420974117,
+        "orig_trans": 0.4458149058149058,
+        "orig_gt": 49.06180682176599,
+        "trans_gt": 1.002204228520018,
+        "orig_only": 4.83576795003746,
+        "trans_only": 45.72036278307017,
+        "gt_only": 72.30942910105034,
+        "tp_retention_rate": 0.7626268500034309,
+        "fp_consistency_rate": 0.008741135269056847,
+        "detection_loss_rate": 0.2542722193130846,
+        "new_hallucination_rate": 0.22325159379320067,
+        "new_tp_rate": 0.013670466514020188
+      },
+      "yellow_to_blue": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue",
+        "orig_trans_gt": 181.09585171875787,
+        "orig_trans": 3.5837850249787793,
+        "orig_gt": 9.049687945119672,
+        "trans_gt": 3.7200396745367934,
+        "orig_only": 3.158847216641335,
+        "trans_only": 19.913161095991672,
+        "gt_only": 69.47862732397395,
+        "tp_retention_rate": 0.9524065199682469,
+        "fp_consistency_rate": 0.13444675908114864,
+        "detection_loss_rate": 0.062007458566992316,
+        "new_hallucination_rate": 0.09559257765200396,
+        "new_tp_rate": 0.05082113960644227
+      }
+    }
+  },
+  "yolov12_imgColorWheel_4": {
+    "variant_id": "imgColorWheel_4",
+    "hue_rotation": 80,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green/teal",
+        "mapping": "orange \u2192 green/teal",
+        "key": "orange_to_green/teal",
+        "exclusion_reason": "Unreliable orange-to-blue mapping: transformed orange cones often appear green/teal rather than blue."
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_orange": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "orig_trans_gt": 149.85102431477614,
+        "orig_trans": 0.6928321678321678,
+        "orig_gt": 49.23130394435062,
+        "trans_gt": 0.7238095238095238,
+        "orig_only": 4.285801061101681,
+        "trans_only": 50.00051661246795,
+        "gt_only": 74.2147123756621,
+        "tp_retention_rate": 0.7527088196383214,
+        "fp_consistency_rate": 0.012601725742045466,
+        "detection_loss_rate": 0.26226037854175027,
+        "new_hallucination_rate": 0.2484273269717307,
+        "new_tp_rate": 0.009658710973516376
+      },
+      "yellow_to_blue": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue",
+        "orig_trans_gt": 179.12877997448695,
+        "orig_trans": 3.610686540198736,
+        "orig_gt": 10.876908484248858,
+        "trans_gt": 3.778460652654904,
+        "orig_only": 2.070423537814842,
+        "trans_only": 18.553601609410016,
+        "gt_only": 70.98113920118575,
+        "tp_retention_rate": 0.9427548271187101,
+        "fp_consistency_rate": 0.148988219326433,
+        "detection_loss_rate": 0.06616354357512896,
+        "new_hallucination_rate": 0.09047380550621553,
+        "new_tp_rate": 0.05054147775057669
+      }
+    }
+  },
+  "yolov26_v2_imgColorWheel_4": {
+    "variant_id": "imgColorWheel_4",
+    "hue_rotation": 80,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green/teal",
+        "mapping": "orange \u2192 green/teal",
+        "key": "orange_to_green/teal",
+        "exclusion_reason": "Unreliable orange-to-blue mapping: transformed orange cones often appear green/teal rather than blue."
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_orange": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "orig_trans_gt": 178.84573165992424,
+        "orig_trans": 2.3320295123670283,
+        "orig_gt": 60.1764180700662,
+        "trans_gt": 0.8156978620794411,
+        "orig_only": 9.933088148330162,
+        "trans_only": 53.199604588562785,
+        "gt_only": 23.69743015867014,
+        "tp_retention_rate": 0.7482391563374188,
+        "fp_consistency_rate": 0.0356226900877654,
+        "detection_loss_rate": 0.279001427117252,
+        "new_hallucination_rate": 0.22619546584015557,
+        "new_tp_rate": 0.033275959779142786
+      },
+      "yellow_to_blue": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue",
+        "orig_trans_gt": 208.30272379597187,
+        "orig_trans": 6.348451374315606,
+        "orig_gt": 10.06197373496492,
+        "trans_gt": 2.855712325959236,
+        "orig_only": 9.40209129296061,
+        "trans_only": 29.881550835394858,
+        "gt_only": 25.147496640432855,
+        "tp_retention_rate": 0.9539212434576821,
+        "fp_consistency_rate": 0.1391225097736092,
+        "detection_loss_rate": 0.08313882091335162,
+        "new_hallucination_rate": 0.12078798442203892,
+        "new_tp_rate": 0.10197803863787556
+      }
+    }
+  },
+  "yolov5_imgColorWheel_5": {
+    "variant_id": "imgColorWheel_5",
+    "hue_rotation": 100,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "exclusion_reason": "Blue-to-orange analysis uses imgColorWheel_4 instead, by user request."
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "darker blue",
+        "mapping": "orange \u2192 darker blue",
+        "key": "orange_to_darker_blue"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov8_imgColorWheel_5": {
+    "variant_id": "imgColorWheel_5",
+    "hue_rotation": 100,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "exclusion_reason": "Blue-to-orange analysis uses imgColorWheel_4 instead, by user request."
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "darker blue",
+        "mapping": "orange \u2192 darker blue",
+        "key": "orange_to_darker_blue"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov12_imgColorWheel_5": {
+    "variant_id": "imgColorWheel_5",
+    "hue_rotation": 100,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "exclusion_reason": "Blue-to-orange analysis uses imgColorWheel_4 instead, by user request."
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "darker blue",
+        "mapping": "orange \u2192 darker blue",
+        "key": "orange_to_darker_blue"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov26_v2_imgColorWheel_5": {
+    "variant_id": "imgColorWheel_5",
+    "hue_rotation": 100,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "exclusion_reason": "Blue-to-orange analysis uses imgColorWheel_4 instead, by user request."
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "darker blue",
+        "mapping": "orange \u2192 darker blue",
+        "key": "orange_to_darker_blue"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov5_imgColorWheel_6": {
+    "variant_id": "imgColorWheel_6",
+    "hue_rotation": 120,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_yellow": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow",
+        "orig_trans_gt": 180.44937643579678,
+        "orig_trans": 1.7981542178803842,
+        "orig_gt": 36.40914528022374,
+        "trans_gt": 1.211473744693559,
+        "orig_only": 4.020262057805225,
+        "trans_only": 31.429307619116166,
+        "gt_only": 78.68228064448414,
+        "tp_retention_rate": 0.8321064582008816,
+        "fp_consistency_rate": 0.04827554625777634,
+        "detection_loss_rate": 0.18156081946633743,
+        "new_hallucination_rate": 0.14625880451124096,
+        "new_tp_rate": 0.015163560079956184
+      }
+    }
+  },
+  "yolov8_imgColorWheel_6": {
+    "variant_id": "imgColorWheel_6",
+    "hue_rotation": 120,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_yellow": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow",
+        "orig_trans_gt": 180.00324314717054,
+        "orig_trans": 2.265085750213384,
+        "orig_gt": 40.122694775585906,
+        "trans_gt": 1.4381270015860808,
+        "orig_only": 4.659718329358683,
+        "trans_only": 24.039773307218713,
+        "gt_only": 78.47135768886683,
+        "tp_retention_rate": 0.8177284551097963,
+        "fp_consistency_rate": 0.07315086919867506,
+        "detection_loss_rate": 0.19723526428504393,
+        "new_hallucination_rate": 0.11571701396976582,
+        "new_tp_rate": 0.017996950013593308
+      }
+    }
+  },
+  "yolov12_imgColorWheel_6": {
+    "variant_id": "imgColorWheel_6",
+    "hue_rotation": 120,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_yellow": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow",
+        "orig_trans_gt": 184.73949772378552,
+        "orig_trans": 2.1125394774307815,
+        "orig_gt": 31.31868944954802,
+        "trans_gt": 1.3451440879382055,
+        "orig_only": 3.8175134110739175,
+        "trans_only": 33.561427244090055,
+        "gt_only": 79.1051886061335,
+        "tp_retention_rate": 0.8550451160435661,
+        "fp_consistency_rate": 0.05349355026293817,
+        "detection_loss_rate": 0.15827956855207378,
+        "new_hallucination_rate": 0.15134216193938083,
+        "new_tp_rate": 0.01672018054982298
+      }
+    }
+  },
+  "yolov26_v2_imgColorWheel_6": {
+    "variant_id": "imgColorWheel_6",
+    "hue_rotation": 120,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_yellow": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow",
+        "orig_trans_gt": 193.884037326325,
+        "orig_trans": 4.267992484023337,
+        "orig_gt": 51.94349926876557,
+        "trans_gt": 1.5858802053721837,
+        "orig_only": 10.108478032380456,
+        "trans_only": 50.83162796887616,
+        "gt_only": 26.37848471425734,
+        "tp_retention_rate": 0.7886994272967752,
+        "fp_consistency_rate": 0.06545187765269359,
+        "detection_loss_rate": 0.23847433400423182,
+        "new_hallucination_rate": 0.20286435604954084,
+        "new_tp_rate": 0.05671075348680558
+      }
+    }
+  },
+  "yolov5_imgColorWheel_7": {
+    "variant_id": "imgColorWheel_7",
+    "hue_rotation": 140,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "yellow \u2192 pink",
+        "key": "yellow_to_pink"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov8_imgColorWheel_7": {
+    "variant_id": "imgColorWheel_7",
+    "hue_rotation": 140,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "yellow \u2192 pink",
+        "key": "yellow_to_pink"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov12_imgColorWheel_7": {
+    "variant_id": "imgColorWheel_7",
+    "hue_rotation": 140,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "yellow \u2192 pink",
+        "key": "yellow_to_pink"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov26_v2_imgColorWheel_7": {
+    "variant_id": "imgColorWheel_7",
+    "hue_rotation": 140,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "yellow \u2192 pink",
+        "key": "yellow_to_pink"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {}
+  },
+  "yolov5_imgColorWheel_8": {
+    "variant_id": "imgColorWheel_8",
+    "hue_rotation": 160,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 59.98247585747584,
+        "orig_trans": 1.7854978354978353,
+        "orig_gt": 3.4418470418470424,
+        "trans_gt": 1.3170995670995673,
+        "orig_only": 1.8888278388278388,
+        "trans_only": 24.108008658008657,
+        "gt_only": 45.47624320124321,
+        "tp_retention_rate": 0.9457330108622447,
+        "fp_consistency_rate": 0.06426737991630144,
+        "detection_loss_rate": 0.07944533897465678,
+        "new_hallucination_rate": 0.27648992474722006,
+        "new_tp_rate": 0.02814715703513766
+      },
+      "yellow_to_orange": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange",
+        "orig_trans_gt": 156.8722122064352,
+        "orig_trans": 2.5698955317990313,
+        "orig_gt": 23.66707829058462,
+        "trans_gt": 0.568090018090018,
+        "orig_only": 2.7384137968897724,
+        "trans_only": 27.24819761568301,
+        "gt_only": 69.33611254051834,
+        "tp_retention_rate": 0.8689089880356249,
+        "fp_consistency_rate": 0.07893646379785532,
+        "detection_loss_rate": 0.14208142646037916,
+        "new_hallucination_rate": 0.14551122026626248,
+        "new_tp_rate": 0.008126693350284996
+      }
+    }
+  },
+  "yolov8_imgColorWheel_8": {
+    "variant_id": "imgColorWheel_8",
+    "hue_rotation": 160,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 61.106461082776875,
+        "orig_trans": 1.2696058327637276,
+        "orig_gt": 4.957514707514708,
+        "trans_gt": 1.0530644793802688,
+        "orig_only": 1.4875955915429602,
+        "trans_only": 9.860959216222376,
+        "gt_only": 43.2647990897991,
+        "tp_retention_rate": 0.9249588804153801,
+        "fp_consistency_rate": 0.10061734581867669,
+        "detection_loss_rate": 0.09365010248168988,
+        "new_hallucination_rate": 0.13454696445310554,
+        "new_tp_rate": 0.02376162555165717
+      },
+      "yellow_to_orange": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange",
+        "orig_trans_gt": 162.4259916319697,
+        "orig_trans": 1.1079215710794659,
+        "orig_gt": 23.135709130564226,
+        "trans_gt": 1.0902445554360565,
+        "orig_only": 4.9311020532351515,
+        "trans_only": 21.11160249247414,
+        "gt_only": 68.19742856524115,
+        "tp_retention_rate": 0.8753206667351505,
+        "fp_consistency_rate": 0.04080648329485027,
+        "detection_loss_rate": 0.14648593461020276,
+        "new_hallucination_rate": 0.11366471628268524,
+        "new_tp_rate": 0.015735043570263865
+      }
+    }
+  },
+  "yolov12_imgColorWheel_8": {
+    "variant_id": "imgColorWheel_8",
+    "hue_rotation": 160,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 61.69289044289044,
+        "orig_trans": 1.4837662337662336,
+        "orig_gt": 2.9165223665223667,
+        "trans_gt": 2.290909090909091,
+        "orig_only": 0.8194444444444444,
+        "trans_only": 18.61212121212121,
+        "gt_only": 44.18434620934621,
+        "tp_retention_rate": 0.9548591723759257,
+        "fp_consistency_rate": 0.07094155816155634,
+        "detection_loss_rate": 0.055833512665331916,
+        "new_hallucination_rate": 0.22136287468122665,
+        "new_tp_rate": 0.049293093197844286
+      },
+      "yellow_to_orange": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange",
+        "orig_trans_gt": 155.45782732842974,
+        "orig_trans": 2.0553446553446553,
+        "orig_gt": 25.505025918900685,
+        "trans_gt": 0.7916093710211358,
+        "orig_only": 3.380857357914116,
+        "trans_only": 24.404627387928567,
+        "gt_only": 70.40470798046107,
+        "tp_retention_rate": 0.8590593292423293,
+        "fp_consistency_rate": 0.06887692790679856,
+        "detection_loss_rate": 0.15496797039250987,
+        "new_hallucination_rate": 0.13357072060964903,
+        "new_tp_rate": 0.01111868423071823
+      }
+    }
+  },
+  "yolov26_v2_imgColorWheel_8": {
+    "variant_id": "imgColorWheel_8",
+    "hue_rotation": 160,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 77.69388634241574,
+        "orig_trans": 5.010495060495061,
+        "orig_gt": 4.753915528915528,
+        "trans_gt": 1.6115800865800864,
+        "orig_only": 4.875497541674012,
+        "trans_only": 32.54695941313589,
+        "gt_only": 20.507666026783674,
+        "tp_retention_rate": 0.9423402999107905,
+        "fp_consistency_rate": 0.11808028483825134,
+        "detection_loss_rate": 0.10428915139356876,
+        "new_hallucination_rate": 0.27850544177528186,
+        "new_tp_rate": 0.07285872575948327
+      },
+      "yellow_to_orange": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange",
+        "orig_trans_gt": 174.97090569802387,
+        "orig_trans": 3.494621241311283,
+        "orig_gt": 33.00531173912873,
+        "trans_gt": 0.8605335385754777,
+        "orig_only": 10.510754467369516,
+        "trans_only": 39.70306504834214,
+        "gt_only": 23.45480826724898,
+        "tp_retention_rate": 0.8413024712832733,
+        "fp_consistency_rate": 0.06506651826145828,
+        "detection_loss_rate": 0.1960345702083049,
+        "new_hallucination_rate": 0.18126842698636142,
+        "new_tp_rate": 0.035390558991416146
+      }
+    }
+  },
+  "yolov5_imgColorWheel_9": {
+    "variant_id": "imgColorWheel_9",
+    "hue_rotation": 180,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 228.70244700570925,
+        "orig_trans": 5.8787616284932005,
+        "orig_gt": 0.0,
+        "trans_gt": 0.1111111111111111,
+        "orig_only": 0.10263157894736842,
+        "trans_only": 1.6348221670802316,
+        "gt_only": 82.57022650865879,
+        "tp_retention_rate": 1.0,
+        "fp_consistency_rate": 0.7718743942247146,
+        "detection_loss_rate": 0.0004373184743106047,
+        "new_hallucination_rate": 0.006917623400558274,
+        "new_tp_rate": 0.0013438475272628315
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 64.45729548229548,
+        "orig_trans": 3.2905594405594405,
+        "orig_gt": 0.06666666666666667,
+        "trans_gt": 0.0,
+        "orig_only": 0.15,
+        "trans_only": 3.3095238095238098,
+        "gt_only": 45.725954600954616,
+        "tp_retention_rate": 0.9989667921118552,
+        "fp_consistency_rate": 0.48748427517821463,
+        "detection_loss_rate": 0.0031879377887075603,
+        "new_hallucination_rate": 0.04657537146125767,
+        "new_tp_rate": 0.0
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "orig_trans_gt": 197.43065159008077,
+        "orig_trans": 6.2278686654300595,
+        "orig_gt": 0.0,
+        "trans_gt": 0.14761904761904762,
+        "orig_only": 0.07792207792207792,
+        "trans_only": 2.0769230769230766,
+        "gt_only": 76.03901554202493,
+        "tp_retention_rate": 1.0,
+        "fp_consistency_rate": 0.7429418203883753,
+        "detection_loss_rate": 0.00038246509573653726,
+        "new_hallucination_rate": 0.010087877326640638,
+        "new_tp_rate": 0.0019375976956345757
+      }
+    }
+  },
+  "yolov8_imgColorWheel_9": {
+    "variant_id": "imgColorWheel_9",
+    "hue_rotation": 180,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 230.8824979764977,
+        "orig_trans": 6.473116332019264,
+        "orig_gt": 0.2837301587301587,
+        "trans_gt": 0.2254901960784314,
+        "orig_only": 0.07142857142857142,
+        "trans_only": 0.12239422084623322,
+        "gt_only": 80.94134254439955,
+        "tp_retention_rate": 0.9987726141442937,
+        "fp_consistency_rate": 0.9709277693014292,
+        "detection_loss_rate": 0.0014940792359500912,
+        "new_hallucination_rate": 0.000514902900051985,
+        "new_tp_rate": 0.0027781076144662627
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 67.60833194583194,
+        "orig_trans": 2.9220709845709845,
+        "orig_gt": 0.09090909090909091,
+        "trans_gt": 0.2,
+        "orig_only": 0.0,
+        "trans_only": 0.6386904761904761,
+        "gt_only": 44.53999750249751,
+        "tp_retention_rate": 0.9986571623327394,
+        "fp_consistency_rate": 0.8206309287413223,
+        "detection_loss_rate": 0.0012872755873135928,
+        "new_hallucination_rate": 0.008949118528826247,
+        "new_tp_rate": 0.004470272936176079
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "orig_trans_gt": 198.8906429238898,
+        "orig_trans": 6.694282382432013,
+        "orig_gt": 0.049754299754299756,
+        "trans_gt": 0.3055555555555555,
+        "orig_only": 0.0,
+        "trans_only": 0.14515329375930988,
+        "gt_only": 73.914611544609,
+        "tp_retention_rate": 0.9997499034864278,
+        "fp_consistency_rate": 0.9787770072515484,
+        "detection_loss_rate": 0.00024195480961485452,
+        "new_hallucination_rate": 0.0007045057732569841,
+        "new_tp_rate": 0.004116880458422978
+      }
+    }
+  },
+  "yolov12_imgColorWheel_9": {
+    "variant_id": "imgColorWheel_9",
+    "hue_rotation": 180,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 229.37580431175766,
+        "orig_trans": 6.018864521052795,
+        "orig_gt": 0.5764713421253669,
+        "trans_gt": 0.1771019677996422,
+        "orig_only": 0.0,
+        "trans_only": 0.02857142857142857,
+        "gt_only": 82.82318642869313,
+        "tp_retention_rate": 0.9974930826821081,
+        "fp_consistency_rate": 0.9952754475104107,
+        "detection_loss_rate": 0.0024429739234128516,
+        "new_hallucination_rate": 0.00012127074307742539,
+        "new_tp_rate": 0.002133751234135781
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 64.80061050061049,
+        "orig_trans": 2.503210678210678,
+        "orig_gt": 0.1,
+        "trans_gt": 0.1,
+        "orig_only": 0.0,
+        "trans_only": 2.6761904761904765,
+        "gt_only": 46.819988344988346,
+        "tp_retention_rate": 0.9984591824448392,
+        "fp_consistency_rate": 0.4833011777980539,
+        "detection_loss_rate": 0.0014835954141932362,
+        "new_hallucination_rate": 0.0381876431380287,
+        "new_tp_rate": 0.002131287826943403
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "orig_trans_gt": 197.1881728886559,
+        "orig_trans": 7.112699784603284,
+        "orig_gt": 0.3867243867243867,
+        "trans_gt": 0.11458333333333333,
+        "orig_only": 0.0,
+        "trans_only": 0.10918114143920596,
+        "gt_only": 76.08863846524389,
+        "tp_retention_rate": 0.9980426441210021,
+        "fp_consistency_rate": 0.9848818967582956,
+        "detection_loss_rate": 0.0018893396193959782,
+        "new_hallucination_rate": 0.0005338287991200902,
+        "new_tp_rate": 0.001503654709458396
+      }
+    }
+  },
+  "yolov26_v2_imgColorWheel_9": {
+    "variant_id": "imgColorWheel_9",
+    "hue_rotation": 180,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; expected original and GT labels are remapped. Transformed predictions of every class are included when their best spatial reference belongs to this source, using GT then original predictions as fallback (IoU >= 0.5). Predictions owned by other sources are excluded. Unmatched predictions of every class remain FP candidates in each cohort. Category-aware matching counts new wrong-class detections as hallucinations; all selected transformed predictions contribute to their denominator. Large orange, other and unknown reference cohorts are excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "orig_trans_gt": 275.449670304111,
+        "orig_trans": 12.641415321220485,
+        "orig_gt": 0.22189102564102564,
+        "trans_gt": 0.4065934065934066,
+        "orig_only": 1.2589785013698056,
+        "trans_only": 2.771265705847624,
+        "gt_only": 27.250185735216597,
+        "tp_retention_rate": 0.9991950891685356,
+        "fp_consistency_rate": 0.7582577667002626,
+        "detection_loss_rate": 0.005113994986951527,
+        "new_hallucination_rate": 0.009514456504597755,
+        "new_tp_rate": 0.014701401219158632
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "orig_trans_gt": 85.06388611388611,
+        "orig_trans": 9.277031302031304,
+        "orig_gt": 0.0,
+        "trans_gt": 0.0,
+        "orig_only": 1.0666666666666667,
+        "trans_only": 3.021717171717172,
+        "gt_only": 22.570698745698742,
+        "tp_retention_rate": 1.0,
+        "fp_consistency_rate": 0.694107231580025,
+        "detection_loss_rate": 0.011180103520317296,
+        "new_hallucination_rate": 0.03103569644058236,
+        "new_tp_rate": 0.0
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "orig_trans_gt": 235.04298630586018,
+        "orig_trans": 14.70306250936861,
+        "orig_gt": 0.0,
+        "trans_gt": 0.0786610139551316,
+        "orig_only": 1.6911120598191534,
+        "trans_only": 2.3888174657736725,
+        "gt_only": 28.095360645223177,
+        "tp_retention_rate": 1.0,
+        "fp_consistency_rate": 0.7827859630670815,
+        "detection_loss_rate": 0.006725784104202298,
+        "new_hallucination_rate": 0.009471408973952489,
+        "new_tp_rate": 0.0027919696700277803
+      }
+    }
+  },
+  "yolov5_imgDarkBright_0": {
+    "orig_trans_gt": 253.0622363791461,
+    "orig_trans": 7.521537492336837,
+    "orig_gt": 2.7328712592303916,
+    "trans_gt": 0.7450439271279989,
+    "orig_only": 2.6047195446431983,
+    "trans_only": 1.4608493785326697,
+    "gt_only": 94.87274201898268,
+    "tp_retention_rate": 0.9893161707256187,
+    "fp_consistency_rate": 0.6491299227447395,
+    "detection_loss_rate": 0.020072064575893913,
+    "new_hallucination_rate": 0.005559006159659723,
+    "new_tp_rate": 0.0077918968710266835
+  },
+  "yolov8_imgDarkBright_0": {
+    "orig_trans_gt": 254.87954562036157,
+    "orig_trans": 7.778815497468507,
+    "orig_gt": 3.398836843609158,
+    "trans_gt": 0.9997548180589118,
+    "orig_only": 2.6030074140252806,
+    "trans_only": 1.306690920236902,
+    "gt_only": 92.03334888623948,
+    "tp_retention_rate": 0.9868404130024963,
+    "fp_consistency_rate": 0.6655093718032343,
+    "detection_loss_rate": 0.022339907948952083,
+    "new_hallucination_rate": 0.0049315640659645275,
+    "new_tp_rate": 0.010746226646770683
+  },
+  "yolov12_imgDarkBright_0": {
+    "orig_trans_gt": 251.80563002005098,
+    "orig_trans": 7.342608394038479,
+    "orig_gt": 4.5185110229015635,
+    "trans_gt": 0.6607851068592168,
+    "orig_only": 2.027129160489876,
+    "trans_only": 1.6371700763005113,
+    "gt_only": 95.00816621935913,
+    "tp_retention_rate": 0.9823718866099921,
+    "fp_consistency_rate": 0.6670909432793659,
+    "detection_loss_rate": 0.024636021792989474,
+    "new_hallucination_rate": 0.006261977096604924,
+    "new_tp_rate": 0.006906996446590366
+  },
+  "yolov26_v2_imgDarkBright_0": {
+    "orig_trans_gt": 292.63801123499115,
+    "orig_trans": 14.77310991463327,
+    "orig_gt": 3.635860278223261,
+    "trans_gt": 1.87620754556844,
+    "orig_only": 7.980080704282854,
+    "trans_only": 4.753759812701187,
+    "gt_only": 37.342970509599944,
+    "tp_retention_rate": 0.987728042774568,
+    "fp_consistency_rate": 0.5370682566705982,
+    "detection_loss_rate": 0.03641051923581071,
+    "new_hallucination_rate": 0.015137381656928284,
+    "new_tp_rate": 0.04783903280505363
+  },
+  "yolov5_imgDarkBright_1": {
+    "orig_trans_gt": 256.61270856070826,
+    "orig_trans": 10.327599342428009,
+    "orig_gt": 0.0,
+    "trans_gt": 0.3369875222816399,
+    "orig_only": 0.020833333333333332,
+    "trans_only": 0.1,
+    "gt_only": 95.6018712412486,
+    "tp_retention_rate": 1.0,
+    "fp_consistency_rate": 0.9884352670794686,
+    "detection_loss_rate": 7.803882331653475e-05,
+    "new_hallucination_rate": 0.0003740033342804679,
+    "new_tp_rate": 0.003512523774253408
+  },
+  "yolov8_imgDarkBright_1": {
+    "orig_trans_gt": 259.1796222299685,
+    "orig_trans": 10.530988543544007,
+    "orig_gt": 0.20320629159104658,
+    "trans_gt": 0.24388846447669976,
+    "orig_only": 0.0,
+    "trans_only": 0.0,
+    "gt_only": 92.84229447041959,
+    "tp_retention_rate": 0.9992165777019654,
+    "fp_consistency_rate": 1.0,
+    "detection_loss_rate": 0.0007528562035119266,
+    "new_hallucination_rate": 0.0,
+    "new_tp_rate": 0.0026200286313949874
+  },
+  "yolov12_imgDarkBright_1": {
+    "orig_trans_gt": 257.66191537002555,
+    "orig_trans": 9.493637204225179,
+    "orig_gt": 0.08868778280542987,
+    "trans_gt": 0.016129032258064516,
+    "orig_only": 0.09090909090909091,
+    "trans_only": 0.0,
+    "gt_only": 95.6487215197765,
+    "tp_retention_rate": 0.9996559162938103,
+    "fp_consistency_rate": 0.9905150345034858,
+    "detection_loss_rate": 0.0006718041906774325,
+    "new_hallucination_rate": 0.0,
+    "new_tp_rate": 0.00016859935666017187
+  },
+  "yolov26_v2_imgDarkBright_1": {
+    "orig_trans_gt": 302.4568217217338,
+    "orig_trans": 21.08160925366,
+    "orig_gt": 0.08340809409888357,
+    "trans_gt": 0.09895833333333333,
+    "orig_only": 0.9366863034700257,
+    "trans_only": 0.2676558355437666,
+    "gt_only": 38.07486045816023,
+    "tp_retention_rate": 0.9997243074279752,
+    "fp_consistency_rate": 0.945959581541145,
+    "detection_loss_rate": 0.003143021420856776,
+    "new_hallucination_rate": 0.0008263404338902771,
+    "new_tp_rate": 0.0025923089820760778
+  },
+  "yolov5_imgDarkBright_2": {
+    "orig_trans_gt": 254.00133039173545,
+    "orig_trans": 8.989274377955319,
+    "orig_gt": 1.5639464615075274,
+    "trans_gt": 1.2811876005395713,
+    "orig_only": 1.1801012425096236,
+    "trans_only": 1.5251169868738434,
+    "gt_only": 94.45904293887855,
+    "tp_retention_rate": 0.9938804422855707,
+    "fp_consistency_rate": 0.7686758784484733,
+    "detection_loss_rate": 0.01032626975245033,
+    "new_hallucination_rate": 0.005737903388578586,
+    "new_tp_rate": 0.013381914721963003
+  },
+  "yolov8_imgDarkBright_2": {
+    "orig_trans_gt": 256.41503335457986,
+    "orig_trans": 9.135001580036839,
+    "orig_gt": 2.0907883131133014,
+    "trans_gt": 1.5331775038301405,
+    "orig_only": 1.5410310277957335,
+    "trans_only": 0.7016150516150517,
+    "gt_only": 91.58335316902895,
+    "tp_retention_rate": 0.9919120261987716,
+    "fp_consistency_rate": 0.8028901802431396,
+    "detection_loss_rate": 0.013492065988934097,
+    "new_hallucination_rate": 0.00262007021903095,
+    "new_tp_rate": 0.016465148483855826
+  },
+  "yolov12_imgDarkBright_2": {
+    "orig_trans_gt": 255.91945984381664,
+    "orig_trans": 8.625399689630205,
+    "orig_gt": 1.1452001472268443,
+    "trans_gt": 1.80928024174466,
+    "orig_only": 0.7187558313760238,
+    "trans_only": 1.11368615934946,
+    "gt_only": 93.668218086856,
+    "tp_retention_rate": 0.9955450891333459,
+    "fp_consistency_rate": 0.8247781859073661,
+    "detection_loss_rate": 0.006996600225184969,
+    "new_hallucination_rate": 0.00416381355573593,
+    "new_tp_rate": 0.01894980779154624
+  },
+  "yolov26_v2_imgDarkBright_2": {
+    "orig_trans_gt": 296.1762466290496,
+    "orig_trans": 17.98476017130673,
+    "orig_gt": 1.503106685371982,
+    "trans_gt": 1.283141555765593,
+    "orig_only": 4.47293238831273,
+    "trans_only": 4.022206217052825,
+    "gt_only": 37.55760635314073,
+    "tp_retention_rate": 0.9949505846857162,
+    "fp_consistency_rate": 0.6791853822020866,
+    "detection_loss_rate": 0.01866712756522406,
+    "new_hallucination_rate": 0.01259039069208625,
+    "new_tp_rate": 0.03303596415740913
+  },
+  "yolov5_imgDarkBright_3": {
+    "orig_trans_gt": 250.83881076152196,
+    "orig_trans": 7.4156939547434915,
+    "orig_gt": 3.483572793654686,
+    "trans_gt": 2.056668334931844,
+    "orig_only": 2.91966195068314,
+    "trans_only": 2.725739298619092,
+    "gt_only": 93.55985290584573,
+    "tp_retention_rate": 0.9863025316727622,
+    "fp_consistency_rate": 0.5677696884443849,
+    "detection_loss_rate": 0.02419439823444501,
+    "new_hallucination_rate": 0.01036257335242019,
+    "new_tp_rate": 0.021509549900407137
+  },
+  "yolov8_imgDarkBright_3": {
+    "orig_trans_gt": 253.5645971294475,
+    "orig_trans": 8.000422805113452,
+    "orig_gt": 4.643169450181461,
+    "trans_gt": 2.2113184022472434,
+    "orig_only": 2.5650026884980486,
+    "trans_only": 1.2712271284180705,
+    "gt_only": 90.74426239609411,
+    "tp_retention_rate": 0.9820177002741334,
+    "fp_consistency_rate": 0.6759024751831958,
+    "detection_loss_rate": 0.02681879127556475,
+    "new_hallucination_rate": 0.004796222618331702,
+    "new_tp_rate": 0.023788979459388206
+  },
+  "yolov12_imgDarkBright_3": {
+    "orig_trans_gt": 253.284193444605,
+    "orig_trans": 7.585641410983843,
+    "orig_gt": 3.08546322457979,
+    "trans_gt": 3.0056250880329625,
+    "orig_only": 1.651968102579071,
+    "trans_only": 2.018250462837456,
+    "gt_only": 92.36885826638175,
+    "tp_retention_rate": 0.9879647877807894,
+    "fp_consistency_rate": 0.6739281962362982,
+    "detection_loss_rate": 0.017836226377554488,
+    "new_hallucination_rate": 0.007590440780837768,
+    "new_tp_rate": 0.03151393310162385
+  },
+  "yolov26_v2_imgDarkBright_3": {
+    "orig_trans_gt": 290.0397268754513,
+    "orig_trans": 16.83044673575156,
+    "orig_gt": 3.7456320479163066,
+    "trans_gt": 2.787250544542647,
+    "orig_only": 6.756336098937662,
+    "trans_only": 5.518890400509046,
+    "gt_only": 37.32171729689171,
+    "tp_retention_rate": 0.987250446851256,
+    "fp_consistency_rate": 0.5782531329802072,
+    "detection_loss_rate": 0.03309039063315129,
+    "new_hallucination_rate": 0.01751048586337855,
+    "new_tp_rate": 0.06949195390820535
+  },
+  "yolov5_imgDarkBright_4": {
+    "orig_trans_gt": 244.99548797047788,
+    "orig_trans": 7.0008639753746005,
+    "orig_gt": 7.554950934213271,
+    "trans_gt": 2.4000336731330747,
+    "orig_only": 3.3884942104503173,
+    "trans_only": 4.59744563246501,
+    "gt_only": 93.06272360388577,
+    "tp_retention_rate": 0.9700853779269637,
+    "fp_consistency_rate": 0.4671352251125574,
+    "detection_loss_rate": 0.0416195846568496,
+    "new_hallucination_rate": 0.017751178127487777,
+    "new_tp_rate": 0.025141047059520086
+  },
+  "yolov8_imgDarkBright_4": {
+    "orig_trans_gt": 248.39456096832762,
+    "orig_trans": 7.354182115806991,
+    "orig_gt": 8.281588114426937,
+    "trans_gt": 2.532132699096182,
+    "orig_only": 3.513005185156766,
+    "trans_only": 2.545891670417688,
+    "gt_only": 90.37863924676768,
+    "tp_retention_rate": 0.9677352642852809,
+    "fp_consistency_rate": 0.5482844119160186,
+    "detection_loss_rate": 0.04408479560360853,
+    "new_hallucination_rate": 0.009760852750169205,
+    "new_tp_rate": 0.027253381347122754
+  },
+  "yolov12_imgDarkBright_4": {
+    "orig_trans_gt": 247.3408080242245,
+    "orig_trans": 6.9874752273467315,
+    "orig_gt": 7.070673020144106,
+    "trans_gt": 3.439394879091523,
+    "orig_only": 2.421436259836932,
+    "trans_only": 4.0547887335446156,
+    "gt_only": 91.68542385581148,
+    "tp_retention_rate": 0.9722077282396269,
+    "fp_consistency_rate": 0.5189862454445502,
+    "detection_loss_rate": 0.035979437331956084,
+    "new_hallucination_rate": 0.015486786837309908,
+    "new_tp_rate": 0.03615665106996464
+  },
+  "yolov26_v2_imgDarkBright_4": {
+    "orig_trans_gt": 281.2159828462269,
+    "orig_trans": 14.562377745623374,
+    "orig_gt": 9.765189597421832,
+    "trans_gt": 2.896561837855756,
+    "orig_only": 8.68498349477329,
+    "trans_only": 9.023223487904898,
+    "gt_only": 36.85168099019403,
+    "tp_retention_rate": 0.966440476146913,
+    "fp_consistency_rate": 0.4512585646721192,
+    "detection_loss_rate": 0.05871577885013664,
+    "new_hallucination_rate": 0.02932491991785011,
+    "new_tp_rate": 0.07287270157793471
+  },
+  "yolov5_imgDarkBright_5": {
+    "orig_trans_gt": 232.64951718418763,
+    "orig_trans": 6.218168430952172,
+    "orig_gt": 15.30375556302502,
+    "trans_gt": 2.6350678287994005,
+    "orig_only": 4.623787427872663,
+    "trans_only": 8.59471634776018,
+    "gt_only": 92.97498721740281,
+    "tp_retention_rate": 0.9382796790965242,
+    "fp_consistency_rate": 0.31991939591621543,
+    "detection_loss_rate": 0.07700119935840574,
+    "new_hallucination_rate": 0.03436546701139571,
+    "new_tp_rate": 0.02756057223820278
+  },
+  "yolov8_imgDarkBright_5": {
+    "orig_trans_gt": 235.05235086631635,
+    "orig_trans": 6.828406233765955,
+    "orig_gt": 17.857013104583913,
+    "trans_gt": 2.6694342553235244,
+    "orig_only": 4.881058847807241,
+    "trans_only": 4.872325899881535,
+    "gt_only": 90.83941079232126,
+    "tp_retention_rate": 0.9293936261425317,
+    "fp_consistency_rate": 0.4118014900442856,
+    "detection_loss_rate": 0.08592764178501534,
+    "new_hallucination_rate": 0.019534426777092634,
+    "new_tp_rate": 0.028547398419511972
+  },
+  "yolov12_imgDarkBright_5": {
+    "orig_trans_gt": 234.2016953676269,
+    "orig_trans": 6.270469388709432,
+    "orig_gt": 16.620919909596235,
+    "trans_gt": 3.3287265699681843,
+    "orig_only": 3.61073346384406,
+    "trans_only": 7.07462362107689,
+    "gt_only": 91.89283167917816,
+    "tp_retention_rate": 0.9337343648569094,
+    "fp_consistency_rate": 0.3698120760118202,
+    "detection_loss_rate": 0.07760397802601078,
+    "new_hallucination_rate": 0.02819973731817041,
+    "new_tp_rate": 0.03495769898302443
+  },
+  "yolov26_v2_imgDarkBright_5": {
+    "orig_trans_gt": 260.773645742258,
+    "orig_trans": 13.957333123163634,
+    "orig_gt": 24.4320874157956,
+    "trans_gt": 3.211101708537851,
+    "orig_only": 10.130159193399352,
+    "trans_only": 13.343950932471662,
+    "gt_only": 37.15172188437382,
+    "tp_retention_rate": 0.9143352163883186,
+    "fp_consistency_rate": 0.3728772366671593,
+    "detection_loss_rate": 0.11174588953947666,
+    "new_hallucination_rate": 0.04581047317463642,
+    "new_tp_rate": 0.07955592356283442
+  },
+  "yolov5_imgDarkBright_6": {
+    "orig_trans_gt": 216.54546192325316,
+    "orig_trans": 5.0536951472330625,
+    "orig_gt": 28.61146302267445,
+    "trans_gt": 2.5588098504624597,
+    "orig_only": 5.493950558459038,
+    "trans_only": 12.360877412302662,
+    "gt_only": 92.37574208561503,
+    "tp_retention_rate": 0.8832932701004262,
+    "fp_consistency_rate": 0.2206032715947262,
+    "detection_loss_rate": 0.13337819302260273,
+    "new_hallucination_rate": 0.05226170222143644,
+    "new_tp_rate": 0.02695340946239878
+  },
+  "yolov8_imgDarkBright_6": {
+    "orig_trans_gt": 219.67141586964055,
+    "orig_trans": 5.599090377312306,
+    "orig_gt": 31.656619337414984,
+    "trans_gt": 2.6498296848665253,
+    "orig_only": 5.703470008279514,
+    "trans_only": 7.345335983700823,
+    "gt_only": 90.3742387387853,
+    "tp_retention_rate": 0.8740426259595958,
+    "fp_consistency_rate": 0.3002531903025956,
+    "detection_loss_rate": 0.14225337783432432,
+    "new_hallucination_rate": 0.031221452428208077,
+    "new_tp_rate": 0.028485420276380784
+  },
+  "yolov12_imgDarkBright_6": {
+    "orig_trans_gt": 217.52249101141953,
+    "orig_trans": 4.887934311641834,
+    "orig_gt": 31.97287347161722,
+    "trans_gt": 3.5011954187282996,
+    "orig_only": 4.764926730624715,
+    "trans_only": 8.82662991914584,
+    "gt_only": 91.52394913682251,
+    "tp_retention_rate": 0.8718498296035834,
+    "fp_consistency_rate": 0.2645058958522442,
+    "detection_loss_rate": 0.14176365718026052,
+    "new_hallucination_rate": 0.03760200944794186,
+    "new_tp_rate": 0.03684493651763438
+  },
+  "yolov26_v2_imgDarkBright_6": {
+    "orig_trans_gt": 241.30159958854014,
+    "orig_trans": 11.988686161847665,
+    "orig_gt": 41.729542116619015,
+    "trans_gt": 3.350973515052055,
+    "orig_only": 11.852048154170756,
+    "trans_only": 16.05524275322822,
+    "gt_only": 36.721907710542226,
+    "tp_retention_rate": 0.8525620118506615,
+    "fp_consistency_rate": 0.30049862273178934,
+    "detection_loss_rate": 0.17460573763068482,
+    "new_hallucination_rate": 0.05887586615294802,
+    "new_tp_rate": 0.08362197607372965
+  },
+  "yolov5_imgDarkBright_7": {
+    "orig_trans_gt": 200.89330659698354,
+    "orig_trans": 4.423025536698869,
+    "orig_gt": 42.67307006229831,
+    "trans_gt": 2.6769519385428473,
+    "orig_only": 5.9835661353412934,
+    "trans_only": 14.172996651757162,
+    "gt_only": 92.17708307837785,
+    "tp_retention_rate": 0.824799011063861,
+    "fp_consistency_rate": 0.17994709587615876,
+    "detection_loss_rate": 0.1915819487299305,
+    "new_hallucination_rate": 0.06379454436366776,
+    "new_tp_rate": 0.028221803511735845
+  },
+  "yolov8_imgDarkBright_7": {
+    "orig_trans_gt": 203.22904450720415,
+    "orig_trans": 4.667859398819271,
+    "orig_gt": 47.43896017827334,
+    "trans_gt": 2.429105761633644,
+    "orig_only": 6.5906919924318315,
+    "trans_only": 8.295119789135397,
+    "gt_only": 90.34921837250242,
+    "tp_retention_rate": 0.8107498392633046,
+    "fp_consistency_rate": 0.23872035873761716,
+    "detection_loss_rate": 0.20627787033124564,
+    "new_hallucination_rate": 0.037942900623312424,
+    "new_tp_rate": 0.02618182408772244
+  },
+  "yolov12_imgDarkBright_7": {
+    "orig_trans_gt": 201.33999832697157,
+    "orig_trans": 4.888910769403726,
+    "orig_gt": 46.38529921637983,
+    "trans_gt": 3.474719612648668,
+    "orig_only": 5.13597422730858,
+    "trans_only": 10.1873218679183,
+    "gt_only": 91.58777597936924,
+    "tp_retention_rate": 0.812755097374492,
+    "fp_consistency_rate": 0.241879118007586,
+    "detection_loss_rate": 0.19988840720095374,
+    "new_hallucination_rate": 0.04632897279851289,
+    "new_tp_rate": 0.036551950282908724
+  },
+  "yolov26_v2_imgDarkBright_7": {
+    "orig_trans_gt": 222.8836025292155,
+    "orig_trans": 11.011041386062525,
+    "orig_gt": 59.224541168468,
+    "trans_gt": 3.447003780926564,
+    "orig_only": 12.781416442913526,
+    "trans_only": 17.152104490456622,
+    "gt_only": 36.50029020195716,
+    "tp_retention_rate": 0.7900644044082081,
+    "fp_consistency_rate": 0.26892560971000007,
+    "detection_loss_rate": 0.23539004909444788,
+    "new_hallucination_rate": 0.06739695706901372,
+    "new_tp_rate": 0.08628879298816854
+  },
+  "yolov5_imgDarkBright_8": {
+    "orig_trans_gt": 185.06979574409604,
+    "orig_trans": 3.58776207504268,
+    "orig_gt": 56.49970204329394,
+    "trans_gt": 2.7842958522290195,
+    "orig_only": 6.4826532243931885,
+    "trans_only": 16.79349659664267,
+    "gt_only": 91.78229446430238,
+    "tp_retention_rate": 0.7661140890683954,
+    "fp_consistency_rate": 0.13355322519377397,
+    "detection_loss_rate": 0.25028762128826393,
+    "new_hallucination_rate": 0.08064671332234662,
+    "new_tp_rate": 0.02944270109464114
+  },
+  "yolov8_imgDarkBright_8": {
+    "orig_trans_gt": 188.29155337185017,
+    "orig_trans": 4.317986299381032,
+    "orig_gt": 61.053445310842896,
+    "trans_gt": 1.9995849603348568,
+    "orig_only": 6.916821324456524,
+    "trans_only": 9.74836528333356,
+    "gt_only": 90.6722434498009,
+    "tp_retention_rate": 0.7551446965714472,
+    "fp_consistency_rate": 0.20578328732664336,
+    "detection_loss_rate": 0.26084241752541343,
+    "new_hallucination_rate": 0.04770251037724657,
+    "new_tp_rate": 0.021577053076856707
+  },
+  "yolov12_imgDarkBright_8": {
+    "orig_trans_gt": 184.51154553906872,
+    "orig_trans": 4.97197226929329,
+    "orig_gt": 59.895248789200224,
+    "trans_gt": 3.18276078765862,
+    "orig_only": 5.5384333865038835,
+    "trans_only": 12.730138802569304,
+    "gt_only": 92.16990042570583,
+    "tp_retention_rate": 0.7549362367203531,
+    "fp_consistency_rate": 0.21393527497603035,
+    "detection_loss_rate": 0.25668602267635965,
+    "new_hallucination_rate": 0.061978387762554495,
+    "new_tp_rate": 0.033378835442639226
+  },
+  "yolov26_v2_imgDarkBright_8": {
+    "orig_trans_gt": 205.40949209624796,
+    "orig_trans": 10.495669468589762,
+    "orig_gt": 74.30785171225907,
+    "trans_gt": 2.865900992444486,
+    "orig_only": 13.56953960770889,
+    "trans_only": 19.291133660742158,
+    "gt_only": 37.0604124620076,
+    "tp_retention_rate": 0.7343466418616865,
+    "fp_consistency_rate": 0.2420792162347898,
+    "detection_loss_rate": 0.2892772823371823,
+    "new_hallucination_rate": 0.08103400694108849,
+    "new_tp_rate": 0.07177975486552006
+  },
+  "yolov5_imgDarkBright_9": {
+    "orig_trans_gt": 169.98398704718966,
+    "orig_trans": 3.5111165194993474,
+    "orig_gt": 69.52349711141518,
+    "trans_gt": 2.645939569136507,
+    "orig_only": 6.731229887238261,
+    "trans_only": 18.98098190015838,
+    "gt_only": 91.62324796536268,
+    "tp_retention_rate": 0.7097230704265766,
+    "fp_consistency_rate": 0.1201477286442698,
+    "detection_loss_rate": 0.3053244393641452,
+    "new_hallucination_rate": 0.09727749543731906,
+    "new_tp_rate": 0.02806791527897901
+  },
+  "yolov8_imgDarkBright_9": {
+    "orig_trans_gt": 172.2013062783885,
+    "orig_trans": 3.6349008495134054,
+    "orig_gt": 74.50606193226464,
+    "trans_gt": 1.886040157703812,
+    "orig_only": 7.530183602327826,
+    "trans_only": 12.664804386851827,
+    "gt_only": 90.57670279295004,
+    "tp_retention_rate": 0.6979982297543419,
+    "fp_consistency_rate": 0.15253536741687798,
+    "detection_loss_rate": 0.3181272163334259,
+    "new_hallucination_rate": 0.0665213536088599,
+    "new_tp_rate": 0.02039783914598301
+  },
+  "yolov12_imgDarkBright_9": {
+    "orig_trans_gt": 169.55705542775877,
+    "orig_trans": 3.97123281050599,
+    "orig_gt": 74.38140461481845,
+    "trans_gt": 2.6028475421038664,
+    "orig_only": 6.33366419227063,
+    "trans_only": 13.625386163774333,
+    "gt_only": 92.52840924876813,
+    "tp_retention_rate": 0.6950812733595356,
+    "fp_consistency_rate": 0.16595009690720514,
+    "detection_loss_rate": 0.3174716922601463,
+    "new_hallucination_rate": 0.0718045736935731,
+    "new_tp_rate": 0.027360592405771877
+  },
+  "yolov26_v2_imgDarkBright_9": {
+    "orig_trans_gt": 185.26560216735044,
+    "orig_trans": 9.407142078867546,
+    "orig_gt": 93.8783104978818,
+    "trans_gt": 2.5716997869666245,
+    "orig_only": 14.657385097143692,
+    "trans_only": 20.041473057785307,
+    "gt_only": 37.17838731400446,
+    "tp_retention_rate": 0.6636920733769794,
+    "fp_consistency_rate": 0.21328485986038823,
+    "detection_loss_rate": 0.3579573696954266,
+    "new_hallucination_rate": 0.09223549011413681,
+    "new_tp_rate": 0.06469670822189968
+  },
+  "yolov5_imgGrayscale_0": {
+    "orig_trans_gt": 62.93104501567888,
+    "orig_trans": 1.1514815770694085,
+    "orig_gt": 157.05475211377097,
+    "trans_gt": 0.4163843859637246,
+    "orig_only": 8.574390399525578,
+    "trans_only": 44.09933324334852,
+    "gt_only": 88.77261326464286,
+    "tp_retention_rate": 0.28606867278184933,
+    "fp_consistency_rate": 0.021392980711623138,
+    "detection_loss_rate": 0.7210305996115285,
+    "new_hallucination_rate": 0.4060777737177285,
+    "new_tp_rate": 0.004668562232248529
+  },
+  "yolov8_imgGrayscale_0": {
+    "orig_trans_gt": 82.71188111062322,
+    "orig_trans": 1.3146046948003232,
+    "orig_gt": 130.92751129931892,
+    "trans_gt": 0.8427249540319973,
+    "orig_only": 8.368897827340078,
+    "trans_only": 55.027902894006075,
+    "gt_only": 83.80647721987951,
+    "tp_retention_rate": 0.38715650787805767,
+    "fp_consistency_rate": 0.020314884004548436,
+    "detection_loss_rate": 0.623744418005248,
+    "new_hallucination_rate": 0.3933455198390683,
+    "new_tp_rate": 0.009955497894718744
+  },
+  "yolov12_imgGrayscale_0": {
+    "orig_trans_gt": 74.21837599055849,
+    "orig_trans": 1.1741264903504907,
+    "orig_gt": 131.30901981047634,
+    "trans_gt": 0.6681604257163368,
+    "orig_only": 7.461336682414725,
+    "trans_only": 62.33780422344272,
+    "gt_only": 85.83117637704116,
+    "tp_retention_rate": 0.3611118396226222,
+    "fp_consistency_rate": 0.016543221601958032,
+    "detection_loss_rate": 0.6479664922192123,
+    "new_hallucination_rate": 0.4504226492975326,
+    "new_tp_rate": 0.007724457208728989
+  },
+  "yolov26_v2_imgGrayscale_0": {
+    "orig_trans_gt": 95.35864524115533,
+    "orig_trans": 2.8187116475496006,
+    "orig_gt": 140.17250143697572,
+    "trans_gt": 1.0782621986735226,
+    "orig_only": 16.683791721801708,
+    "trans_only": 73.96855202813889,
+    "gt_only": 32.91953572570519,
+    "tp_retention_rate": 0.40486639064968016,
+    "fp_consistency_rate": 0.030155983962766787,
+    "detection_loss_rate": 0.615041556788972,
+    "new_hallucination_rate": 0.4270105698979605,
+    "new_tp_rate": 0.03171564820380134
+  },
+  "yolov5_imgMotionBlur_0": {
+    "orig_trans_gt": 255.77249667413284,
+    "orig_trans": 9.933954456008186,
+    "orig_gt": 0.39784332841811065,
+    "trans_gt": 0.7883330688763479,
+    "orig_only": 0.3438348416289593,
+    "trans_only": 0.7780412246212519,
+    "gt_only": 94.98549640631417,
+    "tp_retention_rate": 0.9984469578780503,
+    "fp_consistency_rate": 0.8985262966910021,
+    "detection_loss_rate": 0.002783574318930474,
+    "new_hallucination_rate": 0.002911037526497593,
+    "new_tp_rate": 0.008231195026826817
+  },
+  "yolov8_imgMotionBlur_0": {
+    "orig_trans_gt": 258.2824658528917,
+    "orig_trans": 9.642197543920094,
+    "orig_gt": 0.7772055847285883,
+    "trans_gt": 1.1746102993254504,
+    "orig_only": 1.0065779637785082,
+    "trans_only": 0.1488887251182333,
+    "gt_only": 91.96805403023728,
+    "tp_retention_rate": 0.9969998974351525,
+    "fp_consistency_rate": 0.8929891998877882,
+    "detection_loss_rate": 0.006613747432496038,
+    "new_hallucination_rate": 0.0005529795404333631,
+    "new_tp_rate": 0.012610872877432157
+  },
+  "yolov12_imgMotionBlur_0": {
+    "orig_trans_gt": 256.0310832994168,
+    "orig_trans": 8.861945409904378,
+    "orig_gt": 1.2956196032341643,
+    "trans_gt": 1.3768230942358155,
+    "orig_only": 0.5026857198965873,
+    "trans_only": 0.882151357141431,
+    "gt_only": 94.0496915161706,
+    "tp_retention_rate": 0.9949650790663404,
+    "fp_consistency_rate": 0.8648515200939677,
+    "detection_loss_rate": 0.006743021214599824,
+    "new_hallucination_rate": 0.003302057804937347,
+    "new_tp_rate": 0.014428097891418438
+  },
+  "yolov26_v2_imgMotionBlur_0": {
+    "orig_trans_gt": 298.72648067088636,
+    "orig_trans": 18.36309079469248,
+    "orig_gt": 0.36728235173707974,
+    "trans_gt": 1.518417664909637,
+    "orig_only": 4.13538000591311,
+    "trans_only": 2.6909498650152712,
+    "gt_only": 37.19839864684618,
+    "tp_retention_rate": 0.9987720160125529,
+    "fp_consistency_rate": 0.7290001242368737,
+    "detection_loss_rate": 0.01400115389641277,
+    "new_hallucination_rate": 0.008375221758989151,
+    "new_tp_rate": 0.039218556936164994
+  },
+  "yolov5_imgMotionBlur_1": {
+    "orig_trans_gt": 254.90809102720823,
+    "orig_trans": 9.005674575145868,
+    "orig_gt": 0.9681192667650163,
+    "trans_gt": 1.2088556373592285,
+    "orig_only": 1.2967830494974177,
+    "trans_only": 1.0969010633766367,
+    "gt_only": 94.51557538064749,
+    "tp_retention_rate": 0.9962164545674146,
+    "fp_consistency_rate": 0.7900158966495474,
+    "detection_loss_rate": 0.008508955033747942,
+    "new_hallucination_rate": 0.0041202878507452904,
+    "new_tp_rate": 0.0126284964507319
+  },
+  "yolov8_imgMotionBlur_1": {
+    "orig_trans_gt": 257.47605142500663,
+    "orig_trans": 9.179295181983171,
+    "orig_gt": 1.2006731496327856,
+    "trans_gt": 2.26491896344153,
+    "orig_only": 1.3814405340579714,
+    "trans_only": 0.759629650859159,
+    "gt_only": 90.73799109501857,
+    "tp_retention_rate": 0.9953584028419753,
+    "fp_consistency_rate": 0.8108656288446819,
+    "detection_loss_rate": 0.009590469620768946,
+    "new_hallucination_rate": 0.0028167826535079,
+    "new_tp_rate": 0.024353205313875005
+  },
+  "yolov12_imgMotionBlur_1": {
+    "orig_trans_gt": 255.57874943407472,
+    "orig_trans": 8.37169658128638,
+    "orig_gt": 1.5170561845365451,
+    "trans_gt": 2.1876236592464284,
+    "orig_only": 1.1177593800678167,
+    "trans_only": 1.0679171852353684,
+    "gt_only": 93.15919757555248,
+    "tp_retention_rate": 0.9940992573531634,
+    "fp_consistency_rate": 0.792971553154845,
+    "detection_loss_rate": 0.009883575517223474,
+    "new_hallucination_rate": 0.003996606504911588,
+    "new_tp_rate": 0.022943855190087944
+  },
+  "yolov26_v2_imgMotionBlur_1": {
+    "orig_trans_gt": 295.54470749725573,
+    "orig_trans": 16.578908586142266,
+    "orig_gt": 2.175177427700078,
+    "trans_gt": 2.7981489249427405,
+    "orig_only": 6.337749057552723,
+    "trans_only": 3.215108025579802,
+    "gt_only": 36.350200480826736,
+    "tp_retention_rate": 0.9926938792541574,
+    "fp_consistency_rate": 0.6344350701734409,
+    "detection_loss_rate": 0.026550081962133546,
+    "new_hallucination_rate": 0.010106052765650334,
+    "new_tp_rate": 0.07147552751049994
+  },
+  "yolov5_imgMotionBlur_2": {
+    "orig_trans_gt": 253.51643959359538,
+    "orig_trans": 7.731718973265844,
+    "orig_gt": 1.94683477588332,
+    "trans_gt": 1.7388580483666436,
+    "orig_only": 2.6331995341873786,
+    "trans_only": 1.2688036388164263,
+    "gt_only": 94.16414543588495,
+    "tp_retention_rate": 0.9923791990035029,
+    "fp_consistency_rate": 0.6645954644657746,
+    "detection_loss_rate": 0.017229302356921473,
+    "new_hallucination_rate": 0.0048014217344263315,
+    "new_tp_rate": 0.01813142430572766
+  },
+  "yolov8_imgMotionBlur_2": {
+    "orig_trans_gt": 255.21920568997822,
+    "orig_trans": 7.749248047498481,
+    "orig_gt": 2.7418096598880846,
+    "trans_gt": 3.0049771949271666,
+    "orig_only": 2.778021472505195,
+    "trans_only": 1.5124442253450272,
+    "gt_only": 89.99429370985764,
+    "tp_retention_rate": 0.9893712247326618,
+    "fp_consistency_rate": 0.6436405558639005,
+    "detection_loss_rate": 0.020558927310622185,
+    "new_hallucination_rate": 0.005654295668707996,
+    "new_tp_rate": 0.032311836057335806
+  },
+  "yolov12_imgMotionBlur_2": {
+    "orig_trans_gt": 253.59042191553604,
+    "orig_trans": 7.631995613198318,
+    "orig_gt": 3.0522610226709936,
+    "trans_gt": 2.9624539201810576,
+    "orig_only": 2.0549193706149036,
+    "trans_only": 1.1489812574053604,
+    "gt_only": 92.55896690039309,
+    "tp_retention_rate": 0.9881069626153889,
+    "fp_consistency_rate": 0.704325276220995,
+    "detection_loss_rate": 0.01917616529718657,
+    "new_hallucination_rate": 0.004330322895801337,
+    "new_tp_rate": 0.031013503512952154
+  },
+  "yolov26_v2_imgMotionBlur_2": {
+    "orig_trans_gt": 291.50000990366607,
+    "orig_trans": 14.086728969544852,
+    "orig_gt": 5.8853594388272334,
+    "trans_gt": 2.928035252052629,
+    "orig_only": 8.851124729472218,
+    "trans_only": 3.5336021414615453,
+    "gt_only": 36.21513956497551,
+    "tp_retention_rate": 0.9802096537168608,
+    "fp_consistency_rate": 0.5321478748442783,
+    "detection_loss_rate": 0.04600504461829096,
+    "new_hallucination_rate": 0.011323892095631926,
+    "new_tp_rate": 0.07480321322272687
+  },
+  "yolov5_imgMotionBlur_3": {
+    "orig_trans_gt": 252.12762279990406,
+    "orig_trans": 6.0607130634432895,
+    "orig_gt": 3.7847826860327514,
+    "trans_gt": 2.0930945910941383,
+    "orig_only": 4.381923812778205,
+    "trans_only": 0.6539237882748112,
+    "gt_only": 93.89793925847263,
+    "tp_retention_rate": 0.9852106322128228,
+    "fp_consistency_rate": 0.5461794196137436,
+    "detection_loss_rate": 0.030660979519609874,
+    "new_hallucination_rate": 0.002506075844619146,
+    "new_tp_rate": 0.021805105197370316
+  },
+  "yolov8_imgMotionBlur_3": {
+    "orig_trans_gt": 252.7566291206559,
+    "orig_trans": 6.878855706842709,
+    "orig_gt": 4.633536857767565,
+    "trans_gt": 3.4855472524154236,
+    "orig_only": 3.8807666628354407,
+    "trans_only": 1.757562172369754,
+    "gt_only": 89.60710222711307,
+    "tp_retention_rate": 0.9819980035361725,
+    "fp_consistency_rate": 0.5495529512835062,
+    "detection_loss_rate": 0.031752042666355076,
+    "new_hallucination_rate": 0.006635349969789416,
+    "new_tp_rate": 0.037441702131186104
+  },
+  "yolov12_imgMotionBlur_3": {
+    "orig_trans_gt": 250.94505275842366,
+    "orig_trans": 6.424848899857618,
+    "orig_gt": 4.684242271057982,
+    "trans_gt": 3.666740426647436,
+    "orig_only": 3.365510750833118,
+    "trans_only": 1.9585105183308877,
+    "gt_only": 91.95509437484908,
+    "tp_retention_rate": 0.9816756437460826,
+    "fp_consistency_rate": 0.5468482336963846,
+    "detection_loss_rate": 0.030328398368202836,
+    "new_hallucination_rate": 0.007446945310377609,
+    "new_tp_rate": 0.03834626719158133
+  },
+  "yolov26_v2_imgMotionBlur_3": {
+    "orig_trans_gt": 284.3681549135452,
+    "orig_trans": 13.743188484508977,
+    "orig_gt": 11.528937749241322,
+    "trans_gt": 3.5019407231640862,
+    "orig_only": 10.048354111075426,
+    "trans_only": 3.4636813747176,
+    "gt_only": 36.345742643747336,
+    "tp_retention_rate": 0.9610373402269955,
+    "fp_consistency_rate": 0.5042405264944405,
+    "detection_loss_rate": 0.06749471041683443,
+    "new_hallucination_rate": 0.011353467375313009,
+    "new_tp_rate": 0.08788316979230003
+  },
+  "yolov5_imgMotionBlur_4": {
+    "orig_trans_gt": 248.87354246102214,
+    "orig_trans": 5.519078285960972,
+    "orig_gt": 6.094474411072394,
+    "trans_gt": 2.6828490749923546,
+    "orig_only": 5.12309412243057,
+    "trans_only": 1.3318462687563235,
+    "gt_only": 93.37511537576516,
+    "tp_retention_rate": 0.97609710235096,
+    "fp_consistency_rate": 0.460921135566124,
+    "detection_loss_rate": 0.042233201082723285,
+    "new_hallucination_rate": 0.005154057899385041,
+    "new_tp_rate": 0.027929480812261764
+  },
+  "yolov8_imgMotionBlur_4": {
+    "orig_trans_gt": 249.95757605810908,
+    "orig_trans": 6.506055952017608,
+    "orig_gt": 7.351741813125086,
+    "trans_gt": 4.255883691502822,
+    "orig_only": 4.500995884921867,
+    "trans_only": 1.4772328966470434,
+    "gt_only": 88.95051370367655,
+    "tp_retention_rate": 0.9714283887037308,
+    "fp_consistency_rate": 0.5211396640541481,
+    "detection_loss_rate": 0.044174485928451676,
+    "new_hallucination_rate": 0.005634062605827269,
+    "new_tp_rate": 0.045660853873137
+  },
+  "yolov12_imgMotionBlur_4": {
+    "orig_trans_gt": 248.36608324257452,
+    "orig_trans": 5.417284454893867,
+    "orig_gt": 7.284604639653106,
+    "trans_gt": 4.806065916817505,
+    "orig_only": 4.367894605201404,
+    "trans_only": 2.0376384124749145,
+    "gt_only": 90.72042872838462,
+    "tp_retention_rate": 0.9715056325488591,
+    "fp_consistency_rate": 0.4582058775298163,
+    "detection_loss_rate": 0.043899490219935146,
+    "new_hallucination_rate": 0.007818214725850477,
+    "new_tp_rate": 0.05031133964108975
+  },
+  "yolov26_v2_imgMotionBlur_4": {
+    "orig_trans_gt": 276.847447725682,
+    "orig_trans": 11.768669655217648,
+    "orig_gt": 16.81554271343164,
+    "trans_gt": 3.822410823486818,
+    "orig_only": 12.620373830204318,
+    "trans_only": 4.712067792957298,
+    "gt_only": 36.41348745902023,
+    "tp_retention_rate": 0.9427386383000208,
+    "fp_consistency_rate": 0.4044061940672763,
+    "detection_loss_rate": 0.09255063135556064,
+    "new_hallucination_rate": 0.015857507460625857,
+    "new_tp_rate": 0.09500001209488712
+  },
+  "yolov5_imgMotionBlur_5": {
+    "orig_trans_gt": 244.83677700654474,
+    "orig_trans": 5.0515204877706585,
+    "orig_gt": 10.421138349120566,
+    "trans_gt": 3.246836940043634,
+    "orig_only": 5.659920742370069,
+    "trans_only": 0.9735996952369832,
+    "gt_only": 92.81020677891323,
+    "tp_retention_rate": 0.9591740834575093,
+    "fp_consistency_rate": 0.43230661493018024,
+    "detection_loss_rate": 0.06046207464619192,
+    "new_hallucination_rate": 0.003831429480658643,
+    "new_tp_rate": 0.033801133309319935
+  },
+  "yolov8_imgMotionBlur_5": {
+    "orig_trans_gt": 246.40187298959967,
+    "orig_trans": 4.9860301681529995,
+    "orig_gt": 10.948439785809583,
+    "trans_gt": 4.684347589799754,
+    "orig_only": 6.018143421485837,
+    "trans_only": 1.529757852696254,
+    "gt_only": 88.43140819245598,
+    "tp_retention_rate": 0.957457056617746,
+    "fp_consistency_rate": 0.39780257224895865,
+    "detection_loss_rate": 0.06322451857285304,
+    "new_hallucination_rate": 0.005938454676687553,
+    "new_tp_rate": 0.05030671286987942
+  },
+  "yolov12_imgMotionBlur_5": {
+    "orig_trans_gt": 244.4995070055457,
+    "orig_trans": 5.080495637755864,
+    "orig_gt": 10.68858797236375,
+    "trans_gt": 5.308829865094435,
+    "orig_only": 4.846962563978307,
+    "trans_only": 2.3477836434074226,
+    "gt_only": 90.22783331185448,
+    "tp_retention_rate": 0.9581148643580374,
+    "fp_consistency_rate": 0.41388151059253214,
+    "detection_loss_rate": 0.05859916685391556,
+    "new_hallucination_rate": 0.00912694187371024,
+    "new_tp_rate": 0.055568508345970255
+  },
+  "yolov26_v2_imgMotionBlur_5": {
+    "orig_trans_gt": 267.8878927917061,
+    "orig_trans": 10.200319418070094,
+    "orig_gt": 24.22903356135318,
+    "trans_gt": 3.53506200917054,
+    "orig_only": 14.148501601913786,
+    "trans_only": 6.422042657990577,
+    "gt_only": 36.5771479597956,
+    "tp_retention_rate": 0.9170570707290361,
+    "fp_consistency_rate": 0.33149278891938944,
+    "detection_loss_rate": 0.121269159401407,
+    "new_hallucination_rate": 0.022295251065422773,
+    "new_tp_rate": 0.08812932550725908
+  },
+  "yolov5_imgMotionBlur_6": {
+    "orig_trans_gt": 239.82790717996508,
+    "orig_trans": 4.336100256650566,
+    "orig_gt": 14.975186071261112,
+    "trans_gt": 3.6633481189618395,
+    "orig_only": 6.36812453626442,
+    "trans_only": 1.6285387940942253,
+    "gt_only": 92.20079504280262,
+    "tp_retention_rate": 0.9412283976611848,
+    "fp_consistency_rate": 0.3515919385025772,
+    "detection_loss_rate": 0.08038690144117669,
+    "new_hallucination_rate": 0.00652836365458433,
+    "new_tp_rate": 0.038213955689148336
+  },
+  "yolov8_imgMotionBlur_6": {
+    "orig_trans_gt": 240.91388486196198,
+    "orig_trans": 4.860658471884962,
+    "orig_gt": 15.658933409559792,
+    "trans_gt": 5.414628815994085,
+    "orig_only": 6.330789520517666,
+    "trans_only": 2.123217835211977,
+    "gt_only": 87.69788708486954,
+    "tp_retention_rate": 0.9389688529164905,
+    "fp_consistency_rate": 0.36506049305450544,
+    "detection_loss_rate": 0.08212344102854663,
+    "new_hallucination_rate": 0.008381815967775045,
+    "new_tp_rate": 0.05815146077417788
+  },
+  "yolov12_imgMotionBlur_6": {
+    "orig_trans_gt": 239.08965977581792,
+    "orig_trans": 4.776518838107586,
+    "orig_gt": 15.966606837557938,
+    "trans_gt": 5.955695109034181,
+    "orig_only": 5.275199047132262,
+    "trans_only": 2.4446726674026444,
+    "gt_only": 89.49164772494728,
+    "tp_retention_rate": 0.9373996685140823,
+    "fp_consistency_rate": 0.38223187871617387,
+    "detection_loss_rate": 0.08012510798142752,
+    "new_hallucination_rate": 0.009690831790354432,
+    "new_tp_rate": 0.06239770466311835
+  },
+  "yolov26_v2_imgMotionBlur_6": {
+    "orig_trans_gt": 259.05662543305203,
+    "orig_trans": 8.963878749529444,
+    "orig_gt": 32.97457400368417,
+    "trans_gt": 2.9399947433757987,
+    "orig_only": 15.313134420637716,
+    "trans_only": 6.586584416512705,
+    "gt_only": 37.165208233208055,
+    "tp_retention_rate": 0.8870854413251569,
+    "fp_consistency_rate": 0.29043531702208564,
+    "detection_loss_rate": 0.152660305675756,
+    "new_hallucination_rate": 0.023731412837026317,
+    "new_tp_rate": 0.07330706554689095
+  },
+  "yolov5_imgMotionBlur_7": {
+    "orig_trans_gt": 234.37109318894792,
+    "orig_trans": 3.6984187844123824,
+    "orig_gt": 20.17414527187734,
+    "trans_gt": 4.2111531239135,
+    "orig_only": 6.869482634387384,
+    "trans_only": 2.1570006555134844,
+    "gt_only": 91.51870634094779,
+    "tp_retention_rate": 0.9207443620086331,
+    "fp_consistency_rate": 0.2906441843570715,
+    "detection_loss_rate": 0.10200787451932378,
+    "new_hallucination_rate": 0.008824338298562271,
+    "new_tp_rate": 0.04398996454663397
+  },
+  "yolov8_imgMotionBlur_7": {
+    "orig_trans_gt": 234.43032295317045,
+    "orig_trans": 4.668204686695633,
+    "orig_gt": 21.54662247727016,
+    "trans_gt": 5.402668839303828,
+    "orig_only": 6.7523899751285805,
+    "trans_only": 2.51827982641196,
+    "gt_only": 87.68151124201927,
+    "tp_retention_rate": 0.915825925490914,
+    "fp_consistency_rate": 0.3349054251572035,
+    "detection_loss_rate": 0.10583123705114951,
+    "new_hallucination_rate": 0.010194661020561213,
+    "new_tp_rate": 0.05804067710091854
+  },
+  "yolov12_imgMotionBlur_7": {
+    "orig_trans_gt": 233.86824379780236,
+    "orig_trans": 4.478291135588041,
+    "orig_gt": 20.986115166739953,
+    "trans_gt": 6.084893302205089,
+    "orig_only": 5.580544272847929,
+    "trans_only": 2.801006780573921,
+    "gt_only": 89.20090554424256,
+    "tp_retention_rate": 0.917654478220403,
+    "fp_consistency_rate": 0.3482384207961136,
+    "detection_loss_rate": 0.10028439505426814,
+    "new_hallucination_rate": 0.01132944704601858,
+    "new_tp_rate": 0.06385939327654531
+  },
+  "yolov26_v2_imgMotionBlur_7": {
+    "orig_trans_gt": 248.39064057742172,
+    "orig_trans": 8.446509214412163,
+    "orig_gt": 41.210054284328315,
+    "trans_gt": 2.994597435707193,
+    "orig_only": 15.781201518410784,
+    "trans_only": 9.189562431936565,
+    "gt_only": 36.98743453778323,
+    "tp_retention_rate": 0.8577004302285904,
+    "fp_consistency_rate": 0.25275878054944073,
+    "detection_loss_rate": 0.18160005527467984,
+    "new_hallucination_rate": 0.03415923609757364,
+    "new_tp_rate": 0.07489858038462685
+  },
+  "yolov5_imgMotionBlur_8": {
+    "orig_trans_gt": 228.68924090011967,
+    "orig_trans": 3.5797754929509757,
+    "orig_gt": 25.487274852251492,
+    "trans_gt": 4.681981378137251,
+    "orig_only": 7.2493335198428195,
+    "trans_only": 2.386707215747588,
+    "gt_only": 90.92568664095015,
+    "tp_retention_rate": 0.8997260829671526,
+    "fp_consistency_rate": 0.27087055623699996,
+    "detection_loss_rate": 0.12353174918873475,
+    "new_hallucination_rate": 0.00997213212133738,
+    "new_tp_rate": 0.04897077269160593
+  },
+  "yolov8_imgMotionBlur_8": {
+    "orig_trans_gt": 229.11291245546934,
+    "orig_trans": 4.522449743122661,
+    "orig_gt": 26.38194138374712,
+    "trans_gt": 5.909779757740844,
+    "orig_only": 6.903301175748916,
+    "trans_only": 3.18780878315788,
+    "gt_only": 86.98180670101323,
+    "tp_retention_rate": 0.8967417895612514,
+    "fp_consistency_rate": 0.30946941302019704,
+    "detection_loss_rate": 0.12470091093065924,
+    "new_hallucination_rate": 0.013132987398069186,
+    "new_tp_rate": 0.0636201833022296
+  },
+  "yolov12_imgMotionBlur_8": {
+    "orig_trans_gt": 227.33594060855077,
+    "orig_trans": 4.740100161572663,
+    "orig_gt": 26.377891607279544,
+    "trans_gt": 6.073237107470769,
+    "orig_only": 5.794382205885122,
+    "trans_only": 3.2468330715396294,
+    "gt_only": 89.43161523770122,
+    "tp_retention_rate": 0.8960328990465121,
+    "fp_consistency_rate": 0.3439512129705307,
+    "detection_loss_rate": 0.12175015709712057,
+    "new_hallucination_rate": 0.013450229412452263,
+    "new_tp_rate": 0.06359087479158629
+  },
+  "yolov26_v2_imgMotionBlur_8": {
+    "orig_trans_gt": 235.11404026497982,
+    "orig_trans": 8.531136246855684,
+    "orig_gt": 53.370625271108906,
+    "trans_gt": 3.4311397749625043,
+    "orig_only": 16.576538750690787,
+    "trans_only": 8.909143899586926,
+    "gt_only": 37.067375791815444,
+    "tp_retention_rate": 0.8149966648246945,
+    "fp_consistency_rate": 0.25079171196618283,
+    "detection_loss_rate": 0.2230512515158109,
+    "new_hallucination_rate": 0.034803320052240905,
+    "new_tp_rate": 0.0847226059262568
+  },
+  "yolov5_imgMotionBlur_9": {
+    "orig_trans_gt": 223.18373754028434,
+    "orig_trans": 3.5362481249009594,
+    "orig_gt": 29.729351020835082,
+    "trans_gt": 4.985873172605524,
+    "orig_only": 7.439745822044322,
+    "trans_only": 3.5051584539052065,
+    "gt_only": 90.61988586542452,
+    "tp_retention_rate": 0.882452303319009,
+    "fp_consistency_rate": 0.2441965961696027,
+    "detection_loss_rate": 0.14085121100734996,
+    "new_hallucination_rate": 0.014902186531331981,
+    "new_tp_rate": 0.052150343481110216
+  },
+  "yolov8_imgMotionBlur_9": {
+    "orig_trans_gt": 221.79991330575402,
+    "orig_trans": 4.44667049910193,
+    "orig_gt": 32.547661473853736,
+    "trans_gt": 5.8801575618597415,
+    "orig_only": 7.136094800133495,
+    "trans_only": 4.285721896714777,
+    "gt_only": 86.9037804625823,
+    "tp_retention_rate": 0.87203470879541,
+    "fp_consistency_rate": 0.2802201901285691,
+    "detection_loss_rate": 0.14922613291218206,
+    "new_hallucination_rate": 0.018128155502272602,
+    "new_tp_rate": 0.0633747358331647
+  },
+  "yolov12_imgMotionBlur_9": {
+    "orig_trans_gt": 219.84458737303376,
+    "orig_trans": 4.265658763652435,
+    "orig_gt": 33.503219951989834,
+    "trans_gt": 6.441057211171407,
+    "orig_only": 6.203521665691896,
+    "trans_only": 3.742654732693474,
+    "gt_only": 88.99930030176704,
+    "tp_retention_rate": 0.8677580030956886,
+    "fp_consistency_rate": 0.3001483422103519,
+    "detection_loss_rate": 0.15050866115813394,
+    "new_hallucination_rate": 0.01597418372780546,
+    "new_tp_rate": 0.06748777329651369
+  },
+  "yolov26_v2_imgMotionBlur_9": {
+    "orig_trans_gt": 224.36118034211324,
+    "orig_trans": 7.304109535854806,
+    "orig_gt": 63.161739769007596,
+    "trans_gt": 2.7299451746465255,
+    "orig_only": 17.3973030731145,
+    "trans_only": 10.52933672361576,
+    "gt_only": 37.516385381647765,
+    "tp_retention_rate": 0.7803245051052032,
+    "fp_consistency_rate": 0.20732200348345148,
+    "detection_loss_rate": 0.25801654259389023,
+    "new_hallucination_rate": 0.04299011996736548,
+    "new_tp_rate": 0.06783090872913328
+  },
+  "yolov5_imgResolution_0": {
+    "orig_trans_gt": 188.3685521950102,
+    "orig_trans": 3.3562398220334666,
+    "orig_gt": 63.94015260945258,
+    "trans_gt": 4.530645280596695,
+    "orig_only": 7.687084206735967,
+    "trans_only": 3.727651287304843,
+    "gt_only": 91.38967459886612,
+    "tp_retention_rate": 0.7465796803998274,
+    "fp_consistency_rate": 0.2272185654782791,
+    "detection_loss_rate": 0.27198285554711454,
+    "new_hallucination_rate": 0.01863983256624961,
+    "new_tp_rate": 0.047233425475332845
+  },
+  "yolov8_imgResolution_0": {
+    "orig_trans_gt": 185.534662408563,
+    "orig_trans": 4.030597968326247,
+    "orig_gt": 70.32403147873255,
+    "trans_gt": 5.311281622411425,
+    "orig_only": 7.180829430088178,
+    "trans_only": 3.22824822912808,
+    "gt_only": 87.3903488627506,
+    "tp_retention_rate": 0.7251450384183157,
+    "fp_consistency_rate": 0.27913355343233676,
+    "detection_loss_rate": 0.29020416262104626,
+    "new_hallucination_rate": 0.016295659612297526,
+    "new_tp_rate": 0.057294371141201846
+  },
+  "yolov12_imgResolution_0": {
+    "orig_trans_gt": 190.76178104528466,
+    "orig_trans": 3.7922964052005166,
+    "orig_gt": 62.71855829327495,
+    "trans_gt": 5.471949214382481,
+    "orig_only": 6.597386106837349,
+    "trans_only": 3.6485533322411308,
+    "gt_only": 90.00947560277875,
+    "tp_retention_rate": 0.7525703237697451,
+    "fp_consistency_rate": 0.270140525295847,
+    "detection_loss_rate": 0.262689728503372,
+    "new_hallucination_rate": 0.01791364112444922,
+    "new_tp_rate": 0.05730904440168123
+  },
+  "yolov26_v2_imgResolution_0": {
+    "orig_trans_gt": 201.12392110785046,
+    "orig_trans": 7.251351389319395,
+    "orig_gt": 89.51610192817253,
+    "trans_gt": 2.552432193232172,
+    "orig_only": 17.282196239069545,
+    "trans_only": 7.634432899770597,
+    "gt_only": 37.63956424258534,
+    "tp_retention_rate": 0.6920035272737453,
+    "fp_consistency_rate": 0.22542140570408614,
+    "detection_loss_rate": 0.33885550092954314,
+    "new_hallucination_rate": 0.034930262779942135,
+    "new_tp_rate": 0.06350598177694766
+  },
+  "yolov5_imgResolution_1": {
+    "orig_trans_gt": 238.01139349793885,
+    "orig_trans": 5.35300818322463,
+    "orig_gt": 16.370465280950675,
+    "trans_gt": 3.8085228905882462,
+    "orig_only": 5.293745249854521,
+    "trans_only": 2.112577155011913,
+    "gt_only": 92.0502877424312,
+    "tp_retention_rate": 0.9356460977227941,
+    "fp_consistency_rate": 0.41953675753341374,
+    "detection_loss_rate": 0.08174291201992281,
+    "new_hallucination_rate": 0.008474528764723198,
+    "new_tp_rate": 0.03973054605453623
+  },
+  "yolov8_imgResolution_1": {
+    "orig_trans_gt": 239.10401328250478,
+    "orig_trans": 6.247335175965281,
+    "orig_gt": 17.371934037345717,
+    "trans_gt": 4.671545641209157,
+    "orig_only": 4.729192008909705,
+    "trans_only": 2.537250805018597,
+    "gt_only": 88.33872904904676,
+    "tp_retention_rate": 0.9322668101282761,
+    "fp_consistency_rate": 0.46229375535378886,
+    "detection_loss_rate": 0.0826357134559431,
+    "new_hallucination_rate": 0.01004612507636949,
+    "new_tp_rate": 0.05022612455200677
+  },
+  "yolov12_imgResolution_1": {
+    "orig_trans_gt": 237.7754366978683,
+    "orig_trans": 6.0991139162597845,
+    "orig_gt": 17.19630373120771,
+    "trans_gt": 5.249956115215237,
+    "orig_only": 3.7934198954909695,
+    "trans_only": 2.633159996593167,
+    "gt_only": 90.25260964736471,
+    "tp_retention_rate": 0.9325560405154347,
+    "fp_consistency_rate": 0.4869282300511684,
+    "detection_loss_rate": 0.07924709244710693,
+    "new_hallucination_rate": 0.010459105499494584,
+    "new_tp_rate": 0.054971885554013965
+  },
+  "yolov26_v2_imgResolution_1": {
+    "orig_trans_gt": 266.6616804221721,
+    "orig_trans": 12.234530885675499,
+    "orig_gt": 24.135062099760113,
+    "trans_gt": 5.091772477334285,
+    "orig_only": 12.460421768836644,
+    "trans_only": 6.7573430157686944,
+    "gt_only": 35.6591893304526,
+    "tp_retention_rate": 0.9170036710506143,
+    "fp_consistency_rate": 0.388986896661914,
+    "detection_loss_rate": 0.11599507824803468,
+    "new_hallucination_rate": 0.02324145013823349,
+    "new_tp_rate": 0.12494852272078952
+  },
+  "yolov5_imgResolution_2": {
+    "orig_trans_gt": 248.26283825897576,
+    "orig_trans": 7.116886693575012,
+    "orig_gt": 6.143746299644622,
+    "trans_gt": 3.6821075353243526,
+    "orig_only": 3.338422395746785,
+    "trans_only": 2.335364593704736,
+    "gt_only": 92.12063422302859,
+    "tp_retention_rate": 0.9758506789032068,
+    "fp_consistency_rate": 0.5564121851548176,
+    "detection_loss_rate": 0.03580042627043673,
+    "new_hallucination_rate": 0.00893416080883181,
+    "new_tp_rate": 0.03843426052055878
+  },
+  "yolov8_imgResolution_2": {
+    "orig_trans_gt": 249.58913510711182,
+    "orig_trans": 7.084203739284151,
+    "orig_gt": 7.398478213263203,
+    "trans_gt": 4.477086906243071,
+    "orig_only": 3.7569334222057438,
+    "trans_only": 2.141683008244116,
+    "gt_only": 88.55247960364774,
+    "tp_retention_rate": 0.9712107594694074,
+    "fp_consistency_rate": 0.5456598525333568,
+    "detection_loss_rate": 0.04165128506703875,
+    "new_hallucination_rate": 0.00813424685731524,
+    "new_tp_rate": 0.04812541941455861
+  },
+  "yolov12_imgResolution_2": {
+    "orig_trans_gt": 247.81267000629072,
+    "orig_trans": 7.049962834503609,
+    "orig_gt": 7.7085966772417995,
+    "trans_gt": 4.7501931107294535,
+    "orig_only": 2.848362159005051,
+    "trans_only": 1.961850409786707,
+    "gt_only": 90.86836480244254,
+    "tp_retention_rate": 0.9698318782726253,
+    "fp_consistency_rate": 0.5944231509885398,
+    "detection_loss_rate": 0.03977460280736326,
+    "new_hallucination_rate": 0.007500154208646797,
+    "new_tp_rate": 0.04967856883015266
+  },
+  "yolov26_v2_imgResolution_2": {
+    "orig_trans_gt": 284.13448196660534,
+    "orig_trans": 12.886635777948769,
+    "orig_gt": 9.629536685964867,
+    "trans_gt": 4.235126633165819,
+    "orig_only": 10.337970182312132,
+    "trans_only": 6.650550711930618,
+    "gt_only": 35.12569804207252,
+    "tp_retention_rate": 0.9672201628704108,
+    "fp_consistency_rate": 0.43134956309514333,
+    "detection_loss_rate": 0.06299124106634821,
+    "new_hallucination_rate": 0.021599233332912436,
+    "new_tp_rate": 0.10759750762615783
+  },
+  "yolov5_imgResolution_3": {
+    "orig_trans_gt": 253.2714368581671,
+    "orig_trans": 8.10608506439208,
+    "orig_gt": 2.4913874913600353,
+    "trans_gt": 2.534229933091215,
+    "orig_only": 2.220168802936054,
+    "trans_only": 1.2144237598216663,
+    "gt_only": 93.16226809023176,
+    "tp_retention_rate": 0.9902589928864904,
+    "fp_consistency_rate": 0.702392470033325,
+    "detection_loss_rate": 0.017706688022934562,
+    "new_hallucination_rate": 0.004580550211620808,
+    "new_tp_rate": 0.026481950598375888
+  },
+  "yolov8_imgResolution_3": {
+    "orig_trans_gt": 254.78990353893363,
+    "orig_trans": 8.131791575153072,
+    "orig_gt": 3.2228812326056975,
+    "trans_gt": 3.2741313923056174,
+    "orig_only": 2.5012152794619396,
+    "trans_only": 1.2927140798039445,
+    "gt_only": 89.78736290173596,
+    "tp_retention_rate": 0.9875088312563293,
+    "fp_consistency_rate": 0.681870020258802,
+    "detection_loss_rate": 0.021307225687098245,
+    "new_hallucination_rate": 0.004832783030521552,
+    "new_tp_rate": 0.035182450240488446
+  },
+  "yolov12_imgResolution_3": {
+    "orig_trans_gt": 253.22334087905838,
+    "orig_trans": 7.340173715292936,
+    "orig_gt": 3.0480862915181057,
+    "trans_gt": 3.2664696174649803,
+    "orig_only": 2.39059280313419,
+    "trans_only": 1.5115321564819186,
+    "gt_only": 92.21980453704931,
+    "tp_retention_rate": 0.9881060236594801,
+    "fp_consistency_rate": 0.6529068411671888,
+    "detection_loss_rate": 0.020445993392862485,
+    "new_hallucination_rate": 0.005696553547933631,
+    "new_tp_rate": 0.03420878703654552
+  },
+  "yolov26_v2_imgResolution_3": {
+    "orig_trans_gt": 291.65780596246765,
+    "orig_trans": 15.259797872930966,
+    "orig_gt": 4.598691214925577,
+    "trans_gt": 3.93627202215296,
+    "orig_only": 7.826354161660701,
+    "trans_only": 4.424240239625304,
+    "gt_only": 35.296838526236996,
+    "tp_retention_rate": 0.9844773321134221,
+    "fp_consistency_rate": 0.5546921221924055,
+    "detection_loss_rate": 0.038908192836899565,
+    "new_hallucination_rate": 0.014032817419721065,
+    "new_tp_rate": 0.10033035788222752
+  },
+  "yolov5_imgResolution_4": {
+    "orig_trans_gt": 254.51579913126375,
+    "orig_trans": 8.797039382141136,
+    "orig_gt": 1.2119747526002291,
+    "trans_gt": 1.6057432743519944,
+    "orig_only": 1.448272810982194,
+    "trans_only": 1.2937749259481737,
+    "gt_only": 94.12739572271244,
+    "tp_retention_rate": 0.9952606839132356,
+    "fp_consistency_rate": 0.7623687464497619,
+    "detection_loss_rate": 0.010001942688338027,
+    "new_hallucination_rate": 0.004859935661587447,
+    "new_tp_rate": 0.016773118391127162
+  },
+  "yolov8_imgResolution_4": {
+    "orig_trans_gt": 256.5468422292106,
+    "orig_trans": 9.00636708899046,
+    "orig_gt": 1.7062022420532708,
+    "trans_gt": 2.2848341303535924,
+    "orig_only": 1.506547890322696,
+    "trans_only": 1.3372497397950376,
+    "gt_only": 90.61195667927416,
+    "tp_retention_rate": 0.9933932928243053,
+    "fp_consistency_rate": 0.7600204134266457,
+    "detection_loss_rate": 0.011953709238117838,
+    "new_hallucination_rate": 0.004967951270547425,
+    "new_tp_rate": 0.024595404323878904
+  },
+  "yolov12_imgResolution_4": {
+    "orig_trans_gt": 254.68364875663983,
+    "orig_trans": 8.208204684800846,
+    "orig_gt": 2.1298008507636492,
+    "trans_gt": 2.6213592414217604,
+    "orig_only": 1.292596724229958,
+    "trans_only": 1.2757281784601882,
+    "gt_only": 92.78866156368359,
+    "tp_retention_rate": 0.9917068173258857,
+    "fp_consistency_rate": 0.7616742122926694,
+    "detection_loss_rate": 0.01285097422286429,
+    "new_hallucination_rate": 0.004781788084399322,
+    "new_tp_rate": 0.027474674245972837
+  },
+  "yolov26_v2_imgResolution_4": {
+    "orig_trans_gt": 294.9459653270665,
+    "orig_trans": 15.680047293180012,
+    "orig_gt": 2.745162957432724,
+    "trans_gt": 2.8164406522511203,
+    "orig_only": 6.887554568259835,
+    "trans_only": 4.140631734499025,
+    "gt_only": 35.78419746731097,
+    "tp_retention_rate": 0.9907784858310953,
+    "fp_consistency_rate": 0.5870866464027126,
+    "detection_loss_rate": 0.030077923313138147,
+    "new_hallucination_rate": 0.013037947957485843,
+    "new_tp_rate": 0.07296357753277143
+  },
+  "yolov5_imgResolution_5": {
+    "orig_trans_gt": 254.53901494338012,
+    "orig_trans": 9.20006895525275,
+    "orig_gt": 0.8791715888365712,
+    "trans_gt": 1.6757504896020279,
+    "orig_only": 1.0608864127563384,
+    "trans_only": 1.5053112192237201,
+    "gt_only": 94.13979639094838,
+    "tp_retention_rate": 0.9965579131197626,
+    "fp_consistency_rate": 0.7819021341259975,
+    "detection_loss_rate": 0.007302259363369543,
+    "new_hallucination_rate": 0.005639556414139978,
+    "new_tp_rate": 0.017489338047520852
+  },
+  "yolov8_imgResolution_5": {
+    "orig_trans_gt": 257.62620239474916,
+    "orig_trans": 9.042927095916522,
+    "orig_gt": 1.1562297035748508,
+    "trans_gt": 2.3097634963394285,
+    "orig_only": 1.533479591575042,
+    "trans_only": 0.5456940720098615,
+    "gt_only": 90.78570364583494,
+    "tp_retention_rate": 0.9955320394270986,
+    "fp_consistency_rate": 0.8130592674402181,
+    "detection_loss_rate": 0.009985598791835646,
+    "new_hallucination_rate": 0.0020246541436695596,
+    "new_tp_rate": 0.02481069774119059
+  },
+  "yolov12_imgResolution_5": {
+    "orig_trans_gt": 255.67830861130628,
+    "orig_trans": 8.539064159024626,
+    "orig_gt": 1.3078614932492199,
+    "trans_gt": 2.5768685042584614,
+    "orig_only": 1.0428122600231273,
+    "trans_only": 0.9339151730356816,
+    "gt_only": 92.92116979910233,
+    "tp_retention_rate": 0.9949107709075664,
+    "fp_consistency_rate": 0.8120229546440478,
+    "detection_loss_rate": 0.008818287802788873,
+    "new_hallucination_rate": 0.003488296432573318,
+    "new_tp_rate": 0.02698347055122467
+  },
+  "yolov26_v2_imgResolution_5": {
+    "orig_trans_gt": 295.2087988511613,
+    "orig_trans": 16.14803188499524,
+    "orig_gt": 1.9207807743847012,
+    "trans_gt": 3.3615183013937364,
+    "orig_only": 6.778279695886095,
+    "trans_only": 4.00434159697014,
+    "gt_only": 35.578248895208816,
+    "tp_retention_rate": 0.9935355450749624,
+    "fp_consistency_rate": 0.5996153074473454,
+    "detection_loss_rate": 0.027179816742258115,
+    "new_hallucination_rate": 0.012563716718750726,
+    "new_tp_rate": 0.08632610165391602
+  },
+  "yolov5_imgResolution_6": {
+    "orig_trans_gt": 255.24594465376174,
+    "orig_trans": 9.398863518188511,
+    "orig_gt": 0.954475628805579,
+    "trans_gt": 1.2071494347481238,
+    "orig_only": 0.8828916629438452,
+    "trans_only": 0.7738481359119445,
+    "gt_only": 94.5368269656401,
+    "tp_retention_rate": 0.9962744962410566,
+    "fp_consistency_rate": 0.8501447861916669,
+    "detection_loss_rate": 0.006894897523829735,
+    "new_hallucination_rate": 0.0029023752361726977,
+    "new_tp_rate": 0.012608097972659814
+  },
+  "yolov8_imgResolution_6": {
+    "orig_trans_gt": 257.92618004318325,
+    "orig_trans": 9.31283030415701,
+    "orig_gt": 0.942935203076956,
+    "trans_gt": 1.8980790557595661,
+    "orig_only": 1.186235421828642,
+    "trans_only": 0.5774993038150933,
+    "gt_only": 91.15624066817932,
+    "tp_retention_rate": 0.9963574828067846,
+    "fp_consistency_rate": 0.8407688014381239,
+    "detection_loss_rate": 0.00790431378056852,
+    "new_hallucination_rate": 0.0021411496744902898,
+    "new_tp_rate": 0.020397538355989633
+  },
+  "yolov12_imgResolution_6": {
+    "orig_trans_gt": 256.1477591723994,
+    "orig_trans": 8.592953306954865,
+    "orig_gt": 1.1468928252942006,
+    "trans_gt": 2.3754120767295386,
+    "orig_only": 0.9124017881420674,
+    "trans_only": 0.6604159966902055,
+    "gt_only": 93.16416483378947,
+    "tp_retention_rate": 0.9955424925610018,
+    "fp_consistency_rate": 0.8452829824091808,
+    "detection_loss_rate": 0.007718495347416032,
+    "new_hallucination_rate": 0.0024662952001952877,
+    "new_tp_rate": 0.02486312116448156
+  },
+  "yolov26_v2_imgResolution_6": {
+    "orig_trans_gt": 297.2527072009563,
+    "orig_trans": 16.495748643076876,
+    "orig_gt": 1.2125186990288837,
+    "trans_gt": 2.419709276943102,
+    "orig_only": 6.055023421368308,
+    "trans_only": 3.4415842876991225,
+    "gt_only": 36.122708470927336,
+    "tp_retention_rate": 0.9959374875402229,
+    "fp_consistency_rate": 0.6346384459951442,
+    "detection_loss_rate": 0.022639189842502676,
+    "new_hallucination_rate": 0.010768082932596878,
+    "new_tp_rate": 0.0627804226702098
+  },
+  "yolov5_imgResolution_7": {
+    "orig_trans_gt": 255.33436234916107,
+    "orig_trans": 9.790912777797534,
+    "orig_gt": 0.8420771820452909,
+    "trans_gt": 1.1127934752391277,
+    "orig_only": 0.4764246298617024,
+    "trans_only": 0.8088686557477858,
+    "gt_only": 94.6345609301474,
+    "tp_retention_rate": 0.9967129015315137,
+    "fp_consistency_rate": 0.883959067007992,
+    "detection_loss_rate": 0.004948517946469127,
+    "new_hallucination_rate": 0.003028938148676405,
+    "new_tp_rate": 0.01162218509482414
+  },
+  "yolov8_imgResolution_7": {
+    "orig_trans_gt": 257.80172278595626,
+    "orig_trans": 9.800945067700836,
+    "orig_gt": 0.7832182413472258,
+    "trans_gt": 1.954182964571281,
+    "orig_only": 0.8250714870476539,
+    "trans_only": 0.6847605610763505,
+    "gt_only": 91.15009889230019,
+    "tp_retention_rate": 0.9969711374597621,
+    "fp_consistency_rate": 0.8665138537641586,
+    "detection_loss_rate": 0.005974087172527865,
+    "new_hallucination_rate": 0.002533882763580909,
+    "new_tp_rate": 0.020989184660437338
+  },
+  "yolov12_imgResolution_7": {
+    "orig_trans_gt": 256.1986404087114,
+    "orig_trans": 8.924820219269307,
+    "orig_gt": 1.055924520597974,
+    "trans_gt": 1.6134205747919672,
+    "orig_only": 0.5572094804497597,
+    "trans_only": 0.8165451402194247,
+    "gt_only": 93.83343965595992,
+    "tp_retention_rate": 0.9958954099769304,
+    "fp_consistency_rate": 0.8666073080964871,
+    "detection_loss_rate": 0.0060476666251634715,
+    "new_hallucination_rate": 0.003051895658299844,
+    "new_tp_rate": 0.016903862221254517
+  },
+  "yolov26_v2_imgResolution_7": {
+    "orig_trans_gt": 296.81746046006214,
+    "orig_trans": 16.85684109586623,
+    "orig_gt": 0.9574741541689139,
+    "trans_gt": 2.1028081964878353,
+    "orig_only": 5.769923836602322,
+    "trans_only": 3.6920450756029135,
+    "gt_only": 36.80344718120977,
+    "tp_retention_rate": 0.9967845710203603,
+    "fp_consistency_rate": 0.6404864464121502,
+    "detection_loss_rate": 0.020996761254041648,
+    "new_hallucination_rate": 0.011556812355141029,
+    "new_tp_rate": 0.054048074688093396
+  },
+  "yolov5_imgResolution_8": {
+    "orig_trans_gt": 255.7088893610687,
+    "orig_trans": 9.99471337077122,
+    "orig_gt": 0.5335824925625017,
+    "trans_gt": 0.4913071980876917,
+    "orig_only": 0.22425213675213673,
+    "trans_only": 0.7808873152200314,
+    "gt_only": 95.2663681255376,
+    "tp_retention_rate": 0.9979176656831998,
+    "fp_consistency_rate": 0.9086224635757004,
+    "detection_loss_rate": 0.0028440686833325532,
+    "new_hallucination_rate": 0.002924936729388208,
+    "new_tp_rate": 0.005130734392070988
+  },
+  "yolov8_imgResolution_8": {
+    "orig_trans_gt": 258.37602467808586,
+    "orig_trans": 10.015657996897671,
+    "orig_gt": 0.46956174097763925,
+    "trans_gt": 0.9727845071269867,
+    "orig_only": 0.6593781656939552,
+    "trans_only": 0.3227272727272727,
+    "gt_only": 92.18386563849049,
+    "tp_retention_rate": 0.9981859387773471,
+    "fp_consistency_rate": 0.9106995304820584,
+    "detection_loss_rate": 0.0041886958254170915,
+    "new_hallucination_rate": 0.0011966725872159165,
+    "new_tp_rate": 0.010442459079479374
+  },
+  "yolov12_imgResolution_8": {
+    "orig_trans_gt": 256.42461233089523,
+    "orig_trans": 9.018873410144495,
+    "orig_gt": 0.8612013055933029,
+    "trans_gt": 1.3411478029226787,
+    "orig_only": 0.4996193022663611,
+    "trans_only": 0.6422117645702595,
+    "gt_only": 94.21233408360749,
+    "tp_retention_rate": 0.9966527446911237,
+    "fp_consistency_rate": 0.8876228445160059,
+    "detection_loss_rate": 0.005100444691024297,
+    "new_hallucination_rate": 0.0024014483805069537,
+    "new_tp_rate": 0.01403557229359044
+  },
+  "yolov26_v2_imgResolution_8": {
+    "orig_trans_gt": 298.0863821842861,
+    "orig_trans": 18.3847308443745,
+    "orig_gt": 0.4651361666472017,
+    "trans_gt": 1.843518499501149,
+    "orig_only": 4.454593285108235,
+    "trans_only": 2.650676900517401,
+    "gt_only": 37.11496211956534,
+    "tp_retention_rate": 0.9984420237779517,
+    "fp_consistency_rate": 0.7212526520786258,
+    "detection_loss_rate": 0.015307621753582546,
+    "new_hallucination_rate": 0.008258452957093963,
+    "new_tp_rate": 0.0473200820516322
+  },
+  "yolov5_imgResolution_9": {
+    "orig_trans_gt": 256.61270856070826,
+    "orig_trans": 10.327599342428009,
+    "orig_gt": 0.0,
+    "trans_gt": 0.3369875222816399,
+    "orig_only": 0.020833333333333332,
+    "trans_only": 0.1,
+    "gt_only": 95.6018712412486,
+    "tp_retention_rate": 1.0,
+    "fp_consistency_rate": 0.9884352670794686,
+    "detection_loss_rate": 7.803882331653475e-05,
+    "new_hallucination_rate": 0.0003740033342804679,
+    "new_tp_rate": 0.003512523774253408
+  },
+  "yolov8_imgResolution_9": {
+    "orig_trans_gt": 259.1796222299685,
+    "orig_trans": 10.530988543544007,
+    "orig_gt": 0.20320629159104658,
+    "trans_gt": 0.24388846447669976,
+    "orig_only": 0.0,
+    "trans_only": 0.0,
+    "gt_only": 92.84229447041959,
+    "tp_retention_rate": 0.9992165777019654,
+    "fp_consistency_rate": 1.0,
+    "detection_loss_rate": 0.0007528562035119266,
+    "new_hallucination_rate": 0.0,
+    "new_tp_rate": 0.0026200286313949874
+  },
+  "yolov12_imgResolution_9": {
+    "orig_trans_gt": 257.66191537002555,
+    "orig_trans": 9.493637204225179,
+    "orig_gt": 0.08868778280542987,
+    "trans_gt": 0.016129032258064516,
+    "orig_only": 0.09090909090909091,
+    "trans_only": 0.0,
+    "gt_only": 95.6487215197765,
+    "tp_retention_rate": 0.9996559162938103,
+    "fp_consistency_rate": 0.9905150345034858,
+    "detection_loss_rate": 0.0006718041906774325,
+    "new_hallucination_rate": 0.0,
+    "new_tp_rate": 0.00016859935666017187
+  },
+  "yolov26_v2_imgResolution_9": {
+    "orig_trans_gt": 302.4568217217338,
+    "orig_trans": 21.08160925366,
+    "orig_gt": 0.08340809409888357,
+    "trans_gt": 0.09895833333333333,
+    "orig_only": 0.9366863034700257,
+    "trans_only": 0.2676558355437666,
+    "gt_only": 38.07486045816023,
+    "tp_retention_rate": 0.9997243074279752,
+    "fp_consistency_rate": 0.945959581541145,
+    "detection_loss_rate": 0.003143021420856776,
+    "new_hallucination_rate": 0.0008263404338902771,
+    "new_tp_rate": 0.0025923089820760778
+  },
+  "yolov5_imgStretch_0": {
+    "orig_trans_gt": 256.61270856070826,
+    "orig_trans": 10.327599342428009,
+    "orig_gt": 0.0,
+    "trans_gt": 0.3369875222816399,
+    "orig_only": 0.020833333333333332,
+    "trans_only": 0.1,
+    "gt_only": 95.6018712412486,
+    "tp_retention_rate": 1.0,
+    "fp_consistency_rate": 0.9884352670794686,
+    "detection_loss_rate": 7.803882331653475e-05,
+    "new_hallucination_rate": 0.0003740033342804679,
+    "new_tp_rate": 0.003512523774253408
+  },
+  "yolov8_imgStretch_0": {
+    "orig_trans_gt": 259.1796222299685,
+    "orig_trans": 10.530988543544007,
+    "orig_gt": 0.20320629159104658,
+    "trans_gt": 0.24388846447669976,
+    "orig_only": 0.0,
+    "trans_only": 0.0,
+    "gt_only": 92.84229447041959,
+    "tp_retention_rate": 0.9992165777019654,
+    "fp_consistency_rate": 1.0,
+    "detection_loss_rate": 0.0007528562035119266,
+    "new_hallucination_rate": 0.0,
+    "new_tp_rate": 0.0026200286313949874
+  },
+  "yolov12_imgStretch_0": {
+    "orig_trans_gt": 257.66191537002555,
+    "orig_trans": 9.493637204225179,
+    "orig_gt": 0.08868778280542987,
+    "trans_gt": 0.016129032258064516,
+    "orig_only": 0.09090909090909091,
+    "trans_only": 0.0,
+    "gt_only": 95.6487215197765,
+    "tp_retention_rate": 0.9996559162938103,
+    "fp_consistency_rate": 0.9905150345034858,
+    "detection_loss_rate": 0.0006718041906774325,
+    "new_hallucination_rate": 0.0,
+    "new_tp_rate": 0.00016859935666017187
+  },
+  "yolov26_v2_imgStretch_0": {
+    "orig_trans_gt": 302.4568217217338,
+    "orig_trans": 21.08160925366,
+    "orig_gt": 0.08340809409888357,
+    "trans_gt": 0.09895833333333333,
+    "orig_only": 0.9366863034700257,
+    "trans_only": 0.2676558355437666,
+    "gt_only": 38.07486045816023,
+    "tp_retention_rate": 0.9997243074279752,
+    "fp_consistency_rate": 0.945959581541145,
+    "detection_loss_rate": 0.003143021420856776,
+    "new_hallucination_rate": 0.0008263404338902771,
+    "new_tp_rate": 0.0025923089820760778
+  },
+  "yolov5_imgStretch_1": {
+    "orig_trans_gt": 230.2025682531641,
+    "orig_trans": 5.137214325226591,
+    "orig_gt": 23.9987647009501,
+    "trans_gt": 9.88922918819754,
+    "orig_only": 5.180239001270352,
+    "trans_only": 3.067527463812908,
+    "gt_only": 85.52445706737836,
+    "tp_retention_rate": 0.9055915072432681,
+    "fp_consistency_rate": 0.38380438535598893,
+    "detection_loss_rate": 0.11030975951653696,
+    "new_hallucination_rate": 0.012354290048990439,
+    "new_tp_rate": 0.10364581409954299
+  },
+  "yolov8_imgStretch_1": {
+    "orig_trans_gt": 230.81014844214428,
+    "orig_trans": 5.171430901153892,
+    "orig_gt": 26.060239612901874,
+    "trans_gt": 11.851923492762287,
+    "orig_only": 5.270134060318437,
+    "trans_only": 3.193961237639103,
+    "gt_only": 80.64216225308007,
+    "tp_retention_rate": 0.8985471240565212,
+    "fp_consistency_rate": 0.3792615573200902,
+    "detection_loss_rate": 0.11720528513472146,
+    "new_hallucination_rate": 0.01272355297626471,
+    "new_tp_rate": 0.1281370954390458
+  },
+  "yolov12_imgStretch_1": {
+    "orig_trans_gt": 230.5000071106482,
+    "orig_trans": 4.307732654175551,
+    "orig_gt": 24.54804358309288,
+    "trans_gt": 10.751335243737316,
+    "orig_only": 4.869382440029318,
+    "trans_only": 3.989991291050205,
+    "gt_only": 84.03350767726636,
+    "tp_retention_rate": 0.9037512989559371,
+    "fp_consistency_rate": 0.32715864276751655,
+    "detection_loss_rate": 0.11133468659352141,
+    "new_hallucination_rate": 0.01598880472772348,
+    "new_tp_rate": 0.11342884487024764
+  },
+  "yolov26_v2_imgStretch_1": {
+    "orig_trans_gt": 284.97386347339983,
+    "orig_trans": 12.33558103033763,
+    "orig_gt": 7.552633061603102,
+    "trans_gt": 3.6791857447798564,
+    "orig_only": 11.427260705332113,
+    "trans_only": 7.04011361388439,
+    "gt_only": 35.99136237066296,
+    "tp_retention_rate": 0.9741813710858176,
+    "fp_consistency_rate": 0.40046745159198455,
+    "detection_loss_rate": 0.0600080099781697,
+    "new_hallucination_rate": 0.022855378772798075,
+    "new_tp_rate": 0.09274350669603265
+  },
+  "yolov5_imgStretch_2": {
+    "orig_trans_gt": 222.04343466639085,
+    "orig_trans": 4.738565545263412,
+    "orig_gt": 30.59244749154774,
+    "trans_gt": 6.40426410410222,
+    "orig_only": 5.922138801073336,
+    "trans_only": 4.084572345726003,
+    "gt_only": 89.21457704589628,
+    "tp_retention_rate": 0.8789069579893545,
+    "fp_consistency_rate": 0.32136158881400567,
+    "detection_loss_rate": 0.13868233833722018,
+    "new_hallucination_rate": 0.017214809890663124,
+    "new_tp_rate": 0.06697701025319652
+  },
+  "yolov8_imgStretch_2": {
+    "orig_trans_gt": 222.8670109720321,
+    "orig_trans": 4.822237477726925,
+    "orig_gt": 31.405891944462763,
+    "trans_gt": 7.708159471165932,
+    "orig_only": 6.196264963042556,
+    "trans_only": 5.030884330322085,
+    "gt_only": 84.9695508412476,
+    "tp_retention_rate": 0.8764874605817644,
+    "fp_consistency_rate": 0.30046241308190186,
+    "detection_loss_rate": 0.1417390693711581,
+    "new_hallucination_rate": 0.020924676888961227,
+    "new_tp_rate": 0.08317166495786289
+  },
+  "yolov12_imgStretch_2": {
+    "orig_trans_gt": 224.5397693077634,
+    "orig_trans": 4.448779376243098,
+    "orig_gt": 28.811218523504177,
+    "trans_gt": 6.8227231999137,
+    "orig_only": 5.390614395101791,
+    "trans_only": 4.618470028750007,
+    "gt_only": 88.36842516872379,
+    "tp_retention_rate": 0.8862794308791386,
+    "fp_consistency_rate": 0.30770654902793443,
+    "detection_loss_rate": 0.1299509226376169,
+    "new_hallucination_rate": 0.01920922924097945,
+    "new_tp_rate": 0.07167392469614932
+  },
+  "yolov26_v2_imgStretch_2": {
+    "orig_trans_gt": 272.2235367635529,
+    "orig_trans": 13.507090478278823,
+    "orig_gt": 14.351501995777864,
+    "trans_gt": 3.6588500380871687,
+    "orig_only": 13.050461887662909,
+    "trans_only": 7.731748322888495,
+    "gt_only": 38.476810513751936,
+    "tp_retention_rate": 0.9499206139588785,
+    "fp_consistency_rate": 0.39391560069578124,
+    "detection_loss_rate": 0.08750914040908084,
+    "new_hallucination_rate": 0.02602220123184441,
+    "new_tp_rate": 0.08683499890990722
+  },
+  "yolov5_imgStretch_3": {
+    "orig_trans_gt": 210.9837742331832,
+    "orig_trans": 4.423598840633349,
+    "orig_gt": 39.38136321302395,
+    "trans_gt": 5.317204380261706,
+    "orig_only": 6.925547366206583,
+    "trans_only": 5.297608592645438,
+    "gt_only": 90.67090337404576,
+    "tp_retention_rate": 0.8427042853700615,
+    "fp_consistency_rate": 0.26573340533436,
+    "detection_loss_rate": 0.17693688679452935,
+    "new_hallucination_rate": 0.023438445071716576,
+    "new_tp_rate": 0.05539440775175711
+  },
+  "yolov8_imgStretch_3": {
+    "orig_trans_gt": 213.32625662455072,
+    "orig_trans": 4.410897128586085,
+    "orig_gt": 39.881030006715214,
+    "trans_gt": 6.572830270750225,
+    "orig_only": 7.608711723003326,
+    "trans_only": 4.596011407484318,
+    "gt_only": 86.60426283891002,
+    "tp_retention_rate": 0.8424965152571138,
+    "fp_consistency_rate": 0.2654668955964681,
+    "detection_loss_rate": 0.1790532654814728,
+    "new_hallucination_rate": 0.02007816090104226,
+    "new_tp_rate": 0.070541267723545
+  },
+  "yolov12_imgStretch_3": {
+    "orig_trans_gt": 211.34719347553184,
+    "orig_trans": 4.262838365433118,
+    "orig_gt": 40.067229172115354,
+    "trans_gt": 5.9080186113598145,
+    "orig_only": 5.930456775133184,
+    "trans_only": 6.308566521755963,
+    "gt_only": 89.1756970786708,
+    "tp_retention_rate": 0.840632733992875,
+    "fp_consistency_rate": 0.2583246940656524,
+    "detection_loss_rate": 0.17582694553562947,
+    "new_hallucination_rate": 0.02769020848197765,
+    "new_tp_rate": 0.062134915200618965
+  },
+  "yolov26_v2_imgStretch_3": {
+    "orig_trans_gt": 256.02482987866676,
+    "orig_trans": 13.083458092827344,
+    "orig_gt": 23.621857576600203,
+    "trans_gt": 2.5164688838397447,
+    "orig_only": 14.878329765346594,
+    "trans_only": 12.05268938405401,
+    "gt_only": 40.82236641866526,
+    "tp_retention_rate": 0.9155296356572119,
+    "fp_consistency_rate": 0.32696811240658047,
+    "detection_loss_rate": 0.12515970927887024,
+    "new_hallucination_rate": 0.0424873021942078,
+    "new_tp_rate": 0.058064986432487066
+  },
+  "yolov5_imgStretch_4": {
+    "orig_trans_gt": 195.9805999356727,
+    "orig_trans": 5.318623098661143,
+    "orig_gt": 49.817067364446515,
+    "trans_gt": 4.542373311214373,
+    "orig_only": 8.145663367378976,
+    "trans_only": 7.291500419119574,
+    "gt_only": 91.90417250350667,
+    "tp_retention_rate": 0.7973248977028744,
+    "fp_consistency_rate": 0.25624772156742165,
+    "detection_loss_rate": 0.22356820925643733,
+    "new_hallucination_rate": 0.03421101898205199,
+    "new_tp_rate": 0.04709731460928123
+  },
+  "yolov8_imgStretch_4": {
+    "orig_trans_gt": 197.71035915794786,
+    "orig_trans": 4.712323830763305,
+    "orig_gt": 50.6445896532492,
+    "trans_gt": 4.197262484189267,
+    "orig_only": 8.499774672683653,
+    "trans_only": 8.01967949327594,
+    "gt_only": 89.21601070789104,
+    "tp_retention_rate": 0.7960798047485258,
+    "fp_consistency_rate": 0.22194673623144737,
+    "detection_loss_rate": 0.22611550244242717,
+    "new_hallucination_rate": 0.037363462103233304,
+    "new_tp_rate": 0.04493218512489846
+  },
+  "yolov12_imgStretch_4": {
+    "orig_trans_gt": 200.74732803298528,
+    "orig_trans": 4.337253350643717,
+    "orig_gt": 48.837785127167905,
+    "trans_gt": 5.087806003733019,
+    "orig_only": 6.4316727597261885,
+    "trans_only": 8.068973875928977,
+    "gt_only": 89.48918084981501,
+    "tp_retention_rate": 0.8043241261115209,
+    "fp_consistency_rate": 0.2302408099521854,
+    "detection_loss_rate": 0.2122857707210983,
+    "new_hallucination_rate": 0.03697270686556246,
+    "new_tp_rate": 0.053795391172817335
+  },
+  "yolov26_v2_imgStretch_4": {
+    "orig_trans_gt": 232.04765438617167,
+    "orig_trans": 16.018476708314658,
+    "orig_gt": 34.292685439124135,
+    "trans_gt": 3.427157323573806,
+    "orig_only": 15.682514297829684,
+    "trans_only": 18.53778077439154,
+    "gt_only": 42.99373107059459,
+    "tp_retention_rate": 0.8712448686458153,
+    "fp_consistency_rate": 0.3188469013193657,
+    "detection_loss_rate": 0.167678756491722,
+    "new_hallucination_rate": 0.06865054761968752,
+    "new_tp_rate": 0.07382791329784935
+  },
+  "yolov5_imgStretch_5": {
+    "orig_trans_gt": 178.03996340872087,
+    "orig_trans": 5.856557015597618,
+    "orig_gt": 60.957705994798125,
+    "trans_gt": 3.2424512598868587,
+    "orig_only": 8.679528951491976,
+    "trans_only": 13.222885736907303,
+    "gt_only": 93.00090763259733,
+    "tp_retention_rate": 0.7449443496795012,
+    "fp_consistency_rate": 0.2109788892055521,
+    "detection_loss_rate": 0.2746665225878753,
+    "new_hallucination_rate": 0.0659950247372481,
+    "new_tp_rate": 0.03369012986661324
+  },
+  "yolov8_imgStretch_5": {
+    "orig_trans_gt": 177.6141129564241,
+    "orig_trans": 5.981470468261463,
+    "orig_gt": 62.36652902660796,
+    "trans_gt": 3.735845435751287,
+    "orig_only": 8.563649433544459,
+    "trans_only": 15.390131249963895,
+    "gt_only": 89.34826142944695,
+    "tp_retention_rate": 0.7401185007621672,
+    "fp_consistency_rate": 0.19981360563623765,
+    "detection_loss_rate": 0.27867583200574125,
+    "new_hallucination_rate": 0.07591758489616268,
+    "new_tp_rate": 0.04013408477089899
+  },
+  "yolov12_imgStretch_5": {
+    "orig_trans_gt": 182.94564966734947,
+    "orig_trans": 4.731902870468949,
+    "orig_gt": 58.45117710693706,
+    "trans_gt": 4.5328841003517395,
+    "orig_only": 7.304435014278672,
+    "trans_only": 14.244886549287667,
+    "gt_only": 90.78906469132666,
+    "tp_retention_rate": 0.7578626948497931,
+    "fp_consistency_rate": 0.1800487980438589,
+    "detection_loss_rate": 0.25945938137055785,
+    "new_hallucination_rate": 0.06899742922275517,
+    "new_tp_rate": 0.04755341406477267
+  },
+  "yolov26_v2_imgStretch_5": {
+    "orig_trans_gt": 202.9543526435659,
+    "orig_trans": 16.54564113364819,
+    "orig_gt": 49.8788727453328,
+    "trans_gt": 3.468142933491804,
+    "orig_only": 16.41699285811625,
+    "trans_only": 29.487109275144505,
+    "gt_only": 44.24888841070055,
+    "tp_retention_rate": 0.8027202608810176,
+    "fp_consistency_rate": 0.2649433010946491,
+    "detection_loss_rate": 0.23196930055990378,
+    "new_hallucination_rate": 0.11680133308379417,
+    "new_tp_rate": 0.07268144802377594
+  },
+  "yolov5_imgStretch_6": {
+    "orig_trans_gt": 142.346644838021,
+    "orig_trans": 8.05503763386263,
+    "orig_gt": 80.83721491858937,
+    "trans_gt": 1.5126723951774028,
+    "orig_only": 8.719785625941457,
+    "trans_only": 28.762798845218406,
+    "gt_only": 92.76584574318974,
+    "tp_retention_rate": 0.6377999062891684,
+    "fp_consistency_rate": 0.17688753302237567,
+    "detection_loss_rate": 0.37321842001610184,
+    "new_hallucination_rate": 0.15919444298431842,
+    "new_tp_rate": 0.016044719677894604
+  },
+  "yolov8_imgStretch_6": {
+    "orig_trans_gt": 150.39667267526187,
+    "orig_trans": 7.36088633439168,
+    "orig_gt": 77.9711311144174,
+    "trans_gt": 1.0671733610212728,
+    "orig_only": 9.163253295969609,
+    "trans_only": 26.70333695681281,
+    "gt_only": 90.33754626212533,
+    "tp_retention_rate": 0.6585721374882303,
+    "fp_consistency_rate": 0.17028258218005046,
+    "detection_loss_rate": 0.3558074765282639,
+    "new_hallucination_rate": 0.14393151965418782,
+    "new_tp_rate": 0.011675254466302529
+  },
+  "yolov12_imgStretch_6": {
+    "orig_trans_gt": 157.0141863024671,
+    "orig_trans": 7.045268907195857,
+    "orig_gt": 73.17763506288281,
+    "trans_gt": 2.1275464638553307,
+    "orig_only": 7.761221743000776,
+    "trans_only": 23.907515261588994,
+    "gt_only": 91.96662625900909,
+    "tp_retention_rate": 0.6821014985291827,
+    "fp_consistency_rate": 0.18198243093854258,
+    "detection_loss_rate": 0.33036495696650986,
+    "new_hallucination_rate": 0.12576646421501111,
+    "new_tp_rate": 0.02261082065221609
+  },
+  "yolov26_v2_imgStretch_6": {
+    "orig_trans_gt": 150.23015793471,
+    "orig_trans": 16.74404560913901,
+    "orig_gt": 76.83074114697334,
+    "trans_gt": 2.5063798563924333,
+    "orig_only": 15.98717382804696,
+    "trans_only": 57.043504616203755,
+    "gt_only": 43.65799700853456,
+    "tp_retention_rate": 0.6616293626172329,
+    "fp_consistency_rate": 0.1865118025779862,
+    "detection_loss_rate": 0.35727763992300915,
+    "new_hallucination_rate": 0.2518209216322394,
+    "new_tp_rate": 0.05429250921605388
+  },
+  "yolov5_imgStretch_7": {
+    "orig_trans_gt": 113.43545904902501,
+    "orig_trans": 7.328824282001867,
+    "orig_gt": 101.0820038092494,
+    "trans_gt": 1.1123047048170915,
+    "orig_only": 8.869575502186148,
+    "trans_only": 40.04182697917967,
+    "gt_only": 91.13000567354092,
+    "tp_retention_rate": 0.528793588818308,
+    "fp_consistency_rate": 0.1303128508503015,
+    "detection_loss_rate": 0.4765670554773522,
+    "new_hallucination_rate": 0.2472963126242582,
+    "new_tp_rate": 0.012058508728311965
+  },
+  "yolov8_imgStretch_7": {
+    "orig_trans_gt": 121.54185968892803,
+    "orig_trans": 6.19673747676377,
+    "orig_gt": 98.80804944018074,
+    "trans_gt": 0.557538832006917,
+    "orig_only": 8.97990692959991,
+    "trans_only": 38.773619809905554,
+    "gt_only": 88.14228782261526,
+    "tp_retention_rate": 0.5515857037077945,
+    "fp_consistency_rate": 0.1148601877448282,
+    "detection_loss_rate": 0.45764672709630083,
+    "new_hallucination_rate": 0.23208042426635755,
+    "new_tp_rate": 0.006285681190537744
+  },
+  "yolov12_imgStretch_7": {
+    "orig_trans_gt": 133.18574782932663,
+    "orig_trans": 7.056184228891258,
+    "orig_gt": 88.51915685628154,
+    "trans_gt": 0.9306353684525176,
+    "orig_only": 7.777402014003086,
+    "trans_only": 34.27073926196473,
+    "gt_only": 91.26013444108034,
+    "tp_retention_rate": 0.6007343320536485,
+    "fp_consistency_rate": 0.14369781391647501,
+    "detection_loss_rate": 0.40710735277072424,
+    "new_hallucination_rate": 0.19533796933493797,
+    "new_tp_rate": 0.010094669676532917
+  },
+  "yolov26_v2_imgStretch_7": {
+    "orig_trans_gt": 125.42187463511586,
+    "orig_trans": 12.084381520224735,
+    "orig_gt": 96.96404498291504,
+    "trans_gt": 1.3159276661085462,
+    "orig_only": 15.475711160726433,
+    "trans_only": 71.94582568273582,
+    "gt_only": 39.792234352173786,
+    "tp_retention_rate": 0.5639829844018,
+    "fp_consistency_rate": 0.12144384694845173,
+    "detection_loss_rate": 0.44985617137649125,
+    "new_hallucination_rate": 0.3413507858805645,
+    "new_tp_rate": 0.03201134766189021
+  },
+  "yolov5_imgStretch_8": {
+    "orig_trans_gt": 87.26535691244423,
+    "orig_trans": 5.456305534797755,
+    "orig_gt": 125.24065601467201,
+    "trans_gt": 0.5206867894827114,
+    "orig_only": 8.885868582172208,
+    "trans_only": 45.87315806703529,
+    "gt_only": 89.75796809939588,
+    "tp_retention_rate": 0.4106488833441803,
+    "fp_consistency_rate": 0.0906132265138793,
+    "detection_loss_rate": 0.5912611704971561,
+    "new_hallucination_rate": 0.32974870275871426,
+    "new_tp_rate": 0.005767551478515158
+  },
+  "yolov8_imgStretch_8": {
+    "orig_trans_gt": 107.14946192638155,
+    "orig_trans": 5.216068296781466,
+    "orig_gt": 111.9969437864181,
+    "trans_gt": 0.3333754293518228,
+    "orig_only": 9.064776003006466,
+    "trans_only": 41.11612135460628,
+    "gt_only": 88.12325320345451,
+    "tp_retention_rate": 0.4889400835841465,
+    "fp_consistency_rate": 0.09415801452597641,
+    "detection_loss_rate": 0.5186271944809199,
+    "new_hallucination_rate": 0.26730887192642594,
+    "new_tp_rate": 0.003768800987608319
+  },
+  "yolov12_imgStretch_8": {
+    "orig_trans_gt": 114.877228781175,
+    "orig_trans": 5.501777483200018,
+    "orig_gt": 103.23520324719622,
+    "trans_gt": 1.2360594210634308,
+    "orig_only": 7.758524425748159,
+    "trans_only": 40.421159873998775,
+    "gt_only": 89.9700467676185,
+    "tp_retention_rate": 0.5266881292040805,
+    "fp_consistency_rate": 0.10248933804086115,
+    "detection_loss_rate": 0.4797182701009766,
+    "new_hallucination_rate": 0.24945755021411373,
+    "new_tp_rate": 0.013552375742325217
+  },
+  "yolov26_v2_imgStretch_8": {
+    "orig_trans_gt": 104.44748326338156,
+    "orig_trans": 9.95456988532295,
+    "orig_gt": 111.49217991691613,
+    "trans_gt": 0.9522175204394226,
+    "orig_only": 15.616715111945082,
+    "trans_only": 82.34043749902847,
+    "gt_only": 38.196396802966504,
+    "tp_retention_rate": 0.4836882753502013,
+    "fp_consistency_rate": 0.09224734491347396,
+    "detection_loss_rate": 0.5263069686406395,
+    "new_hallucination_rate": 0.4165029922246789,
+    "new_tp_rate": 0.024323147495673093
+  },
+  "yolov5_imgStretch_9": {
+    "orig_trans_gt": 60.54326772797348,
+    "orig_trans": 3.8045952712647453,
+    "orig_gt": 149.87306044521614,
+    "trans_gt": 0.18681753958417951,
+    "orig_only": 8.96331854736667,
+    "trans_only": 49.89067588110266,
+    "gt_only": 89.73826458749214,
+    "tp_retention_rate": 0.28773084414885086,
+    "fp_consistency_rate": 0.06071945266397996,
+    "detection_loss_rate": 0.7116827674527471,
+    "new_hallucination_rate": 0.4360106661849569,
+    "new_tp_rate": 0.0020774797772236783
+  },
+  "yolov8_imgStretch_9": {
+    "orig_trans_gt": 78.39806454860575,
+    "orig_trans": 3.7634596533479687,
+    "orig_gt": 139.14269375229765,
+    "trans_gt": 0.29239996263266543,
+    "orig_only": 9.22606209417369,
+    "trans_only": 44.73133883414825,
+    "gt_only": 87.44598115479414,
+    "tp_retention_rate": 0.36038333763719427,
+    "fp_consistency_rate": 0.06520103157545626,
+    "detection_loss_rate": 0.6435976905736855,
+    "new_hallucination_rate": 0.3517022159602979,
+    "new_tp_rate": 0.0033326345768942872
+  },
+  "yolov12_imgStretch_9": {
+    "orig_trans_gt": 84.19579291482061,
+    "orig_trans": 4.297718518681745,
+    "orig_gt": 128.93277537725723,
+    "trans_gt": 0.45876183035229606,
+    "orig_only": 8.209981115461616,
+    "trans_only": 47.67460143023148,
+    "gt_only": 89.23036881319511,
+    "tp_retention_rate": 0.3950469596334742,
+    "fp_consistency_rate": 0.07141166825915529,
+    "detection_loss_rate": 0.6078045774873476,
+    "new_hallucination_rate": 0.34894014473343626,
+    "new_tp_rate": 0.005115021486556255
+  },
+  "yolov26_v2_imgStretch_9": {
+    "orig_trans_gt": 81.98266748785393,
+    "orig_trans": 8.150242696518632,
+    "orig_gt": 128.08121647498135,
+    "trans_gt": 1.103182269186074,
+    "orig_only": 15.548221047017956,
+    "trans_only": 91.70892934378337,
+    "gt_only": 36.425540680658834,
+    "tp_retention_rate": 0.3902749294227007,
+    "fp_consistency_rate": 0.07062149554276792,
+    "detection_loss_rate": 0.6144250300840227,
+    "new_hallucination_rate": 0.50129229231159,
+    "new_tp_rate": 0.029395678362421684
+  },
+  "yolov5_yellow_to_blue": {
+    "orig_trans_gt": 157.851025333734,
+    "orig_trans": 4.337544689668628,
+    "orig_gt": 91.14542404694987,
+    "trans_gt": 0.5660240743234922,
+    "orig_only": 5.626187829181186,
+    "trans_only": 11.228199382015784,
+    "gt_only": 92.24559464412707,
+    "tp_retention_rate": 0.6339489005821118,
+    "fp_consistency_rate": 0.2046790594627882,
+    "detection_loss_rate": 0.3736930178465608,
+    "new_hallucination_rate": 0.06453626337091299,
+    "new_tp_rate": 0.006098633793259862
+  },
+  "yolov8_yellow_to_blue": {
+    "orig_trans_gt": 159.24912394999416,
+    "orig_trans": 3.935116502044339,
+    "orig_gt": 92.99859751134322,
+    "trans_gt": 1.0977601665575332,
+    "orig_only": 6.037067149234954,
+    "trans_only": 11.084865342517753,
+    "gt_only": 88.5974693783082,
+    "tp_retention_rate": 0.6313203664533503,
+    "fp_consistency_rate": 0.18687882158623173,
+    "detection_loss_rate": 0.3776817195401125,
+    "new_hallucination_rate": 0.06320957657403614,
+    "new_tp_rate": 0.0122387798339758
+  },
+  "yolov12_yellow_to_blue": {
+    "orig_trans_gt": 154.80601079911625,
+    "orig_trans": 3.875076197413479,
+    "orig_gt": 95.35372710404646,
+    "trans_gt": 0.5514698322157437,
+    "orig_only": 5.191361111108016,
+    "trans_only": 11.376873919616658,
+    "gt_only": 91.84548103648348,
+    "tp_retention_rate": 0.6188286416379359,
+    "fp_consistency_rate": 0.1895522772299151,
+    "detection_loss_rate": 0.38786626440423816,
+    "new_hallucination_rate": 0.06668373412719963,
+    "new_tp_rate": 0.005968485183016597
+  },
+  "yolov26_v2_yellow_to_blue": {
+    "orig_trans_gt": 186.70631519147582,
+    "orig_trans": 7.398608301876213,
+    "orig_gt": 99.5973106839512,
+    "trans_gt": 1.5998904509696699,
+    "orig_only": 13.74364373739019,
+    "trans_only": 18.919485006723995,
+    "gt_only": 35.03474662761302,
+    "tp_retention_rate": 0.6521269670287487,
+    "fp_consistency_rate": 0.18468016734727946,
+    "detection_loss_rate": 0.36865335515342296,
+    "new_hallucination_rate": 0.08815164498703569,
+    "new_tp_rate": 0.0436715245066532
+  },
+  "yolov5_yellow_to_orange": {
+    "orig_trans_gt": 100.26473652611128,
+    "orig_trans": 3.559481285536679,
+    "orig_gt": 120.2225019299909,
+    "trans_gt": 0.2461653529836803,
+    "orig_only": 5.251048176409762,
+    "trans_only": 47.97121250113677,
+    "gt_only": 85.48485422783091,
+    "tp_retention_rate": 0.45474167678903304,
+    "fp_consistency_rate": 0.06268707444464956,
+    "detection_loss_rate": 0.5472079002149078,
+    "new_hallucination_rate": 0.3155137401122219,
+    "new_tp_rate": 0.002871368545333021
+  },
+  "yolov8_yellow_to_orange": {
+    "orig_trans_gt": 107.69862530719293,
+    "orig_trans": 3.44161908481792,
+    "orig_gt": 117.83824040787609,
+    "trans_gt": 0.5230893441149832,
+    "orig_only": 5.595349934901504,
+    "trans_only": 44.788389974612365,
+    "gt_only": 83.1146859464842,
+    "tp_retention_rate": 0.4775211580853194,
+    "fp_consistency_rate": 0.06394047618298929,
+    "detection_loss_rate": 0.5262035745902047,
+    "new_hallucination_rate": 0.28627610429796935,
+    "new_tp_rate": 0.00625422355266518
+  },
+  "yolov12_yellow_to_orange": {
+    "orig_trans_gt": 101.7451596983267,
+    "orig_trans": 3.08570740228853,
+    "orig_gt": 120.76925116308249,
+    "trans_gt": 0.11804015196910683,
+    "orig_only": 5.152937963825968,
+    "trans_only": 46.60863486905254,
+    "gt_only": 85.52026875145474,
+    "tp_retention_rate": 0.4572520013622741,
+    "fp_consistency_rate": 0.0562599893569569,
+    "detection_loss_rate": 0.5457010675635365,
+    "new_hallucination_rate": 0.307530949740828,
+    "new_tp_rate": 0.0013783568765028187
+  },
+  "yolov26_v2_yellow_to_orange": {
+    "orig_trans_gt": 122.19637669190182,
+    "orig_trans": 6.563505272644275,
+    "orig_gt": 131.08247447226717,
+    "trans_gt": 1.166209154277829,
+    "orig_only": 12.103295670083533,
+    "trans_only": 57.73401911451047,
+    "gt_only": 32.1541196243149,
+    "tp_retention_rate": 0.48245787648767086,
+    "fp_consistency_rate": 0.08590883275502804,
+    "detection_loss_rate": 0.5265234764116289,
+    "new_hallucination_rate": 0.3076520579825125,
+    "new_tp_rate": 0.034999929383262324
+  }
+}

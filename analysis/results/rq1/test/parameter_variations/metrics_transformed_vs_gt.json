@@ -1,0 +1,1666 @@
+{
+  "dataset": "test",
+  "comparison": "transformed_vs_gt",
+  "precision_metric": "AP",
+  "models": [
+    "yolov5",
+    "yolov8",
+    "yolov12",
+    "yolov26_v2"
+  ],
+  "rules": {
+    "imgColorWheel": {
+      "varying_parameter": "hue_rotation",
+      "settings": [
+        {
+          "variant_id": "imgColorWheel_0",
+          "hue_rotation": 0,
+          "status": "included",
+          "included_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 2,
+              "target": "blue",
+              "mapping": "blue \u2192 blue",
+              "key": "blue_to_blue"
+            },
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "orange \u2192 orange",
+              "key": "orange_to_orange"
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": 1,
+              "target": "yellow",
+              "mapping": "yellow \u2192 yellow",
+              "key": "yellow_to_yellow"
+            }
+          ],
+          "excluded_mappings": [],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 0
+          },
+          "models": {},
+          "class_shifts": {
+            "blue_to_blue": {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 2,
+              "target": "blue",
+              "mapping": "blue \u2192 blue",
+              "key": "blue_to_blue",
+              "models": {
+                "yolov5": {
+                  "AP": 0.39470496952425377,
+                  "AR": 0.4082044384667115
+                },
+                "yolov8": {
+                  "AP": 0.40105487143479285,
+                  "AR": 0.41439139206455955
+                },
+                "yolov12": {
+                  "AP": 0.39867378723880276,
+                  "AR": 0.41153328850033627
+                },
+                "yolov26_v2": {
+                  "AP": 0.5513681911710767,
+                  "AR": 0.5751513113651648
+                }
+              }
+            },
+            "orange_to_orange": {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "orange \u2192 orange",
+              "key": "orange_to_orange",
+              "models": {
+                "yolov5": {
+                  "AP": 0.37716589858907956,
+                  "AR": 0.3910741301059001
+                },
+                "yolov8": {
+                  "AP": 0.3901502654854545,
+                  "AR": 0.408018154311649
+                },
+                "yolov12": {
+                  "AP": 0.3830209524021883,
+                  "AR": 0.3960665658093797
+                },
+                "yolov26_v2": {
+                  "AP": 0.526009992089548,
+                  "AR": 0.5555219364599092
+                }
+              }
+            },
+            "yellow_to_yellow": {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": 1,
+              "target": "yellow",
+              "mapping": "yellow \u2192 yellow",
+              "key": "yellow_to_yellow",
+              "models": {
+                "yolov5": {
+                  "AP": 0.39266817378811575,
+                  "AR": 0.4090220385674931
+                },
+                "yolov8": {
+                  "AP": 0.3954710065823318,
+                  "AR": 0.41267217630854003
+                },
+                "yolov12": {
+                  "AP": 0.39292429994039085,
+                  "AR": 0.4100206611570248
+                },
+                "yolov26_v2": {
+                  "AP": 0.5402025777522954,
+                  "AR": 0.5691460055096419
+                }
+              }
+            }
+          }
+        },
+        {
+          "variant_id": "imgColorWheel_1",
+          "hue_rotation": 20,
+          "status": "included",
+          "included_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 2,
+              "target": "blue",
+              "mapping": "blue \u2192 blue",
+              "key": "blue_to_blue"
+            }
+          ],
+          "excluded_mappings": [
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": null,
+              "target": "yellow",
+              "mapping": "orange \u2192 yellow",
+              "key": "orange_to_yellow",
+              "exclusion_reason": "Orange-to-yellow mapping excluded from analysis by user request."
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": null,
+              "target": "green",
+              "mapping": "yellow \u2192 green",
+              "key": "yellow_to_green"
+            }
+          ],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 20
+          },
+          "models": {},
+          "class_shifts": {
+            "blue_to_blue": {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 2,
+              "target": "blue",
+              "mapping": "blue \u2192 blue",
+              "key": "blue_to_blue",
+              "models": {
+                "yolov5": {
+                  "AP": 0.3782408068277542,
+                  "AR": 0.39246805648957633
+                },
+                "yolov8": {
+                  "AP": 0.3848934384565061,
+                  "AR": 0.3994956287827842
+                },
+                "yolov12": {
+                  "AP": 0.38631927052439524,
+                  "AR": 0.39922663080026893
+                },
+                "yolov26_v2": {
+                  "AP": 0.5222721034461555,
+                  "AR": 0.5512441156691326
+                }
+              }
+            }
+          }
+        },
+        {
+          "variant_id": "imgColorWheel_2",
+          "hue_rotation": 40,
+          "status": "excluded",
+          "included_mappings": [],
+          "excluded_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": null,
+              "target": "highly saturated blue",
+              "mapping": "blue \u2192 highly saturated blue",
+              "key": "blue_to_highly_saturated_blue"
+            },
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": null,
+              "target": "green",
+              "mapping": "orange \u2192 green",
+              "key": "orange_to_green"
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": null,
+              "target": "green",
+              "mapping": "yellow \u2192 green",
+              "key": "yellow_to_green"
+            }
+          ],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 40
+          },
+          "models": {},
+          "class_shifts": {}
+        },
+        {
+          "variant_id": "imgColorWheel_3",
+          "hue_rotation": 60,
+          "status": "excluded",
+          "included_mappings": [],
+          "excluded_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": null,
+              "target": "pink",
+              "mapping": "blue \u2192 pink",
+              "key": "blue_to_pink"
+            },
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": null,
+              "target": "cyan",
+              "mapping": "orange \u2192 cyan",
+              "key": "orange_to_cyan"
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": null,
+              "target": "cyan",
+              "mapping": "yellow \u2192 cyan",
+              "key": "yellow_to_cyan"
+            }
+          ],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 60
+          },
+          "models": {},
+          "class_shifts": {}
+        },
+        {
+          "variant_id": "imgColorWheel_4",
+          "hue_rotation": 80,
+          "status": "included",
+          "included_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "blue \u2192 orange",
+              "key": "blue_to_orange"
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": 2,
+              "target": "blue",
+              "mapping": "yellow \u2192 blue",
+              "key": "yellow_to_blue"
+            }
+          ],
+          "excluded_mappings": [
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": null,
+              "target": "green/teal",
+              "mapping": "orange \u2192 green/teal",
+              "key": "orange_to_green/teal",
+              "exclusion_reason": "Unreliable orange-to-blue mapping: transformed orange cones often appear green/teal rather than blue."
+            }
+          ],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 80
+          },
+          "models": {},
+          "class_shifts": {
+            "blue_to_orange": {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "blue \u2192 orange",
+              "key": "blue_to_orange",
+              "models": {
+                "yolov5": {
+                  "AP": 0.24261208225841843,
+                  "AR": 0.25147948890383315
+                },
+                "yolov8": {
+                  "AP": 0.23832674209984323,
+                  "AR": 0.2471755211835911
+                },
+                "yolov12": {
+                  "AP": 0.23836395746848546,
+                  "AR": 0.24973100201748485
+                },
+                "yolov26_v2": {
+                  "AP": 0.3191623993706727,
+                  "AR": 0.33668459986550103
+                }
+              }
+            },
+            "yellow_to_blue": {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": 2,
+              "target": "blue",
+              "mapping": "yellow \u2192 blue",
+              "key": "yellow_to_blue",
+              "models": {
+                "yolov5": {
+                  "AP": 0.3427031760872323,
+                  "AR": 0.3613636363636364
+                },
+                "yolov8": {
+                  "AP": 0.35277317837104777,
+                  "AR": 0.3735537190082644
+                },
+                "yolov12": {
+                  "AP": 0.34345564685328606,
+                  "AR": 0.3630509641873278
+                },
+                "yolov26_v2": {
+                  "AP": 0.47195503005940037,
+                  "AR": 0.5063705234159779
+                }
+              }
+            }
+          }
+        },
+        {
+          "variant_id": "imgColorWheel_5",
+          "hue_rotation": 100,
+          "status": "excluded",
+          "included_mappings": [],
+          "excluded_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": null,
+              "target": "orange",
+              "mapping": "blue \u2192 orange",
+              "key": "blue_to_orange",
+              "exclusion_reason": "Blue-to-orange analysis uses imgColorWheel_4 instead, by user request."
+            },
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": null,
+              "target": "darker blue",
+              "mapping": "orange \u2192 darker blue",
+              "key": "orange_to_darker_blue"
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": null,
+              "target": "purple",
+              "mapping": "yellow \u2192 purple",
+              "key": "yellow_to_purple"
+            }
+          ],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 100
+          },
+          "models": {},
+          "class_shifts": {}
+        },
+        {
+          "variant_id": "imgColorWheel_6",
+          "hue_rotation": 120,
+          "status": "included",
+          "included_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 1,
+              "target": "yellow",
+              "mapping": "blue \u2192 yellow",
+              "key": "blue_to_yellow"
+            }
+          ],
+          "excluded_mappings": [
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": null,
+              "target": "pink",
+              "mapping": "orange \u2192 pink",
+              "key": "orange_to_pink"
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": null,
+              "target": "purple",
+              "mapping": "yellow \u2192 purple",
+              "key": "yellow_to_purple"
+            }
+          ],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 120
+          },
+          "models": {},
+          "class_shifts": {
+            "blue_to_yellow": {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 1,
+              "target": "yellow",
+              "mapping": "blue \u2192 yellow",
+              "key": "blue_to_yellow",
+              "models": {
+                "yolov5": {
+                  "AP": 0.262474631378252,
+                  "AR": 0.2745124411566914
+                },
+                "yolov8": {
+                  "AP": 0.25888270909717326,
+                  "AR": 0.2710827168796234
+                },
+                "yolov12": {
+                  "AP": 0.28078091091750684,
+                  "AR": 0.29250168123739073
+                },
+                "yolov26_v2": {
+                  "AP": 0.35902597677573506,
+                  "AR": 0.3852387357094822
+                }
+              }
+            }
+          }
+        },
+        {
+          "variant_id": "imgColorWheel_7",
+          "hue_rotation": 140,
+          "status": "excluded",
+          "included_mappings": [],
+          "excluded_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": null,
+              "target": "green",
+              "mapping": "blue \u2192 green",
+              "key": "blue_to_green"
+            },
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": null,
+              "target": "pink",
+              "mapping": "orange \u2192 pink",
+              "key": "orange_to_pink"
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": null,
+              "target": "pink",
+              "mapping": "yellow \u2192 pink",
+              "key": "yellow_to_pink"
+            }
+          ],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 140
+          },
+          "models": {},
+          "class_shifts": {}
+        },
+        {
+          "variant_id": "imgColorWheel_8",
+          "hue_rotation": 160,
+          "status": "included",
+          "included_mappings": [
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "orange \u2192 orange",
+              "key": "orange_to_orange"
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "yellow \u2192 orange",
+              "key": "yellow_to_orange"
+            }
+          ],
+          "excluded_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": null,
+              "target": "green",
+              "mapping": "blue \u2192 green",
+              "key": "blue_to_green"
+            }
+          ],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 160
+          },
+          "models": {},
+          "class_shifts": {
+            "orange_to_orange": {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "orange \u2192 orange",
+              "key": "orange_to_orange",
+              "models": {
+                "yolov5": {
+                  "AP": 0.35117848097397114,
+                  "AR": 0.3670196671709532
+                },
+                "yolov8": {
+                  "AP": 0.3574006916777012,
+                  "AR": 0.37745839636913764
+                },
+                "yolov12": {
+                  "AP": 0.35014243652130306,
+                  "AR": 0.3629349470499244
+                },
+                "yolov26_v2": {
+                  "AP": 0.486552592131302,
+                  "AR": 0.5121028744326778
+                }
+              }
+            },
+            "yellow_to_orange": {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "yellow \u2192 orange",
+              "key": "yellow_to_orange",
+              "models": {
+                "yolov5": {
+                  "AP": 0.3091947924679607,
+                  "AR": 0.32145316804407714
+                },
+                "yolov8": {
+                  "AP": 0.31789692115636486,
+                  "AR": 0.33588154269972453
+                },
+                "yolov12": {
+                  "AP": 0.31411045886233263,
+                  "AR": 0.3275137741046832
+                },
+                "yolov26_v2": {
+                  "AP": 0.40489693263051046,
+                  "AR": 0.428168044077135
+                }
+              }
+            }
+          }
+        },
+        {
+          "variant_id": "imgColorWheel_9",
+          "hue_rotation": 180,
+          "status": "included",
+          "included_mappings": [
+            {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 2,
+              "target": "blue",
+              "mapping": "blue \u2192 blue",
+              "key": "blue_to_blue"
+            },
+            {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "orange \u2192 orange",
+              "key": "orange_to_orange"
+            },
+            {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": 1,
+              "target": "yellow",
+              "mapping": "yellow \u2192 yellow",
+              "key": "yellow_to_yellow"
+            }
+          ],
+          "excluded_mappings": [],
+          "excluded_classes": [
+            "large_orange_cone",
+            "other_cone",
+            "unknown_cone"
+          ],
+          "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+          "setting": {
+            "hue_rotation": 180
+          },
+          "models": {},
+          "class_shifts": {
+            "blue_to_blue": {
+              "source_category_id": 2,
+              "source": "blue",
+              "target_category_id": 2,
+              "target": "blue",
+              "mapping": "blue \u2192 blue",
+              "key": "blue_to_blue",
+              "models": {
+                "yolov5": {
+                  "AP": 0.39470496952425377,
+                  "AR": 0.4082044384667115
+                },
+                "yolov8": {
+                  "AP": 0.40105487143479285,
+                  "AR": 0.41439139206455955
+                },
+                "yolov12": {
+                  "AP": 0.39867378723880276,
+                  "AR": 0.41153328850033627
+                },
+                "yolov26_v2": {
+                  "AP": 0.5513681911710767,
+                  "AR": 0.5751513113651648
+                }
+              }
+            },
+            "orange_to_orange": {
+              "source_category_id": 3,
+              "source": "orange",
+              "target_category_id": 3,
+              "target": "orange",
+              "mapping": "orange \u2192 orange",
+              "key": "orange_to_orange",
+              "models": {
+                "yolov5": {
+                  "AP": 0.37716589858907956,
+                  "AR": 0.3910741301059001
+                },
+                "yolov8": {
+                  "AP": 0.3901502654854545,
+                  "AR": 0.408018154311649
+                },
+                "yolov12": {
+                  "AP": 0.3830209524021883,
+                  "AR": 0.3960665658093797
+                },
+                "yolov26_v2": {
+                  "AP": 0.526009992089548,
+                  "AR": 0.5555219364599092
+                }
+              }
+            },
+            "yellow_to_yellow": {
+              "source_category_id": 1,
+              "source": "yellow",
+              "target_category_id": 1,
+              "target": "yellow",
+              "mapping": "yellow \u2192 yellow",
+              "key": "yellow_to_yellow",
+              "models": {
+                "yolov5": {
+                  "AP": 0.39266817378811575,
+                  "AR": 0.4090220385674931
+                },
+                "yolov8": {
+                  "AP": 0.3954710065823318,
+                  "AR": 0.41267217630854003
+                },
+                "yolov12": {
+                  "AP": 0.39292429994039085,
+                  "AR": 0.4100206611570248
+                },
+                "yolov26_v2": {
+                  "AP": 0.5402025777522954,
+                  "AR": 0.5691460055096419
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "imgDarkBright": {
+      "varying_parameter": "gamma",
+      "settings": [
+        {
+          "variant_id": "imgDarkBright_0",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 0.5,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4618879777717972,
+              "AR": 0.47896102190314255
+            },
+            "yolov8": {
+              "AP": 0.46468736079655204,
+              "AR": 0.48208101393594005
+            },
+            "yolov12": {
+              "AP": 0.4630506322832514,
+              "AR": 0.4792653312490775
+            }
+          }
+        },
+        {
+          "variant_id": "imgDarkBright_1",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 1.0,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4702047365697615,
+              "AR": 0.48735592269233463
+            },
+            "yolov8": {
+              "AP": 0.4766311466218272,
+              "AR": 0.4943886589459985
+            },
+            "yolov12": {
+              "AP": 0.47575656138420136,
+              "AR": 0.4920310014184011
+            }
+          }
+        },
+        {
+          "variant_id": "imgDarkBright_2",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 1.5,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4677748511732215,
+              "AR": 0.4845708866474596
+            },
+            "yolov8": {
+              "AP": 0.473309450854341,
+              "AR": 0.490382622098283
+            },
+            "yolov12": {
+              "AP": 0.4726628214345337,
+              "AR": 0.49014827530821525
+            }
+          }
+        },
+        {
+          "variant_id": "imgDarkBright_3",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 2.0,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.45557708385097057,
+              "AR": 0.4727170692155823
+            },
+            "yolov8": {
+              "AP": 0.46191712345260955,
+              "AR": 0.4787777272774839
+            },
+            "yolov12": {
+              "AP": 0.46400957625684564,
+              "AR": 0.48032931338555196
+            }
+          }
+        },
+        {
+          "variant_id": "imgDarkBright_4",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 2.5,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4371822085884845,
+              "AR": 0.4547630156161205
+            },
+            "yolov8": {
+              "AP": 0.44614716856309755,
+              "AR": 0.4635950161627746
+            },
+            "yolov12": {
+              "AP": 0.4446050758217353,
+              "AR": 0.46293111705472734
+            }
+          }
+        },
+        {
+          "variant_id": "imgDarkBright_5",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 3.0,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4101137523185338,
+              "AR": 0.43078295016870066
+            },
+            "yolov8": {
+              "AP": 0.4210196615595292,
+              "AR": 0.44010903285029707
+            },
+            "yolov12": {
+              "AP": 0.4201123486796905,
+              "AR": 0.43874414524617383
+            }
+          }
+        },
+        {
+          "variant_id": "imgDarkBright_6",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 3.5,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.3795298026095634,
+              "AR": 0.40221620000889474
+            },
+            "yolov8": {
+              "AP": 0.3889632563313278,
+              "AR": 0.4100284325926401
+            },
+            "yolov12": {
+              "AP": 0.38922588497560273,
+              "AR": 0.40919983408534594
+            }
+          }
+        },
+        {
+          "variant_id": "imgDarkBright_7",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 4.0,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.3500614521108833,
+              "AR": 0.3745756165597791
+            },
+            "yolov8": {
+              "AP": 0.35815778039925783,
+              "AR": 0.3804460995398086
+            },
+            "yolov12": {
+              "AP": 0.35972782055486635,
+              "AR": 0.3802361334900392
+            }
+          }
+        },
+        {
+          "variant_id": "imgDarkBright_8",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 4.5,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.32132474507985254,
+              "AR": 0.3485510872761418
+            },
+            "yolov8": {
+              "AP": 0.3341583923712857,
+              "AR": 0.35915554644656594
+            },
+            "yolov12": {
+              "AP": 0.33015529265585103,
+              "AR": 0.35407094739442835
+            }
+          }
+        },
+        {
+          "variant_id": "imgDarkBright_9",
+          "setting": {
+            "brightness_constant": 0,
+            "brightness_multiplier": 1,
+            "gamma": 5.0,
+            "method": "gamma"
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.29975615526148913,
+              "AR": 0.3282818039507081
+            },
+            "yolov8": {
+              "AP": 0.3063402794308646,
+              "AR": 0.33378413457316236
+            },
+            "yolov12": {
+              "AP": 0.299367958797284,
+              "AR": 0.3256302999391244
+            }
+          }
+        }
+      ]
+    },
+    "imgGrayscale": {
+      "varying_parameter": null,
+      "settings": [
+        {
+          "variant_id": "imgGrayscale_0",
+          "setting": {},
+          "models": {
+            "yolov5": {
+              "AP": 0.07815001216758623,
+              "AR": 0.10265958162207663
+            },
+            "yolov8": {
+              "AP": 0.10702872116187269,
+              "AR": 0.14567661285057137
+            },
+            "yolov12": {
+              "AP": 0.10461161283061604,
+              "AR": 0.13641713070192618
+            }
+          }
+        }
+      ]
+    },
+    "imgMotionBlur": {
+      "varying_parameter": "kernel_size",
+      "settings": [
+        {
+          "variant_id": "imgMotionBlur_0",
+          "setting": {
+            "kernel_size": 3,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4704842644961255,
+              "AR": 0.4880049977744344
+            },
+            "yolov8": {
+              "AP": 0.477974750819162,
+              "AR": 0.4959982945201876
+            },
+            "yolov12": {
+              "AP": 0.47807119639110046,
+              "AR": 0.4949571820148525
+            }
+          }
+        },
+        {
+          "variant_id": "imgMotionBlur_1",
+          "setting": {
+            "kernel_size": 5,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.469831796957602,
+              "AR": 0.48736034048514315
+            },
+            "yolov8": {
+              "AP": 0.4778778273317403,
+              "AR": 0.49594675025214024
+            },
+            "yolov12": {
+              "AP": 0.47741504656909706,
+              "AR": 0.494190127171763
+            }
+          }
+        },
+        {
+          "variant_id": "imgMotionBlur_2",
+          "setting": {
+            "kernel_size": 7,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4656889197641817,
+              "AR": 0.48335823281093837
+            },
+            "yolov8": {
+              "AP": 0.47517019811756245,
+              "AR": 0.4929499698218757
+            },
+            "yolov12": {
+              "AP": 0.4746452319997965,
+              "AR": 0.4906288346930179
+            }
+          }
+        },
+        {
+          "variant_id": "imgMotionBlur_3",
+          "setting": {
+            "kernel_size": 9,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4589790419098679,
+              "AR": 0.47677544338261485
+            },
+            "yolov8": {
+              "AP": 0.4659567287040372,
+              "AR": 0.4845714287906304
+            },
+            "yolov12": {
+              "AP": 0.4693930282454636,
+              "AR": 0.4851788349889007
+            }
+          }
+        },
+        {
+          "variant_id": "imgMotionBlur_4",
+          "setting": {
+            "kernel_size": 11,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.44946254944529374,
+              "AR": 0.4662133067771054
+            },
+            "yolov8": {
+              "AP": 0.4533101942627474,
+              "AR": 0.4717753447959021
+            },
+            "yolov12": {
+              "AP": 0.46021785878221705,
+              "AR": 0.47628636529492974
+            }
+          }
+        },
+        {
+          "variant_id": "imgMotionBlur_5",
+          "setting": {
+            "kernel_size": 13,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.43298385766777175,
+              "AR": 0.4507565447934545
+            },
+            "yolov8": {
+              "AP": 0.43904253498560786,
+              "AR": 0.4573162923271846
+            },
+            "yolov12": {
+              "AP": 0.44246294975518424,
+              "AR": 0.4591077412036917
+            }
+          }
+        },
+        {
+          "variant_id": "imgMotionBlur_6",
+          "setting": {
+            "kernel_size": 15,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4153889690408737,
+              "AR": 0.4335248112503777
+            },
+            "yolov8": {
+              "AP": 0.42187409069307996,
+              "AR": 0.4410377523844827
+            },
+            "yolov12": {
+              "AP": 0.4208196646920357,
+              "AR": 0.43759156991571463
+            }
+          }
+        },
+        {
+          "variant_id": "imgMotionBlur_7",
+          "setting": {
+            "kernel_size": 17,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.39683151784110154,
+              "AR": 0.41637200029008803
+            },
+            "yolov8": {
+              "AP": 0.40102012340943877,
+              "AR": 0.4203822192338816
+            },
+            "yolov12": {
+              "AP": 0.399912315305024,
+              "AR": 0.4168424167915674
+            }
+          }
+        },
+        {
+          "variant_id": "imgMotionBlur_8",
+          "setting": {
+            "kernel_size": 19,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.3752136140412322,
+              "AR": 0.3951073460927228
+            },
+            "yolov8": {
+              "AP": 0.37965796708149846,
+              "AR": 0.39921815049997467
+            },
+            "yolov12": {
+              "AP": 0.37580243164178767,
+              "AR": 0.3935735221396576
+            }
+          }
+        },
+        {
+          "variant_id": "imgMotionBlur_9",
+          "setting": {
+            "kernel_size": 21,
+            "orientation": 0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.353075849300215,
+              "AR": 0.3738556827896671
+            },
+            "yolov8": {
+              "AP": 0.3547672881921292,
+              "AR": 0.37480688039866605
+            },
+            "yolov12": {
+              "AP": 0.3488055268858411,
+              "AR": 0.36596799884067027
+            }
+          }
+        }
+      ]
+    },
+    "imgResolution": {
+      "varying_parameter": "size_ratio",
+      "settings": [
+        {
+          "variant_id": "imgResolution_0",
+          "setting": {
+            "size_ratio": 0.1
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.280951394106824,
+              "AR": 0.29639366367396686
+            },
+            "yolov8": {
+              "AP": 0.2847490110386177,
+              "AR": 0.2969172947573896
+            },
+            "yolov12": {
+              "AP": 0.2840017697753896,
+              "AR": 0.29644405232464355
+            }
+          }
+        },
+        {
+          "variant_id": "imgResolution_1",
+          "setting": {
+            "size_ratio": 0.2
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.41889199747822753,
+              "AR": 0.43622571601915894
+            },
+            "yolov8": {
+              "AP": 0.42751755791121115,
+              "AR": 0.44386060334563177
+            },
+            "yolov12": {
+              "AP": 0.42875067793920507,
+              "AR": 0.44520865504866736
+            }
+          }
+        },
+        {
+          "variant_id": "imgResolution_2",
+          "setting": {
+            "size_ratio": 0.3
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4562933637225933,
+              "AR": 0.47425912641573265
+            },
+            "yolov8": {
+              "AP": 0.4614275029625266,
+              "AR": 0.47871023370647076
+            },
+            "yolov12": {
+              "AP": 0.4608186739051633,
+              "AR": 0.47707629231544263
+            }
+          }
+        },
+        {
+          "variant_id": "imgResolution_3",
+          "setting": {
+            "size_ratio": 0.4
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4663073866866539,
+              "AR": 0.4843562475115055
+            },
+            "yolov8": {
+              "AP": 0.4724704010055887,
+              "AR": 0.4911663978421538
+            },
+            "yolov12": {
+              "AP": 0.4746963662916669,
+              "AR": 0.49097897851064454
+            }
+          }
+        },
+        {
+          "variant_id": "imgResolution_4",
+          "setting": {
+            "size_ratio": 0.5
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4696687820476294,
+              "AR": 0.48730507750540186
+            },
+            "yolov8": {
+              "AP": 0.4790342202502364,
+              "AR": 0.49720674756666544
+            },
+            "yolov12": {
+              "AP": 0.4787082227815177,
+              "AR": 0.4951114933583999
+            }
+          }
+        },
+        {
+          "variant_id": "imgResolution_5",
+          "setting": {
+            "size_ratio": 0.6
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.47083880050944527,
+              "AR": 0.48827649159367265
+            },
+            "yolov8": {
+              "AP": 0.4788386211788544,
+              "AR": 0.4968051244105144
+            },
+            "yolov12": {
+              "AP": 0.4786785674789271,
+              "AR": 0.4956948412572573
+            }
+          }
+        },
+        {
+          "variant_id": "imgResolution_6",
+          "setting": {
+            "size_ratio": 0.7
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4705979594074534,
+              "AR": 0.48750843522948983
+            },
+            "yolov8": {
+              "AP": 0.4786280170915122,
+              "AR": 0.49649054626189393
+            },
+            "yolov12": {
+              "AP": 0.4800958658159749,
+              "AR": 0.49711088144910354
+            }
+          }
+        },
+        {
+          "variant_id": "imgResolution_7",
+          "setting": {
+            "size_ratio": 0.8
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.47107694406129,
+              "AR": 0.48792493059610054
+            },
+            "yolov8": {
+              "AP": 0.47937226981475894,
+              "AR": 0.4968897717082904
+            },
+            "yolov12": {
+              "AP": 0.4792842287203757,
+              "AR": 0.49543275568490575
+            }
+          }
+        },
+        {
+          "variant_id": "imgResolution_8",
+          "setting": {
+            "size_ratio": 0.9
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.470307920133128,
+              "AR": 0.4874570683520945
+            },
+            "yolov8": {
+              "AP": 0.4781039350663455,
+              "AR": 0.49551983486653095
+            },
+            "yolov12": {
+              "AP": 0.4783473374181335,
+              "AR": 0.4951732070789879
+            }
+          }
+        },
+        {
+          "variant_id": "imgResolution_9",
+          "setting": {
+            "size_ratio": 1.0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4702047365697615,
+              "AR": 0.48735592269233463
+            },
+            "yolov8": {
+              "AP": 0.4766311466218272,
+              "AR": 0.4943886589459985
+            },
+            "yolov12": {
+              "AP": 0.47575656138420136,
+              "AR": 0.4920310014184011
+            }
+          }
+        }
+      ]
+    },
+    "imgStretch": {
+      "varying_parameter": "width_ratio",
+      "settings": [
+        {
+          "variant_id": "imgStretch_0",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 1.0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4702047365697615,
+              "AR": 0.48735592269233463
+            },
+            "yolov8": {
+              "AP": 0.4766311466218272,
+              "AR": 0.4943886589459985
+            },
+            "yolov12": {
+              "AP": 0.47575656138420136,
+              "AR": 0.4920310014184011
+            }
+          }
+        },
+        {
+          "variant_id": "imgStretch_1",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 1.2
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.4096285189625151,
+              "AR": 0.42592420337966175
+            },
+            "yolov8": {
+              "AP": 0.4110197166974646,
+              "AR": 0.4282892717192898
+            },
+            "yolov12": {
+              "AP": 0.41819684400267065,
+              "AR": 0.43225352529807104
+            }
+          }
+        },
+        {
+          "variant_id": "imgStretch_2",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 1.4
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.3174674135794859,
+              "AR": 0.3338936027363326
+            },
+            "yolov8": {
+              "AP": 0.3188750487812658,
+              "AR": 0.33659494460137174
+            },
+            "yolov12": {
+              "AP": 0.33095751604095736,
+              "AR": 0.3471440826810539
+            }
+          }
+        },
+        {
+          "variant_id": "imgStretch_3",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 1.6
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.24360723349093924,
+              "AR": 0.25927855913215797
+            },
+            "yolov8": {
+              "AP": 0.2472508463787693,
+              "AR": 0.2628033454920057
+            },
+            "yolov12": {
+              "AP": 0.26347016874091933,
+              "AR": 0.27823118617299664
+            }
+          }
+        },
+        {
+          "variant_id": "imgStretch_4",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 1.8
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.18660160684014473,
+              "AR": 0.20581567588606883
+            },
+            "yolov8": {
+              "AP": 0.19127287856080422,
+              "AR": 0.21162931647286037
+            },
+            "yolov12": {
+              "AP": 0.2127979985792287,
+              "AR": 0.22946087633509854
+            }
+          }
+        },
+        {
+          "variant_id": "imgStretch_5",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 2.0
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.1322528840072055,
+              "AR": 0.15605389548344273
+            },
+            "yolov8": {
+              "AP": 0.13932923688898755,
+              "AR": 0.16162747523727367
+            },
+            "yolov12": {
+              "AP": 0.16602284393454225,
+              "AR": 0.1840457809675058
+            }
+          }
+        },
+        {
+          "variant_id": "imgStretch_6",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 2.2
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.07596532138298547,
+              "AR": 0.10640388958972857
+            },
+            "yolov8": {
+              "AP": 0.09556157720172141,
+              "AR": 0.12111676572124741
+            },
+            "yolov12": {
+              "AP": 0.12019360796695211,
+              "AR": 0.1399912616494405
+            }
+          }
+        },
+        {
+          "variant_id": "imgStretch_7",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 2.4
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.0438736926244248,
+              "AR": 0.07579258939161936
+            },
+            "yolov8": {
+              "AP": 0.06464014542021937,
+              "AR": 0.09009982944741965
+            },
+            "yolov12": {
+              "AP": 0.08947259479055972,
+              "AR": 0.11161372746699502
+            }
+          }
+        },
+        {
+          "variant_id": "imgStretch_8",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 2.6
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.021706554047433314,
+              "AR": 0.045844623158650795
+            },
+            "yolov8": {
+              "AP": 0.041034698699271524,
+              "AR": 0.07215046971768276
+            },
+            "yolov12": {
+              "AP": 0.06762475289184529,
+              "AR": 0.09025840932541718
+            }
+          }
+        },
+        {
+          "variant_id": "imgStretch_9",
+          "setting": {
+            "height_ratio": 1.0,
+            "width_ratio": 2.8
+          },
+          "models": {
+            "yolov5": {
+              "AP": 0.011494399938838171,
+              "AR": 0.02733335287489882
+            },
+            "yolov8": {
+              "AP": 0.022946910016240517,
+              "AR": 0.05036498611450728
+            },
+            "yolov12": {
+              "AP": 0.04323414794311466,
+              "AR": 0.0645133278903991
+            }
+          }
+        }
+      ]
+    }
+  }
+}
