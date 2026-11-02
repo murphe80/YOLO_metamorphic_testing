@@ -328,7 +328,7 @@ if [ ! -d "$IMAGES_DIR" ]; then
 fi
 
 # =============================================================================
-# Stage 1 — Generate metamorphic images
+# Stage 1 : Generate metamorphic images
 # =============================================================================
 if [ "$ANALYSIS_ONLY" = true ]; then
     echo ""
@@ -376,7 +376,7 @@ else
 fi
 
 # =============================================================================
-# Stage 2 — Run inference
+# Stage 2 : Run inference
 # =============================================================================
 if [ "$ANALYSIS_ONLY" = false ]; then
     echo ""
@@ -408,7 +408,7 @@ run_model() {
     fi
 
     echo ""
-    echo "── $display_name — original images ──"
+    echo "── $display_name : original images ──"
     # Inference scripts store outputs below results/<model>/ by default. The
     # relative subdirectory below resolves to results/<dataset>/<model>/.
     run_inference_dir "$script" "$weights" "$IMAGES_DIR" "../$DATASET/$model_name/original"
@@ -417,7 +417,7 @@ run_model() {
     for rule_name in "${RUN_OUTPUT_NAMES[@]}"; do
         rule_dir="$TRANSFORMED_DIR/$rule_name"
         [ -d "$rule_dir" ] || continue
-        echo "── $display_name — $rule_name ──"
+        echo "── $display_name : $rule_name ──"
         run_inference_dir "$script" "$weights" "$rule_dir" "../$DATASET/$model_name/$rule_name"
         visualize_detection_samples "$model_version" "$rule_dir" "$results_dir" "$rule_name"
     done
@@ -446,7 +446,7 @@ if [ "$ANALYSIS_ONLY" = false ]; then
 fi
 
 # =============================================================================
-# Stage 3 — Evaluate (metamorphic comparison: original vs transformed)
+# Stage 3 : Evaluate (metamorphic comparison: original vs transformed)
 # =============================================================================
 if [ "$SKIP_ANALYSIS" = false ]; then
     echo ""

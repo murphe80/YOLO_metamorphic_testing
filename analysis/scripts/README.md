@@ -2,7 +2,7 @@
 
 - `run_base_metamorphic_analysis.sh` evaluates base metamorphic results.
 - `run_cone_colour_analysis.sh` evaluates cone-colour results and generates
-  `confidence_change/cone_colour.png`, combining the selected colour rules on
+  `confidence_change/cone_colour.pdf`, combining the selected colour rules on
   one x axis. Experiment runners calling this script also generate the plot.
 - `generate_detection_overlap_metrics.sh` is a convenience runner for retained,
   lost, and new detection metrics on the test dataset.

@@ -2,11 +2,15 @@
 """Plot confidence behaviour across transformation settings.
 
 For each model and setting, detections are classified against ground truth and
-summarised in three groups:
+summarised in four groups:
 
 * retained true positives: transformed confidence - original confidence
 * lost true positives: original confidence - inference confidence threshold
 * persistent false positives: transformed confidence - original confidence
+* new false positives: transformed confidence for FPs without an original FP match
+
+The confidence-change line plots show retained true positives only.
+Lost TP and new FP distributions are plotted separately.
 
 True-positive matching is category-aware and confidence-prioritised. Persistent
 false positives are spatially matched between the original and transformed
@@ -19,6 +23,7 @@ Usage:
     python3 analysis/visualisation/plot_confidence_change.py --dataset test
     python3 analysis/visualisation/plot_confidence_change.py --rules imgColorWheel
     python3 analysis/visualisation/plot_confidence_change.py --dataset test --rules cone_colour
+    python3 analysis/visualisation/plot_confidence_change.py --dataset test --new-fp-only
 """
 
 import argparse
@@ -46,6 +51,8 @@ from analysis.utils.analyse_cone_colours import (
     update_ground_truth_cone_color,
 )
 from utils.model_registry import get_model_by_name, get_model_names
+from analysis.visualisation.model_legend import sorted_model_legend
+from analysis.visualisation.parameter_settings import configure_resolution_axis
 from analysis.utils.color_wheel import (
     metadata as hue_metadata, grouped, remap_reference, select_predictions,
 )
@@ -61,11 +68,13 @@ MARKERS = ["o", "s", "^", "D", "v", "P", "X", "*"]
 RETAINED_TP_CHANGE = "retained_tp_change"
 LOST_TP_CHANGE = "lost_tp_change"
 PERSISTENT_FP_CHANGE = "persistent_fp_change"
+NEW_FP_CONFIDENCE = "new_fp_confidence"
 LOST_TP_THRESHOLD = 0.25
 METRICS = (
     RETAINED_TP_CHANGE,
     LOST_TP_CHANGE,
     PERSISTENT_FP_CHANGE,
+    NEW_FP_CONFIDENCE,
 )
 LINE_METRICS = (
     RETAINED_TP_CHANGE,
@@ -75,6 +84,7 @@ METRIC_LABELS = {
     RETAINED_TP_CHANGE: "Retained TP confidence change",
     LOST_TP_CHANGE: "Lost TP confidence decrease (original − 0.25)",
     PERSISTENT_FP_CHANGE: "Persistent FP confidence change",
+    NEW_FP_CONFIDENCE: "New FP confidence",
 }
 
 
@@ -146,7 +156,7 @@ def confidence_summary(
     iou_threshold: float,
     source_mapping: Optional[dict] = None,
 ) -> ConfidenceSummary:
-    """Summarise retained TPs, lost TPs, and persistent FPs."""
+    """Summarise TP changes, persistent FP changes, and new FP confidences."""
     # Use GT-aligned exports throughout. The ordinary metamorphic exports can
     # use generated image IDs that do not necessarily match the GT image IDs.
     original_path = model_dir / "original" / "detections_for_gt.json"
@@ -241,15 +251,20 @@ def confidence_summary(
         ]
         original_fps = [original[index] for index in original_fp_indices]
         transformed_fps = [transformed[index] for index in transformed_fp_indices]
-        for original_fp_index, transformed_fp_index in match_detection_pairs(
+        fp_pairs = match_detection_pairs(
             original_fps, transformed_fps, iou_threshold
-        ):
+        )
+        for original_fp_index, transformed_fp_index in fp_pairs:
             original_score = original_fps[original_fp_index].get("score")
             transformed_score = transformed_fps[transformed_fp_index].get("score")
             if original_score is not None and transformed_score is not None:
                 values[PERSISTENT_FP_CHANGE].append(
                     float(transformed_score) - float(original_score)
                 )
+        persistent_indices = {transformed_index for _, transformed_index in fp_pairs}
+        for index, detection in enumerate(transformed_fps):
+            if index not in persistent_indices and detection.get("score") is not None:
+                values[NEW_FP_CONFIDENCE].append(float(detection["score"]))
 
     return ConfidenceSummary(
         values=values,
@@ -301,6 +316,7 @@ def collect_series(
     gt_path: Path,
     iou_threshold: float,
     export_records: Optional[list] = None,
+    new_fp_series: Optional[Dict[str, List[Tuple[float, List[float]]]]] = None,
 ) -> Tuple[
     str,
     Dict[str, Dict[str, List[Tuple[float, float]]]],
@@ -308,7 +324,7 @@ def collect_series(
     List[str],
     Dict[str, int],
 ]:
-    """Collect line means and Lost-TP distributions for every setting."""
+    """Collect line means, Lost-TP distributions, and optional new-FP distributions."""
     hue_records = []
     if rule == "imgColorWheel":
         hue_records = [{**hue_metadata(v["variant_id"]), "class_shifts": {}} for v in variants]
@@ -363,7 +379,10 @@ def collect_series(
             for metric in METRICS:
                 observations = summary.values[metric]
                 counts[metric] += len(observations)
-                if metric == LOST_TP_CHANGE:
+                if metric == NEW_FP_CONFIDENCE:
+                    if new_fp_series is not None:
+                        new_fp_series.setdefault(model, []).append((x_value, observations))
+                elif metric == LOST_TP_CHANGE:
                     if observations:
                         lost_tp_series[model].append((x_value, observations))
                 elif observations:
@@ -387,56 +406,39 @@ def plot_rule(
     setting_labels: List[str],
     output_path: Path,
 ) -> bool:
-    if not any(points for metric in LINE_METRICS for points in series[metric].values()):
+    retained_series = series[RETAINED_TP_CHANGE]
+    if not any(retained_series.values()):
         return False
 
-    fig, axes = plt.subplots(1, 2, figsize=(22 if rule == "imgColorWheel" else 13, 7), sharex=True)
-    model_order = sorted(next(iter(series.values())))
-    for axis, metric in zip(axes, LINE_METRICS):
-        for index, model in enumerate(model_order):
-            points = series[metric][model]
-            if not points:
-                continue
-            x_values, y_values = zip(*points)
-            axis.plot(
-                x_values,
-                y_values,
-                marker=MARKERS[index % len(MARKERS)],
-                linewidth=2,
-                linestyle="none" if rule == "imgColorWheel" else "-",
-                markersize=6,
-                color=get_model_color(model),
-                label=get_model_label(model),
-            )
-
-        axis.axhline(
-            0, color="#555555", linewidth=1, linestyle="--", alpha=0.7
+    fig, axis = plt.subplots(figsize=(14 if rule == "imgColorWheel" else 10, 7))
+    for index, model in enumerate(sorted(retained_series)):
+        points = retained_series[model]
+        if not points:
+            continue
+        x_values, y_values = zip(*points)
+        axis.plot(
+            x_values,
+            y_values,
+            marker=MARKERS[index % len(MARKERS)],
+            linewidth=2,
+            linestyle="none" if rule == "imgColorWheel" else "-",
+            markersize=6,
+            color=get_model_color(model),
+            label=get_model_label(model),
         )
-        axis.set_xlabel(x_label, fontsize=10, fontweight="bold")
-        axis.set_ylabel(METRIC_LABELS[metric], fontsize=10, fontweight="bold")
-        axis.grid(True, alpha=0.3, linestyle=":", linewidth=0.8)
-        if setting_labels:
-            positions = list(range(len(setting_labels)))
-            axis.set_xticks(positions, setting_labels, rotation=30, ha="right")
-        if not any(series[metric].values()):
-            axis.text(
-                0.5,
-                0.5,
-                "No observations",
-                transform=axis.transAxes,
-                ha="center",
-                va="center",
-                color="#666666",
-            )
 
-    handles, labels = [], []
-    for axis in axes:
-        axis_handles, axis_labels = axis.get_legend_handles_labels()
-        for handle, label in zip(axis_handles, axis_labels):
-            if label not in labels:
-                handles.append(handle)
-                labels.append(label)
+    axis.axhline(0, color="#555555", linewidth=1, linestyle="--", alpha=0.7)
+    axis.set_xlabel(x_label, fontsize=10, fontweight="bold")
+    axis.set_ylabel(METRIC_LABELS[RETAINED_TP_CHANGE], fontsize=10, fontweight="bold")
+    axis.grid(True, alpha=0.3, linestyle=":", linewidth=0.8)
+    if setting_labels:
+        positions = list(range(len(setting_labels)))
+        axis.set_xticks(positions, setting_labels, rotation=30, ha="right")
+
+    configure_resolution_axis(axis, rule, [x for points in retained_series.values() for x, _ in points])
+    handles, labels = axis.get_legend_handles_labels()
     if handles:
+        handles, labels = sorted_model_legend(handles, labels)
         fig.legend(
             handles,
             labels,
@@ -447,8 +449,7 @@ def plot_rule(
             fontsize=9,
         )
     fig.suptitle(
-        f"{format_rule_name(rule)} — Retained TP and Persistent FP Confidence"
-        + ("\nHue 40, 60, 100, 140: excluded (no included mappings)" if rule == "imgColorWheel" else ""),
+        f"{format_rule_name(rule)} : Retained TP Confidence Change",
         fontsize=14,
         fontweight="bold",
         y=0.995,
@@ -504,7 +505,7 @@ def plot_lost_tp_rule(
     axis.set_xlabel(x_label, fontsize=11, fontweight="bold")
     axis.set_ylabel(METRIC_LABELS[LOST_TP_CHANGE], fontsize=11, fontweight="bold")
     axis.set_title(
-        f"{format_rule_name(rule)} — {get_model_label(model)} Lost TP Confidence Decrease"
+        f"{format_rule_name(rule)} : {get_model_label(model)} Lost TP Confidence Decrease"
         + ("\nHue 40, 60, 100, 140: excluded (no included mappings)" if rule == "imgColorWheel" else ""),
         fontsize=13,
         fontweight="bold",
@@ -516,8 +517,61 @@ def plot_lost_tp_rule(
         axis.set_xticks(positions, setting_labels, rotation=30, ha="right")
     else:
         axis.set_xticks(x_values)
+    configure_resolution_axis(axis, rule, x_values)
     fig.tight_layout()
 
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    return True
+
+
+def plot_new_fp_rule(
+    rule: str,
+    x_label: str,
+    series: Dict[str, List[Tuple[float, List[float]]]],
+    setting_labels: List[str],
+    output_path: Path,
+) -> bool:
+    """Plot absolute new-FP confidence distributions, with one panel per model."""
+    if not series:
+        return False
+    models = list(series)
+    columns = min(2, len(models))
+    rows = (len(models) + columns - 1) // columns
+    fig, axes = plt.subplots(rows, columns, squeeze=False, sharey=True,
+                             figsize=(24 if rule == "imgColorWheel" else 16, 5 * rows),
+                             constrained_layout=True)
+    for axis in axes.flat:
+        axis.set_visible(False)
+    for axis, model in zip(axes.flat, models):
+        axis.set_visible(True)
+        settings = series[model]
+        populated = [(x, scores) for x, scores in settings if scores]
+        if populated:
+            positions, distributions = zip(*populated)
+            axis.boxplot(distributions, positions=positions,
+                         widths=_violin_width([x for x, _ in settings]),
+                         showmeans=False, patch_artist=True, manage_ticks=False,
+                         boxprops={"facecolor": get_model_color(model), "alpha": .55},
+                         medianprops={"color": "black", "linewidth": 1.5},
+                         flierprops={"marker": "o", "markersize": 2, "alpha": .4})
+        else:
+            axis.text(.5, .5, "No new FP observations", transform=axis.transAxes,
+                      ha="center", va="center")
+        positions = [x for x, _ in settings]
+        if setting_labels:
+            axis.set_xticks(range(len(setting_labels)), setting_labels, rotation=35, ha="right")
+        else:
+            axis.set_xticks(positions)
+        configure_resolution_axis(axis, rule, positions)
+        axis.set_ylim(0, 1)
+        axis.set_ylabel("New FP confidence")
+        axis.set_xlabel(x_label)
+        axis.grid(axis="y", alpha=.25)
+        axis.set_title(f"{get_model_label(model)} (n={sum(len(v) for _, v in settings):,})")
+    fig.suptitle(f"{format_rule_name(rule)} : New FP Confidence\n"
+                 "Boxes: middle 50%; line: median; whiskers: 1.5 IQR; circles: outliers")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor="white")
     plt.close(fig)
@@ -566,6 +620,10 @@ def main() -> None:
         "--models",
         nargs="*",
         help="Models to include (default: models found in the results)",
+    )
+    parser.add_argument(
+        "--new-fp-only", action="store_true",
+        help="Generate only new FP confidence plots and data under <output_dir>/new_FP",
     )
     parser.add_argument(
         "--iou_threshold",
@@ -638,6 +696,7 @@ def main() -> None:
             continue
 
         hue_export = []
+        new_fp_series = {model: [] for model in models}
         x_label, line_series, lost_tp_series, setting_labels, counts = collect_series(
             rule,
             variants,
@@ -646,11 +705,31 @@ def main() -> None:
             gt_path,
             args.iou_threshold,
             hue_export,
+            new_fp_series,
         )
+        new_fp_output = output_dir / "new_FP" / f"{rule}.pdf"
+        if plot_new_fp_rule(rule, x_label, new_fp_series, setting_labels, new_fp_output):
+            new_fp_output.with_suffix(".json").write_text(json.dumps({
+                "dataset": args.dataset, "rule": rule, "iou_threshold": args.iou_threshold,
+                "definition": "transformed FP with no spatial match to an original FP; "
+                              "FP membership uses category-aware GT matching; FP pairs ignore category",
+                "confidence": "absolute transformed detection score, not a confidence change",
+                "gt_source": str(gt_path.resolve()), "results_source": str(results_dir.resolve()),
+                "x_label": x_label, "setting_labels": setting_labels,
+                "models": {model: [dict(setting=x, count=len(scores), scores=scores,
+                                         mean=sum(scores) / len(scores) if scores else None)
+                                   for x, scores in settings]
+                           for model, settings in new_fp_series.items()},
+                "hue_mappings": hue_export,
+            }, indent=2, allow_nan=False) + "\n")
+            print(f"  Saved: {new_fp_output} (new FP={counts[NEW_FP_CONFIDENCE]})", flush=True)
+            generated += 1
+        if args.new_fp_only:
+            continue
         if rule == "imgColorWheel":
             output_dir.mkdir(parents=True, exist_ok=True)
             (output_dir / "imgColorWheel.json").write_text(json.dumps(hue_export, indent=2) + "\n")
-        output_path = output_dir / f"{rule}.png"
+        output_path = output_dir / f"{rule}.pdf"
         if plot_rule(rule, x_label, line_series, setting_labels, output_path):
             print(
                 f"  Saved: {output_path} "
@@ -660,7 +739,7 @@ def main() -> None:
             )
             generated += 1
         else:
-            print(f"  Skip {rule}: no retained TP or persistent FP detections found")
+            print(f"  Skip {rule}: no retained TP detections found")
             skipped += 1
 
         # Colour rules intentionally produce one combined figure only.
@@ -668,7 +747,7 @@ def main() -> None:
             continue
 
         for model in models:
-            lost_output_path = output_dir / "lost_true_positives" / model / f"{rule}.png"
+            lost_output_path = output_dir / "lost_true_positives" / model / f"{rule}.pdf"
             if plot_lost_tp_rule(
                 rule,
                 model,

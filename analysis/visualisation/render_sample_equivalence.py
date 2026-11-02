@@ -24,7 +24,6 @@ from analysis.utils.calculate_sample_equivalence import (
     TARGET_ARMS,
     build_summaries,
     create_response_plots,
-    load_config,
     write_markdown_report,
 )
 
@@ -72,6 +71,28 @@ def rebuild_analysis_arm_values(parameter_rows):
     return analysis_arm_values
 
 
+def rebuild_plot_config(parameter_rows):
+    """Use saved settings so later config/cohort changes cannot alter the plots."""
+    config = {}
+    variants = {}
+    for row in parameter_rows:
+        rule = row["rule"]
+        rule_config = config.setdefault(rule, {
+            "varying_parameter": row["varying_parameter"], "variants": [],
+        })
+        variant = {**row["setting"], "variant_id": row["variant_id"]}
+        key = (rule, row["variant_id"])
+        if rule_config["varying_parameter"] != row["varying_parameter"]:
+            raise ValueError(f"Inconsistent saved parameter for {rule!r}.")
+        if key in variants:
+            if variants[key] != variant:
+                raise ValueError(f"Inconsistent saved setting for {key!r}.")
+        else:
+            variants[key] = variant
+            rule_config["variants"].append(variant)
+    return config
+
+
 def main() -> None:
     cli_args = parse_args()
     with cli_args.results_json.open() as handle:
@@ -95,8 +116,7 @@ def main() -> None:
             "calculate_sample_equivalence.py to regenerate it."
         )
 
-    source_config = Path(metadata["source_config"])
-    config = load_config(source_config, metadata["rules"])
+    config = rebuild_plot_config(data["parameter_results"])
     render_args = SimpleNamespace(
         output_dir=cli_args.output_dir,
         models=metadata["models"],

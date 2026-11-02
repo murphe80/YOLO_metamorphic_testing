@@ -71,6 +71,12 @@ def get_model_by_name(name: str) -> Optional[Dict]:
     return None
 
 
+def get_model_display_name(name: str) -> str:
+    """Return a model's presentation label, falling back to its identifier."""
+    model = get_model_by_name(name)
+    return model.get("display_name", name) if model else name
+
+
 def get_model_by_version(version: str) -> Optional[Dict]:
     """
     Get model configuration by version.

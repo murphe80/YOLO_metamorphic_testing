@@ -51,7 +51,10 @@ def build(source, roots=None):
         'rq2/rq2c/performance_distributions/*/*.png',
         'rq3/sample_equivalence/plots/*.png',
     ):
-        figures.update(relative(p) for p in root.glob(pattern) if p.is_file())
+        for extension in ('.pdf', '.png'):
+            figures.update(relative(p) for p in root.glob(pattern.replace('.png', extension)) if p.is_file())
+    # Prefer the vector export when a legacy PNG also exists.
+    figures = {p for p in figures if not p.endswith('.png') or p[:-4] + '.pdf' not in figures}
     config_path = PROJECT / 'config/brute_force_transformations.json'
     config = load(config_path) if config_path.exists() else {}
     variants = {v['variant_id']: (rule, {k: x for k, x in v.items() if k != 'variant_id'})
@@ -98,9 +101,12 @@ def build(source, roots=None):
         dataset = model_dir.parent.name if model_dir.parent != validation_root else 'default'
         validation.setdefault(dataset, {})[model_dir.name] = {
             **{k: d.get(k, {}) for k in ('metrics', 'holdout_summary', 'ap_threshold')},
-            'figure': relative(p.parent / 'brightness_validation.png'),
+            'figure': relative(p.parent / ('brightness_validation.pdf'
+                if (p.parent / 'brightness_validation.pdf').is_file() else 'brightness_validation.png')),
         }
-        figures.update(relative(f) for f in p.parent.glob('*.png') if f.is_file())
+        for extension in ('*.pdf', '*.png'):
+            figures.update(relative(f) for f in p.parent.glob(extension) if f.is_file())
+    figures = {p for p in figures if not p.endswith('.png') or p[:-4] + '.pdf' not in figures}
     search = {}
     for p in sorted(root.glob('rq2/rq2a/*/*/results.json')):
         d = load(p)

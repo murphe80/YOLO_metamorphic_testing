@@ -56,7 +56,7 @@ def calculate_mapping(original, transformed, ground_truth, variant, key, thresho
                               with_empty(selected_trans, transformed),
                               with_empty(expected_gt, ground_truth), key, threshold)
     result.update(variant_id=variant, hue_rotation=record["hue_rotation"], mapping=mapping,
-                  title=f"{mapping['mapping'].capitalize()} — {variant} (hue {record['hue_rotation']})")
+                  title=f"{mapping['mapping'].capitalize()} : {variant} (hue {record['hue_rotation']})")
     return result
 
 
@@ -74,7 +74,7 @@ def main():
     base = (args.results_dir or PROJECT_ROOT / "results" / args.dataset) / args.model
     gt_path = args.gt_path or PROJECT_ROOT / "data/base_images" / args.dataset / "annotations_coco.json"
     output = args.output or (PROJECT_ROOT / "analysis/results/rq1" / args.dataset /
-                            "detection_overlap_metrics/plots/color_wheel_hallucination.png")
+                            "detection_overlap_metrics/plots/color_wheel_hallucination.pdf")
     try:
         original = load_raw(base / "original")
         gt = load_ground_truth(gt_path)

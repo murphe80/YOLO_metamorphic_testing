@@ -440,7 +440,8 @@ def plot_method_comparison(statistics: Dict, output_dir: Path):
 
     side = "combined"
     overall = statistics["overall"][side]
-    methods = overall["ranking_by_coefficient_of_variation"]
+    methods = [m for m in overall["ranking_by_coefficient_of_variation"]
+               if m != "mean_shift_separation_spread_ratio"]
     if not methods:
         return
 
@@ -451,12 +452,12 @@ def plot_method_comparison(statistics: Dict, output_dir: Path):
     ax.bar(range(len(methods)), cvs, color=colors)
     ax.set_xticks(range(len(methods)))
     ax.set_xticklabels(methods, rotation=30, ha="right")
-    ax.set_ylabel("Coefficient of Variation (std / mean)")
-    ax.set_title("RQ2.b: Brightness Method Consistency at Degradation Thresholds\n(lower = more reliable predictor)")
+    ax.set_ylabel("Coefficient of Variation")
+    ax.set_title("Brightness method consistency at Degradation Thresholds")
     ax.grid(True, alpha=0.3, axis="y")
     plt.tight_layout()
 
-    output_path = output_dir / "method_comparison.png"
+    output_path = output_dir / "method_comparison.pdf"
     plt.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
     print(f"Plot saved to: {output_path}")

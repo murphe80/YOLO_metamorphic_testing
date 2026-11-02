@@ -30,6 +30,8 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils.model_registry import get_model_by_name, get_model_names
+from analysis.visualisation.model_legend import sorted_model_legend
+from analysis.visualisation.parameter_settings import configure_resolution_axis
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "brute_force_transformations.json"
@@ -233,17 +235,19 @@ def plot_rule(
             label=get_model_label(model),
         )
 
+    configure_resolution_axis(ax, rule, [x for points in series.values() for x, _ in points])
     ax.set_xlabel(format_param_label(param_name), fontsize=11, fontweight="bold")
     ax.set_ylabel(metric, fontsize=11, fontweight="bold")
     ax.set_title(
-        f"{format_rule_name(rule)} — {metric} vs {format_param_label(param_name)}\n"
+        f"{format_rule_name(rule)} : {metric} vs {format_param_label(param_name)}\n"
         f"({comparison.replace('_', ' ')})",
         fontsize=13,
         fontweight="bold",
         pad=15,
     )
     ax.grid(True, alpha=0.3, linestyle=":", linewidth=0.8)
-    ax.legend(loc="best", framealpha=0.9, fontsize=9)
+    ax.legend(*sorted_model_legend(*ax.get_legend_handles_labels()),
+              loc="best", framealpha=0.9, fontsize=9)
     plt.tight_layout()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -390,7 +394,7 @@ def main():
             metrics_export["rules"][rule] = {"varying_parameter": "hue_rotation", "settings": settings}
             for metric, directory in ((args.metric, precision_output_dir), ("AR", ar_output_dir)):
                 plot_metric(settings, models, metric, args.comparison,
-                            directory / f"{rule}_{args.comparison}.png")
+                            directory / f"{rule}_{args.comparison}.pdf")
             generated += 1
             ar_generated += 1
             continue
@@ -419,7 +423,7 @@ def main():
             ar_skipped += 1
             continue
 
-        output_path = precision_output_dir / f"{rule}_{args.comparison}.png"
+        output_path = precision_output_dir / f"{rule}_{args.comparison}.pdf"
         if plot_rule(rule, param_name, series, args.comparison, args.metric, output_path):
             print(f"  Saved: {output_path}")
             generated += 1
@@ -435,7 +439,7 @@ def main():
             args.comparison,
             AR_METRIC,
         )
-        ar_output_path = ar_output_dir / f"{rule}_{args.comparison}.png"
+        ar_output_path = ar_output_dir / f"{rule}_{args.comparison}.pdf"
         if plot_rule(
             rule,
             param_name,

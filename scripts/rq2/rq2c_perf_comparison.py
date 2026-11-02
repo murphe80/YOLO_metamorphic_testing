@@ -7,9 +7,13 @@ in RQ2.a (the gamma values at which each image's AP crosses the target),
 compare per-image AP at the original image against AP at the lower and
 upper gamma thresholds, across the whole dataset.
 
-For each YOLO model, this produces a single PNG with 3 violin plots (AP at
-Original / Lower threshold / Upper threshold), showing the spread of
+For each YOLO model, this produces 3 separate PDFs with one violin plot each
+(AP at Original / Lower threshold / Upper threshold), showing the spread of
 per-image AP values across the dataset.
+
+Additional overlay PDFs can be generated from the two saved RQ2.c summary
+JSON files with --overlay-from-summaries. These also use separate files and
+overlap the search methods only at the lower and upper thresholds.
 
 "Lower" and "upper" refer to the two operational gamma crossings found by
 RQ2.a (``gamma_left``/``gamma_right``)
@@ -43,6 +47,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 from PIL import Image
 
 # Add project root to path
@@ -58,6 +63,10 @@ RESULTS_ROOT = PROJECT_ROOT / "analysis" / "results" / "rq2"
 SEARCH_METHODS = ["golden_section", "brute_force"]
 THRESHOLDS = ("original", "lower", "upper")
 AP_LABEL = "AP (IoU 0.50:0.95)"
+METHOD_STYLES = {
+    "brute_force": ("Brute force", "#0072B2"),
+    "golden_section": ("Golden search", "#D55E00"),
+}
 THRESHOLD_LABELS = {
     "original": "Original",
     "lower": "Lower \u03b3 Threshold (brighter)",
@@ -260,70 +269,133 @@ def plot_performance_distribution(
     model: str,
     records: List[Dict],
     output_path: Path,
-) -> bool:
+    records_by_method: Optional[Dict[str, List[Dict]]] = None,
+) -> List[Path]:
     """
-    Save a single PNG with a row of 3 violin plots (AP at
+    Save separate PDFs with one violin plot each (AP at
     Original/Lower/Upper), matching the violin styling used by
     ``plot_confidence_change.plot_lost_tp_rule``.
+
+    Append _original, _lower, and _upper to output_path's stem and return
+    the saved paths.
+
+    When records_by_method is supplied, overlay its threshold distributions
+    at the same position; the original-image panel still uses records.
     """
     if not records:
-        return False
+        return []
 
     color = get_model_color(model)
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5.5), sharey=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    saved_paths = []
 
-    for col, threshold in enumerate(THRESHOLDS):
-        axis = axes[col]
+    for threshold in THRESHOLDS:
+        fig, axis = plt.subplots(figsize=(5, 5.5))
         key = f"ap_{threshold}"
         values = [r[key] for r in records if r.get(key) is not None]
+        overlay = records_by_method is not None and threshold != "original"
 
-        if not values:
+        if not values and not overlay:
             axis.text(
                 0.5, 0.5, "No observations",
                 transform=axis.transAxes, ha="center", va="center", color="#666666",
             )
-            axis.set_xticks([])
-            continue
 
-        violin_parts = axis.violinplot(
-            values,
-            positions=[0],
-            widths=0.6,
-            showmeans=False,
-            showmedians=True,
-        )
-        for body in violin_parts["bodies"]:
-            body.set_facecolor(color)
-            body.set_edgecolor(color)
-            body.set_alpha(0.55)
-        for part_key in ("cmedians", "cbars", "cmins", "cmaxes"):
-            violin_parts[part_key].set_color(color)
+        distributions = [("", color, values)]
+        if overlay:
+            distributions = [
+                (label, method_color, [r[key] for r in records_by_method[method]
+                                       if r.get(key) is not None])
+                for method, (label, method_color) in METHOD_STYLES.items()
+            ]
 
-        mean_val = float(np.mean(values))
-        median_val = float(np.median(values))
-        axis.set_title(
-            f"{THRESHOLD_LABELS[threshold]}\n"
-            f"(n={len(values)}, mean={mean_val:.3f}, median={median_val:.3f})",
-            fontsize=10,
-        )
+        for label, distribution_color, distribution in distributions:
+            if not distribution:
+                continue
+            violin_parts = axis.violinplot(
+                distribution,
+                positions=[0],
+                widths=0.6,
+                showmeans=False,
+                showmedians=True,
+            )
+            for body in violin_parts["bodies"]:
+                body.set_facecolor(distribution_color)
+                body.set_edgecolor(distribution_color)
+                body.set_alpha(0.35 if overlay else 0.55)
+            for part_key in ("cmedians", "cbars", "cmins", "cmaxes"):
+                violin_parts[part_key].set_color(distribution_color)
+                if overlay and label == METHOD_STYLES["golden_section"][0]:
+                    violin_parts[part_key].set_linestyle("--")
+
+        axis.set_title(THRESHOLD_LABELS[threshold], fontsize=10)
         axis.set_xticks([])
         axis.set_ylim(-0.02, 1.02)
         axis.grid(True, alpha=0.3, linestyle=":", linewidth=0.8, axis="y")
 
-        if col == 0:
-            axis.set_ylabel(AP_LABEL, fontsize=11, fontweight="bold")
+        axis.set_ylabel(AP_LABEL, fontsize=11, fontweight="bold")
 
-    fig.suptitle(
-        f"{get_model_label(model)} \u2014 AP Distribution: Original vs Brightness Thresholds",
-        fontsize=14,
-        fontweight="bold",
-    )
-    fig.tight_layout(rect=(0, 0, 1, 0.90))
+        fig.suptitle(
+            f"{get_model_label(model)}: AP Distribution",
+            fontsize=14,
+            fontweight="bold",
+        )
+        if overlay:
+            fig.legend(
+                handles=[Patch(facecolor=c, edgecolor=c, alpha=0.35, label=label)
+                         for label, c in METHOD_STYLES.values()],
+                loc="lower center", ncol=2, frameon=False,
+            )
+        fig.tight_layout(rect=(0, 0.06 if overlay else 0, 1, 0.90))
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    return True
+        threshold_path = output_path.with_name(f"{output_path.stem}_{threshold}.pdf")
+        fig.savefig(threshold_path, dpi=150, bbox_inches="tight", facecolor="white")
+        plt.close(fig)
+        saved_paths.append(threshold_path)
+    return saved_paths
+
+
+def plot_overlays_from_summaries(
+    summary_paths: List[Path], models: Optional[List[str]],
+    preferred_method: str, output_dir: Path,
+) -> int:
+    """Overlay thresholds and use each unique image from either method for Original."""
+    model_data = {}
+    for path in summary_paths:
+        with open(path) as f:
+            summary = json.load(f)
+        for model, data in summary.items():
+            method = data.get("search_method")
+            if method in SEARCH_METHODS:
+                model_data.setdefault(model, {})[method] = data
+
+    generated = 0
+    for model in models if models is not None else model_data:
+        methods = model_data.get(model, {})
+        if any(not methods.get(method, {}).get("records") for method in SEARCH_METHODS):
+            print(f"Skip {model}: overlay requires saved AP records from both search methods")
+            continue
+        if len({methods[method].get("dataset", "test") for method in SEARCH_METHODS}) != 1:
+            print(f"Skip {model}: search methods used different datasets")
+            continue
+        # Original AP is independent of threshold-search success. Include the
+        # union of images, counting shared images once and preferring the chosen
+        # method's original AP when both summaries contain it.
+        original_records = {}
+        method_order = [m for m in SEARCH_METHODS if m != preferred_method] + [preferred_method]
+        for method in method_order:
+            for record in methods[method]["records"]:
+                if record.get("ap_original") is not None:
+                    original_records[record["image_name"]] = record
+        output_path = output_dir / f"{model}_overlapping_performance_distribution.pdf"
+        saved_paths = plot_performance_distribution(
+            model, list(original_records.values()), output_path,
+            records_by_method={method: methods[method]["records"] for method in SEARCH_METHODS},
+        )
+        for saved_path in saved_paths:
+            print(f"Saved: {saved_path}")
+            generated += 1
+    return generated
 
 
 def resolve_results_json(model: str, preferred_method: str) -> Tuple[Optional[Path], Optional[str]]:
@@ -351,6 +423,16 @@ Examples:
   # Quick test
   python scripts/rq2/rq2c_perf_comparison.py --num-images 10
         """
+    )
+    parser.add_argument(
+        "--overlay-from-summaries",
+        type=Path,
+        nargs=2,
+        metavar=("SUMMARY_A", "SUMMARY_B"),
+        help="Generate additional overlapping violins from saved RQ2.c summary JSONs "
+             "for both methods, without recomputing AP. Original includes all unique "
+             "images from either summary (shared AP values prefer --search-method); "
+             "each threshold retains all observations from each method.",
     )
     parser.add_argument(
         "--models",
@@ -389,6 +471,17 @@ Examples:
         else RESULTS_ROOT / "rq2c/performance_distributions"
     )
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.overlay_from_summaries:
+        if args.num_images is not None:
+            parser.error("--num-images cannot be used with --overlay-from-summaries")
+        generated = plot_overlays_from_summaries(
+            args.overlay_from_summaries, args.models, args.search_method, output_dir
+        )
+        print(f"RQ2.c Complete: {generated} overlay plot(s) generated")
+        if generated == 0:
+            sys.exit(1)
+        return
 
     models = args.models if args.models else get_model_names()
 
@@ -434,9 +527,9 @@ Examples:
             print(f"  Skip {model}: no complete image records")
             continue
 
-        output_path = output_dir / f"{model}_{chosen_method}_performance_distribution.png"
-        if plot_performance_distribution(model, records, output_path):
-            print(f"  Saved: {output_path}")
+        output_path = output_dir / f"{model}_{chosen_method}_performance_distribution.pdf"
+        for saved_path in plot_performance_distribution(model, records, output_path):
+            print(f"  Saved: {saved_path}")
             generated += 1
 
         all_model_data[model] = {

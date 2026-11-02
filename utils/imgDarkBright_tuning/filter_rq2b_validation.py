@@ -7,7 +7,7 @@ import json
 import math
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 os.environ.setdefault('MPLCONFIGDIR', '/tmp/rq2b_validation_matplotlib')
 import matplotlib
@@ -19,7 +19,9 @@ ROOT = Path(__file__).resolve().parents[2]
 BASE = ROOT / 'analysis/results/rq2/rq2b/validation'
 # Load only analysis/plotting definitions: no inference imports or execution.
 source_code = ROOT / 'scripts/rq2/rq2b_validate_brightness_method.py'
-names = {'div', 'classify', 'confusion_metrics', 'plot_confusion_matrices', 'plot'}
+names = {'div', 'fmt', 'classify', 'classify_binary', 'predict_brightness',
+         'confusion_metrics', 'plot_confusion_matrices', 'plot_confusion_matrices_binary',
+         'plot', 'plot_binary'}
 tree = ast.parse(source_code.read_text())
 tree.body = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
 exec(compile(tree, str(source_code), 'exec'), globals())
@@ -49,6 +51,9 @@ def main():
         source = base / model / 'validation_results.json'
         source_bytes = source.read_bytes()
         original = json.loads(source_bytes)
+        if original.get('schema_version', 0) >= 4:
+            raise ValueError('This binary AP-filtering utility accepts schema <= 3 only. '
+                             'Use the unfiltered three-way calibration report for schema 4.')
         data = copy.deepcopy(original)
         rows = original['validation_observations']
         retained = [row for row in data['validation_observations']
@@ -91,7 +96,7 @@ def main():
         out = base / model / 'filtered_ap_0.1'
         out.mkdir(exist_ok=True)
         (out / 'validation_results.json').write_text(json.dumps(data, indent=2) + '\n')
-        plot(out / 'brightness_validation.png', retained, data['operating_ranges'], data['ap_threshold'])
+        plot(out / 'brightness_validation.pdf', retained, data['operating_ranges'], data['ap_threshold'])
         plot_confusion_matrices(out, data)
         # Check saved output and independently count all confusion-matrix cells.
         saved = json.loads((out / 'validation_results.json').read_text())
@@ -112,8 +117,8 @@ def main():
                     counts['tp' if outside and fail else 'fp' if outside else 'fn' if fail else 'tn'] += 1
                 assert all(m[k] == v for k, v in counts.items())
         assert source.read_bytes() == source_bytes
-        for path in out.glob('*.png'):
-            assert path.read_bytes().startswith(b'\x89PNG\r\n\x1a\n')
+        for path in out.glob('*.pdf'):
+            assert path.read_bytes().startswith(b'%PDF-')
         print(json.dumps({'model': model, **data['analysis_filter'], 'output': str(out)}), flush=True)
 
 

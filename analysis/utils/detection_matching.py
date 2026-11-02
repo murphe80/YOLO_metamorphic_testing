@@ -12,8 +12,9 @@ Matching algorithm based on pycocotools COCOeval.evaluateImg approach:
 """
 
 import json
+import math
 from pathlib import Path
-from typing import Dict, List, Tuple, Set
+from typing import Dict, List, Tuple, Optional
 from collections import defaultdict
 
 
@@ -142,13 +143,13 @@ def match_detection_pairs(
     return pairs
 
 
-def match_three_way_per_image(
+def match_three_way_members(
     original_dets: List[Dict],
     transformed_dets: List[Dict],
     gt_dets: List[Dict],
     iou_threshold: float = 0.5,
     require_category_match: bool = True
-) -> Dict[str, int]:
+) -> Dict[str, list]:
     """
     Perform three-way matching of detections for a single image using COCO evaluation approach.
 
@@ -175,7 +176,8 @@ def match_three_way_per_image(
             like COCO AP.
 
     Returns:
-        Dictionary with counts for each Venn region:
+        Dictionary of (original index, transformed index, GT index) tuples per
+        Venn region. Missing sources have index None. Regions:
         - orig_trans_gt: All three (TPs maintained)
         - orig_trans: Original + Transformed only (consistent FPs)
         - orig_gt: Original + GT only (TPs lost during transformation)
@@ -257,13 +259,13 @@ def match_three_way_per_image(
 
     # Step 4: Assign to Venn regions based on matches
     regions = {
-        'orig_trans_gt': 0,
-        'orig_trans': 0,
-        'orig_gt': 0,
-        'trans_gt': 0,
-        'orig_only': 0,
-        'trans_only': 0,
-        'gt_only': 0
+        'orig_trans_gt': [],
+        'orig_trans': [],
+        'orig_gt': [],
+        'trans_gt': [],
+        'orig_only': [],
+        'trans_only': [],
+        'gt_only': []
     }
 
     # Track which detections we've assigned to a region
@@ -281,7 +283,7 @@ def match_three_way_per_image(
         trans_gt = trans_to_gt.get(trans_idx)
 
         if orig_gt is not None and orig_gt == trans_gt:
-            regions['orig_trans_gt'] += 1
+            regions['orig_trans_gt'].append((orig_idx, trans_idx, orig_gt))
             assigned_orig.add(orig_idx)
             assigned_trans.add(trans_idx)
             assigned_gt.add(orig_gt)
@@ -289,30 +291,125 @@ def match_three_way_per_image(
     # Two-way: orig + trans (no GT match)
     for orig_idx, trans_idx in orig_to_trans.items():
         if orig_idx not in assigned_orig and trans_idx not in assigned_trans:
-            regions['orig_trans'] += 1
+            regions['orig_trans'].append((orig_idx, trans_idx, None))
             assigned_orig.add(orig_idx)
             assigned_trans.add(trans_idx)
 
     # Two-way: orig + GT (trans lost this detection)
     for orig_idx, gt_idx in orig_to_gt.items():
         if orig_idx not in assigned_orig and gt_idx not in assigned_gt:
-            regions['orig_gt'] += 1
+            regions['orig_gt'].append((orig_idx, None, gt_idx))
             assigned_orig.add(orig_idx)
             assigned_gt.add(gt_idx)
 
     # Two-way: trans + GT (orig missed, trans recovered)
     for trans_idx, gt_idx in trans_to_gt.items():
         if trans_idx not in assigned_trans and gt_idx not in assigned_gt:
-            regions['trans_gt'] += 1
+            regions['trans_gt'].append((None, trans_idx, gt_idx))
             assigned_trans.add(trans_idx)
             assigned_gt.add(gt_idx)
 
     # Single-source only
-    regions['orig_only'] = len(original_dets) - len(assigned_orig)
-    regions['trans_only'] = len(transformed_dets) - len(assigned_trans)
-    regions['gt_only'] = len(gt_dets) - len(assigned_gt)
+    regions['orig_only'] = [
+        (index, None, None) for index in range(len(original_dets)) if index not in assigned_orig
+    ]
+    regions['trans_only'] = [
+        (None, index, None) for index in range(len(transformed_dets)) if index not in assigned_trans
+    ]
+    regions['gt_only'] = [
+        (None, None, index) for index in range(len(gt_dets)) if index not in assigned_gt
+    ]
 
     return regions
+
+
+def match_three_way_per_image(
+    original_dets: List[Dict],
+    transformed_dets: List[Dict],
+    gt_dets: List[Dict],
+    iou_threshold: float = 0.5,
+    require_category_match: bool = True,
+) -> Dict[str, int]:
+    """Return the existing seven counts, using the shared region assignments."""
+    return {region: len(members) for region, members in match_three_way_members(
+        original_dets, transformed_dets, gt_dets, iou_threshold, require_category_match
+    ).items()}
+
+
+SIZE_BINS = ("small", "medium", "large")
+# COCO's 32² and 96² area cutoffs. Use disjoint bins for additive stacks;
+# an exact boundary goes into the larger bin (COCO AP ranges overlap there).
+SIZE_AREA_BOUNDARIES = (32 ** 2, 96 ** 2)
+METRIC_REGIONS = {
+    "tp_retention_rate": (("orig_trans_gt",), ("orig_trans_gt", "orig_gt")),
+    "fp_consistency_rate": (("orig_trans",), ("orig_only", "trans_only", "orig_trans")),
+    "detection_loss_rate": (("orig_gt", "orig_only"),
+                            ("orig_trans_gt", "orig_trans", "orig_gt", "orig_only")),
+    "new_hallucination_rate": (("trans_only",),
+                              ("orig_trans_gt", "orig_trans", "trans_gt", "trans_only")),
+    "new_tp_rate": (("trans_gt",), ("trans_gt", "gt_only")),
+}
+
+
+def size_bin(area: float) -> str:
+    if not math.isfinite(area) or area < 0:
+        raise ValueError(f"Invalid object area: {area!r}")
+    return SIZE_BINS[0 if area < SIZE_AREA_BOUNDARIES[0] else
+                     1 if area < SIZE_AREA_BOUNDARIES[1] else 2]
+
+
+def bbox_area(detection: dict) -> float:
+    # Predicted area must describe the box, even if a cached 'area' is stale.
+    width, height = detection["bbox"][2:]
+    if width < 0 or height < 0:
+        raise ValueError(f"Negative bounding-box dimensions: {detection['bbox']!r}")
+    return width * height
+
+
+def member_area(member, original, native_transformed, ground_truth, reference_area_scale):
+    """GT area for matched objects; prediction area otherwise, in transformed pixels."""
+    original_index, transformed_index, gt_index = member
+    if gt_index is not None:
+        gt = ground_truth[gt_index]
+        return gt.get("area", bbox_area(gt)) * reference_area_scale
+    if transformed_index is not None:
+        return bbox_area(native_transformed[transformed_index])
+    return bbox_area(original[original_index]) * reference_area_scale
+
+
+def make_size_breakdown(total_regions, raw_counts, weighted_counts, reference_area_scale):
+    def summarize(counts, weights):
+        total = sum(weights.values())
+        return {
+            "counts": counts,
+            "weighted_counts": weights,
+            "proportions": {size: weights[size] / total if total else 0.0 for size in SIZE_BINS},
+        }
+
+    regions = {region: summarize(raw_counts[region], weighted_counts[region])
+               for region in total_regions}
+    metrics = {}
+    for metric, (numerator, denominator) in METRIC_REGIONS.items():
+        counts = {size: sum(raw_counts[region][size] for region in numerator) for size in SIZE_BINS}
+        weights = {size: sum(weighted_counts[region][size] for region in numerator) for size in SIZE_BINS}
+        divisor = sum(total_regions[region] for region in denominator)
+        metrics[metric] = {
+            **summarize(counts, weights),
+            "weighted_denominator": divisor,
+            "rate_contributions": {size: weights[size] / divisor if divisor else 0.0 for size in SIZE_BINS},
+        }
+    return {
+        "coordinate_space": "transformed_image",
+        "area_units": "pixels_squared",
+        "area_ranges": {"small": [0, 1024], "medium": [1024, 9216], "large": [9216, None]},
+        "boundary_policy": "Lower inclusive, upper exclusive; exact COCO cutoffs enter the larger bin so stacks are disjoint.",
+        "area_source": "GT area when the region has a GT member; otherwise native transformed prediction bbox area; otherwise projected original prediction bbox area.",
+        "reference_area_scale": reference_area_scale,
+        "normalization": "Each region-size count is divided by the image's total across all seven regions, then summed across images. Existing metric denominators are unchanged.",
+        "proportion_definition": "Weighted share of the metric numerator (or region); zero when empty. Rate contributions sum to the existing metric value.",
+        "regions": regions,
+        "metrics": metrics,
+    }
 
 
 def aggregate_three_way_overlap(
@@ -320,8 +417,12 @@ def aggregate_three_way_overlap(
     transformed_coco_path: Path,
     gt_coco_path: Path,
     iou_threshold: float = 0.5,
-    require_category_match: bool = True
-) -> Dict[str, float]:
+    require_category_match: bool = True,
+    *,
+    include_sizes: bool = False,
+    transformed_native_path: Optional[Path] = None,
+    reference_area_scale: float = 1.0,
+) -> dict:
     """
     Compute image-normalized three-way overlap statistics across all images.
 
@@ -339,14 +440,26 @@ def aggregate_three_way_overlap(
             when True (default), matches also require equal category_id so
             that a detection whose predicted class changes after
             transformation is not miscounted as a retained true positive.
+        include_sizes: Add raw counts, image-normalized weights, within-metric
+            size proportions, and additive rate contributions under size_breakdown.
+        transformed_native_path: Predictions before coordinate back-projection,
+            in the same per-image annotation order as transformed_coco_path.
+        reference_area_scale: Forward area multiplier for GT and original boxes
+            (width ratio times height ratio for geometric transformations).
 
     Returns:
-        Dictionary with image-normalized aggregate weights for all 7 Venn regions
+        Existing image-normalized weights, plus size_breakdown when requested.
     """
     # Load detections grouped by image
     original_by_img = load_detections_by_image(original_coco_path)
     transformed_by_img = load_detections_by_image(transformed_coco_path)
     gt_by_img = load_detections_by_image(gt_coco_path)
+
+    native_by_img = (load_detections_by_image(transformed_native_path)
+                     if include_sizes and transformed_native_path
+                     and transformed_native_path != transformed_coco_path else transformed_by_img)
+    if include_sizes and (not math.isfinite(reference_area_scale) or reference_area_scale <= 0):
+        raise ValueError("reference_area_scale must be finite and positive")
 
     # Aggregate per-image proportions across all images
     total_regions = {
@@ -359,6 +472,9 @@ def aggregate_three_way_overlap(
         'gt_only': 0.0
     }
 
+    raw_counts = {region: dict.fromkeys(SIZE_BINS, 0) for region in total_regions}
+    weighted_counts = {region: dict.fromkeys(SIZE_BINS, 0.0) for region in total_regions}
+
     # Get all image IDs that appear in any source
     all_image_ids = set(original_by_img.keys()) | set(transformed_by_img.keys()) | set(gt_by_img.keys())
 
@@ -368,9 +484,10 @@ def aggregate_three_way_overlap(
         gt_dets = gt_by_img.get(image_id, [])
 
         # Match detections for this image
-        image_regions = match_three_way_per_image(
+        members = match_three_way_members(
             orig_dets, trans_dets, gt_dets, iou_threshold, require_category_match
         )
+        image_regions = {region: len(items) for region, items in members.items()}
 
         image_total = sum(image_regions.values())
         if image_total == 0:
@@ -383,6 +500,25 @@ def aggregate_three_way_overlap(
         for region, count in image_regions.items():
             total_regions[region] += count / image_total
 
+        if include_sizes:
+            native = native_by_img.get(image_id, [])
+            if len(native) != len(trans_dets) or any(
+                any(raw.get(key) != matched.get(key) for key in ("id", "image_id", "category_id", "score"))
+                for raw, matched in zip(native, trans_dets)
+            ):
+                raise ValueError(f"Native and matching detections are not aligned for image {image_id}")
+            for region, items in members.items():
+                counts = dict.fromkeys(SIZE_BINS, 0)
+                for member in items:
+                    size = size_bin(member_area(member, orig_dets, native, gt_dets, reference_area_scale))
+                    counts[size] += 1
+                for size in SIZE_BINS:
+                    raw_counts[region][size] += counts[size]
+                    weighted_counts[region][size] += counts[size] / image_total
+
+    if include_sizes:
+        total_regions["size_breakdown"] = make_size_breakdown(
+            total_regions, raw_counts, weighted_counts, reference_area_scale)
     return total_regions
 
 

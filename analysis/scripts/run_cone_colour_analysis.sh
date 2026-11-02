@@ -21,7 +21,7 @@
 #   analysis/results/rq1/<dataset>/<model>/<transformation>/
 #       original_vs_transformed/stats.json
 #       transformed_vs_gt/stats.json
-#   analysis/results/rq1/<dataset>/confidence_change/cone_colour.png
+#   analysis/results/rq1/<dataset>/confidence_change/cone_colour.pdf
 # =============================================================================
 
 set -euo pipefail
@@ -237,7 +237,7 @@ for model in "${MODELS[@]}"; do
         mkdir -p "$stats_base/original_vs_transformed"
 
         echo ""
-        echo "── Analyzing $model — $transformation ──"
+        echo "── Analyzing $model : $transformation ──"
 
         expected_original="$transformed_results/expected_original_coco.json"
         transformed_coco="$transformed_results/detections_coco.json"

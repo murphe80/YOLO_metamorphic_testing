@@ -13,14 +13,14 @@ Usage:
     # With detailed metrics for each transformation
     python3 analysis/visualisation/visualise_ap.py --detailed
     
-    # Export to PNG image
-    python3 analysis/visualisation/visualise_ap.py --export_png
+    # Export to vector PDF
+    python3 analysis/visualisation/visualise_ap.py --export_pdf
     
     # Custom output location
-    python3 analysis/visualisation/visualise_ap.py --export_png --png_output results.png
+    python3 analysis/visualisation/visualise_ap.py --export_pdf --pdf_output results.pdf
     
     # All options combined
-    python3 analysis/visualisation/visualise_ap.py --detailed --export_png --transformed_images_dir data/transformed_images/base_metamorphic
+    python3 analysis/visualisation/visualise_ap.py --detailed --export_pdf --transformed_images_dir data/transformed_images/base_metamorphic
 
 Output includes:
     - Summary comparison table showing AP50 scores for each model/transformation
@@ -28,7 +28,7 @@ Output includes:
     - Robustness ranking (which transformations are most challenging)
     - Regression analysis (where older models outperform newer ones)
     - Optional: Detailed metrics (AP50, AP75, AR@100)
-    - Optional: PNG image export (high-resolution table)
+    - Optional: Vector PDF export (comparison table)
 """
 
 import json
@@ -382,8 +382,8 @@ def print_robustness_ranking(data: Dict):
               f"{category:<20} │ {detail:<30}")
 
 
-def export_table_as_png(data: Dict, configs: Dict = None, output_file: str = "analysis/results/rq1/visualisation/comparison_table.png", metric: str = "AP50"):
-    """Export comparison table as a raster PNG (not plain text)."""
+def export_table_as_pdf(data: Dict, configs: Dict = None, output_file: str = "analysis/results/rq1/visualisation/comparison_table.pdf", metric: str = "AP50"):
+    """Export comparison table as a vector PDF."""
     _ = configs or {}  # reserved for future columns (e.g. configuration summary)
     all_transforms = set()
     for model_data in data.values():
@@ -454,7 +454,7 @@ def export_table_as_png(data: Dict, configs: Dict = None, output_file: str = "an
                 table[(i, j)].set_facecolor("#F2F2F2")
 
     fig.suptitle(
-        f"YOLO model comparison — metamorphic testing ({metric.upper()})",
+        f"YOLO model comparison : metamorphic testing ({metric.upper()})",
         fontsize=13,
         fontweight="bold",
         y=0.98,
@@ -488,15 +488,15 @@ def main():
         help='Directory containing transformed images with config files'
     )
     parser.add_argument(
-        '--export_png',
+        '--export_pdf',
         action='store_true',
-        help='Export comparison table as PNG image'
+        help='Export comparison table as vector PDF'
     )
     parser.add_argument(
-        '--png_output',
+        '--pdf_output',
         type=str,
-        default='analysis/results/rq1/visualisation/comparison_table.png',
-        help='Output PNG file path'
+        default='analysis/results/rq1/visualisation/comparison_table.pdf',
+        help='Output PDF file path'
     )
     parser.add_argument(
         '--metric',
@@ -537,9 +537,9 @@ def main():
     if args.detailed:
         print_detailed_metrics(data)
     
-    # Export PNG if requested
-    if args.export_png:
-        export_table_as_png(data, configs, args.png_output, metric=args.metric)
+    # Export PDF if requested
+    if args.export_pdf:
+        export_table_as_pdf(data, configs, args.pdf_output, metric=args.metric)
     
     print("\n" + "=" * 120)
     print("Analysis complete!")

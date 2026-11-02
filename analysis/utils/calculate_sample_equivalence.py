@@ -81,6 +81,8 @@ from pycocotools.cocoeval import COCOeval
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
+from utils.model_registry import get_model_display_name
+from analysis.visualisation.parameter_settings import configure_resolution_axis
 from analysis.utils.color_wheel import (
     metadata as hue_metadata, mapping_for_key, baseline_key,
     remap_reference, select_predictions,
@@ -146,14 +148,14 @@ ANALYSES: Dict[str, Dict[str, Optional[str]]] = {
             "real ground truth)"
         ),
         "plot_suffix": "gt_accuracy_degradation",
-        "ylabel_template": "{metric} degradation vs ground truth (original - transformed)",
+        "ylabel_template": "{metric} degradation",
     },
 }
 MODEL_LABELS = {
     "yolov5": "YOLOv5",
     "yolov8": "YOLOv8",
     "yolov12": "YOLOv12",
-    "yolov26_v2": "YOLOv26_v2",
+    "yolov26_v2": get_model_display_name("yolov26_v2"),
 }
 ARM_LABELS = {
     "full": "Full test set (100%)",
@@ -250,7 +252,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--skip-plots",
         action="store_true",
-        help="Generate JSON and Markdown but skip PNG response-curve plots.",
+        help="Generate JSON and Markdown but skip PDF response-curve plots.",
     )
     return parser.parse_args()
 
@@ -1240,9 +1242,28 @@ def create_response_plots(
     config: Mapping[str, Mapping],
     analysis_arm_values: Mapping[str, Mapping[Tuple[str, str, str, str], Mapping]],
 ) -> List[str]:
+    """Render all-model plots plus standalone YOLOv12 PDFs when available."""
     plot_dir = args.output_dir / "plots"
+    output_paths = _create_response_plots(
+        args, config, analysis_arm_values, args.models, plot_dir
+    )
+    if "yolov12" in args.models:
+        output_paths.extend(_create_response_plots(
+            args, config, analysis_arm_values, ["yolov12"], plot_dir / "yolov12"
+        ))
+    return output_paths
+
+
+def _create_response_plots(
+    args: argparse.Namespace,
+    config: Mapping[str, Mapping],
+    analysis_arm_values: Mapping[str, Mapping[Tuple[str, str, str, str], Mapping]],
+    models: Sequence[str],
+    plot_dir: Path,
+) -> List[str]:
     plot_dir.mkdir(parents=True, exist_ok=True)
     output_paths: List[str] = []
+    single_model = len(models) == 1
 
     for analysis_key, arm_values in analysis_arm_values.items():
         spec = ANALYSES[analysis_key]
@@ -1252,9 +1273,12 @@ def create_response_plots(
                 [parameter_value(rule_config, variant, index) for index, variant in enumerate(variants)]
             )
             for metric in METRICS:
-                fig, axes = plt.subplots(3, 2, figsize=(14, 14), squeeze=False)
+                if single_model:
+                    fig, axes = plt.subplots(1, 1, figsize=(10, 6), squeeze=False)
+                else:
+                    fig, axes = plt.subplots(3, 2, figsize=(14, 14), squeeze=False)
                 flat_axes = axes.ravel()
-                for model_index, model in enumerate(args.models):
+                for model_index, model in enumerate(models):
                     axis = flat_axes[model_index]
                     if len(variants) == 1:
                         positions = np.arange(len(ALL_ARMS))
@@ -1305,14 +1329,16 @@ def create_response_plots(
                             else:
                                 axis.fill_between(x_values, low, high, alpha=0.14, color=ARM_COLORS[arm])
                         axis.set_xlabel(format_parameter(rule_config["varying_parameter"]))
+                        configure_resolution_axis(axis, rule, x_values)
                     if len(variants) == 1 and rule.startswith("imgColorWheel__"):
                         axis.set_xlabel(f"Hue rotation: {x_values[0]:g}")
                     axis.axhline(0.0, color="#666666", linestyle="--", linewidth=0.8)
                     axis.set_ylabel(spec["ylabel_template"].format(metric=metric))
-                    axis.set_title(MODEL_LABELS.get(model, model))
+                    if not single_model:
+                        axis.set_title(MODEL_LABELS.get(model, model))
                     axis.grid(alpha=0.25, linestyle=":")
 
-                for unused_index in range(len(args.models), len(flat_axes)):
+                for unused_index in range(len(models), len(flat_axes)):
                     flat_axes[unused_index].axis("off")
                 handles, labels = flat_axes[0].get_legend_handles_labels()
                 if handles:
@@ -1325,7 +1351,7 @@ def create_response_plots(
                         framealpha=0.9,
                     )
                 fig.suptitle(
-                    f"{format_rule(rule)}: {metric} \u2014 {spec['title']}",
+                    spec["title"],
                     fontsize=15,
                     fontweight="bold",
                     y=0.995,
@@ -1333,12 +1359,12 @@ def create_response_plots(
                 fig.subplots_adjust(
                     left=0.07,
                     right=0.98,
-                    bottom=0.055,
-                    top=0.91,
+                    bottom=0.13 if single_model else 0.055,
+                    top=0.86 if single_model else 0.91,
                     hspace=0.38,
                     wspace=0.12,
                 )
-                filename = f"{rule}_{metric.lower()}_{spec['plot_suffix']}.png"
+                filename = f"{rule}_{metric.lower()}_{spec['plot_suffix']}.pdf"
                 path = plot_dir / filename
                 fig.savefig(path, dpi=150, bbox_inches="tight", facecolor="white")
                 plt.close(fig)
@@ -1556,21 +1582,25 @@ def _render_analysis_section(
     )
 
     relevant_plots = [
-        path for path in plot_paths if path.endswith(f"_{spec['plot_suffix']}.png")
+        path for path in plot_paths if path.endswith(f"_{spec['plot_suffix']}.pdf")
     ]
     if relevant_plots:
         lines.extend(["", "### Response curves", ""])
         for rule in config:
             rule_plots = [
-                f"plots/{rule}_{metric.lower()}_{spec['plot_suffix']}.png" for metric in METRICS
+                f"plots/{rule}_{metric.lower()}_{spec['plot_suffix']}.pdf" for metric in METRICS
             ]
             rule_plots = [path for path in rule_plots if path in relevant_plots]
             if not rule_plots:
                 continue
             lines.extend([f"#### {format_rule(rule)}", ""])
             for metric, relative in zip(METRICS, rule_plots):
-                lines.append(f"![{format_rule(rule)} {metric} {spec['plot_suffix']}]({relative})")
+                lines.append(f"[{format_rule(rule)} {metric} {spec['plot_suffix']}]({relative})")
                 lines.append("")
+                individual = str(Path("plots") / "yolov12" / Path(relative).name)
+                if individual in relevant_plots:
+                    lines.append(f"[YOLOv12 {format_rule(rule)} {metric}]({individual})")
+                    lines.append("")
 
     lines.append("")
     return lines

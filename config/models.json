@@ -41,7 +41,7 @@
     },
     {
       "name": "yolov26_v2",
-      "display_name": "YOLOv26_V2",
+      "display_name": "YOLO26",
       "version": "v26_v2",
       "weights": "models/yolov26_v2/yolo26s_retained.pt",
       "inference_script": "models/yolov26_v2/infer_v26.py",

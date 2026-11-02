@@ -35,6 +35,27 @@ POLICY = (
     "positive candidates in each applicable cohort; their source colour cannot "
     "be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded."
 )
+OVERLAP_POLICY = (
+    "Source-only cohort; expected original and GT labels are remapped. "
+    "Transformed predictions of every class are included when their best "
+    "spatial reference belongs to this source, using GT then original "
+    "predictions as fallback (IoU >= 0.5). Predictions owned by other "
+    "sources are excluded. Unmatched predictions of every class remain "
+    "FP candidates. Category-aware matching counts wrong-class predictions "
+    "as errors. All selected transformed predictions enter the denominator."
+)
+
+
+def cone_colour_mapping(rule):
+    """Describe a cone-colour rule in the same canonical IDs as hue cohorts."""
+    source, target = rule.split("_to_")
+    category_ids = {name: category for category, name in NAMES.items()}
+    return {
+        "key": rule, "source": source, "target": target,
+        "source_category_id": category_ids[source],
+        "target_category_id": category_ids[target],
+        "mapping": f"{source} → {target}",
+    }
 
 
 def is_color_wheel(variant):
@@ -139,6 +160,20 @@ def select_predictions(predictions, reference, mapping, transformed=True, fallba
         if owner is None or owner == source:
             selected.append(dict(ann))
     return selected
+
+
+def overlap_cohort(original, transformed, ground_truth, mapping):
+    """Select and remap the identical source cohort for both colour-rule families."""
+    source_original = dict(original)
+    source_original["annotations"] = select_predictions(
+        original, ground_truth, mapping, transformed=False
+    )
+    return (
+        remap_reference(source_original, mapping),
+        select_predictions(transformed, ground_truth, mapping, fallback=original,
+                           include_wrong_classes=True),
+        remap_reference(ground_truth, mapping),
+    )
 
 
 def evaluate_files(gt_path, dt_path, variant, image_dir=None):

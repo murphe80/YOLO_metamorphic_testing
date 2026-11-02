@@ -13,7 +13,8 @@ from analysis.utils.calculate_detection_overlap_metrics import (
 
 
 class ConeColourOverlapTests(unittest.TestCase):
-    def calculate(self, rule, source, predicted, generic=False, category_aware=True):
+    def calculate(self, rule, source, predicted, generic=False, category_aware=True,
+                  extra_references=()):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             categories = [
@@ -22,7 +23,7 @@ class ConeColourOverlapTests(unittest.TestCase):
             ]
             original = {"categories": categories, "annotations": [
                 {"image_id": 1, "category_id": source, "bbox": [0, 0, 20, 20]}
-            ]}
+            ] + list(extra_references)}
             original_path = root / "model/original/detections_original_coco.json"
             gt_path = root / "gt.json"
             trans_path = root / "model" / rule / "detections_coco.json"
@@ -66,6 +67,37 @@ class ConeColourOverlapTests(unittest.TestCase):
     def test_spatial_matching_ignores_colour(self):
         result = self.calculate("yellow_to_orange", 1, 1, category_aware=False)
         self.assertEqual(result["tp_retention_rate"], 1)
+
+    def test_untransformed_classes_do_not_enter_source_retention(self):
+        extras = [{"image_id": 1, "category_id": category, "bbox": [40*i, 0, 20, 20]}
+                  for i, category in enumerate((2, 3, 4), 1)]
+        result = self.calculate("yellow_to_blue", 1, 2, extra_references=extras)
+        self.assertEqual(result["tp_retention_rate"], 1)
+        self.assertEqual(result["orig_gt"], 0)
+        self.assertEqual(result["cohort"], "source_only")
+
+    def test_cone_and_hue_share_ownership_and_wrong_class_policy(self):
+        def det(category, x, score=.9):
+            return dict(image_id=1, category_id=category, bbox=[x, 0, 20, 20], score=score)
+        gt = {"annotations": [det(1, 0), det(2, 40), det(4, 80)]}
+        original = {"annotations": gt["annotations"] + [det(3, 120), det(1, 160)]}
+        transformed = [det(2, 0), det(1, 0, .7), det(2, 40), det(1, 80),
+                       det(2, 120), det(1, 160), det(3, 200)]
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            files = [(root/"gt.json", gt),
+                     (root/"model/original/detections_original_coco.json", original)]
+            files.extend((root/"model"/rule/"detections_coco.json", transformed)
+                         for rule in ("yellow_to_blue", "imgColorWheel_4"))
+            for path, data in files:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(data))
+            cone = calculate_statistics_for_model_transformation("model", "yellow_to_blue", root, root/"gt.json")
+            hue = calculate_statistics_for_model_transformation("model", "imgColorWheel_4", root, root/"gt.json")["class_shifts"]["yellow_to_blue"]
+            for key in hue:
+                self.assertEqual(cone[key], hue[key], key)
+            self.assertEqual(cone["tp_retention_rate"], 1)
+            self.assertAlmostEqual(cone["new_hallucination_rate"], .75)
 
 
 if __name__ == "__main__":

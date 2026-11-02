@@ -18,3 +18,5 @@ analysis/results/
     └── sample_equivalence/{results.json,report.md,plots/}
 ```
 
+
+Graphs are exported directly from Matplotlib as vector `.pdf` files. 

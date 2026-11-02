@@ -21,6 +21,9 @@ class ColorWheelHallucinationTests(unittest.TestCase):
         self.assertEqual(result['counts'], [2, 1, 1, 0, 0, 1])
         self.assertAlmostEqual(result['percentages'][0], 200 / 3)
         self.assertAlmostEqual(result['percentages'][1], 100 / 3)
+        cone_result = calculate_rule(original, transformed, gt, 'yellow_to_blue')
+        for key in ('detections', 'counts', 'percentages', 'images', 'other_count'):
+            self.assertEqual(cone_result[key], result[key], key)
 
     def test_unreliable_mapping_is_rejected(self):
         for variant, key in [('imgColorWheel_4', 'orange_to_blue'),

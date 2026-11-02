@@ -15,6 +15,9 @@ IoU accuracy means transformed-to-GT spatial precision, ignoring class, with
 confidence-ordered one-to-one matching. It is not mean IoU or GT recall.
 Class bars partition only new hallucinations (the existing trans_only region),
 not all transformed FPs. Other/unknown classes are retained in the calculated results.
+Each rule uses the same source-only cohort and prediction ownership policy as
+imgColorWheel: other source objects are excluded; wrong-class and unowned
+predictions remain error candidates.
 Only available transformed TXT files form each rule's cohort; empty files are
 valid, missing files are not silently interpreted as empty detections.
 """
@@ -28,12 +31,14 @@ import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
+from utils.model_registry import get_model_display_name
 
 from analysis.utils.detection_matching import (
     match_detection_pairs,
     match_three_way_per_image,
 )
 from analysis.utils.format_detections import MODEL_TO_COCO_CATEGORY
+from analysis.utils.color_wheel import cone_colour_mapping, overlap_cohort, grouped
 
 # Canonical COCO IDs, not raw model IDs.
 RULES = {
@@ -123,10 +128,23 @@ def new_detection_indices(original, transformed, gt, threshold):
 
 
 def calculate_rule(original, transformed, ground_truth, rule, threshold=0.5):
-    source, target = RULES[rule]
-    original = {name: expected_classes(ds, source, target) for name, ds in original.items()}
-    ground_truth = {name: expected_classes(ds, source, target) for name, ds in ground_truth.items()}
-    return calculate_cohort(original, transformed, ground_truth, rule, threshold)
+    mapping = cone_colour_mapping(rule)
+    def flatten(by_name):
+        return {"annotations": [dict(d, image_id=name)
+                                for name, ds in by_name.items() for d in ds]}
+    expected_original, selected, expected_gt = overlap_cohort(
+        flatten(original), flatten(transformed), flatten(ground_truth), mapping
+    )
+    def with_empty(data, names):
+        by_name = grouped(data)
+        return {name: by_name.get(name, []) for name in names}
+    result = calculate_cohort(
+        with_empty(expected_original, original), with_empty(selected, transformed),
+        with_empty(expected_gt, ground_truth), rule, threshold
+    )
+    result.update(cohort="source_only", mapping=mapping,
+                  title=f"{mapping['mapping'].capitalize()} ({mapping['source']}-source cohort)")
+    return result
 
 
 def calculate_cohort(original, transformed, ground_truth, rule, threshold=0.5):
@@ -203,7 +221,7 @@ def plot(results, model, threshold, output, rule_family="cone colour rules"):
         ax.spines[["top", "right"]].set_visible(False)
     for ax in list(axes.flat)[len(results):]:
         ax.set_visible(False)
-    fig.suptitle(f"{model} — {rule_family}: new false positives and spatial accuracy",
+    fig.suptitle(f"{get_model_display_name(model)} : {rule_family}: new false positives and spatial accuracy",
                  fontsize=19, y=.98)
     fig.subplots_adjust(left=.065, right=.985, bottom=.09, top=.88, hspace=.38, wspace=.16)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -219,7 +237,7 @@ def main():
     parser.add_argument("--results-dir", type=Path,
                         help="Dataset results directory containing model folders")
     parser.add_argument("--gt-path", type=Path)
-    parser.add_argument("--output", type=Path, help="Output PNG path (overwrites if present)")
+    parser.add_argument("--output", type=Path, help="Output PDF path (overwrites if present)")
     parser.add_argument("--iou-threshold", type=float, default=.5)
     args = parser.parse_args()
     if not 0 <= args.iou_threshold < 1:
@@ -227,7 +245,7 @@ def main():
     results_dir = args.results_dir or PROJECT_ROOT / "results" / args.dataset
     gt_path = args.gt_path or PROJECT_ROOT / "data/base_images" / args.dataset / "annotations_coco.json"
     output = args.output or (PROJECT_ROOT / "analysis/results/rq1" / args.dataset /
-                            "detection_overlap_metrics/plots/cone_color_hallucination.png")
+                            "detection_overlap_metrics/plots/cone_color_hallucination.pdf")
     try:
         original = load_raw(results_dir / args.model / "original")
         gt = load_ground_truth(gt_path)

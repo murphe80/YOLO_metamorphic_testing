@@ -34,7 +34,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             root, relative = ROOTS[parts[2]], parts[3]
             path = (root / relative).resolve()
-            if not path.is_relative_to(root.resolve()) or path.suffix not in ('.png', '.jpg', '.json', '.md'):
+            if not path.is_relative_to(root.resolve()) or path.suffix not in ('.pdf', '.png', '.jpg', '.json', '.md'):
                 self.send_error(403)
                 return
         else:

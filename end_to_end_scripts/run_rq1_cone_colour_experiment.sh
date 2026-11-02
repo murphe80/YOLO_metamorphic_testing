@@ -326,7 +326,7 @@ echo "Transformations: ${TRANSFORMATIONS[*]}"
 echo "Models: ${MODELS[*]}"
 
 # =============================================================================
-# Stage 1 — Generate segmentation masks and cone-colour transformations
+# Stage 1 : Generate segmentation masks and cone-colour transformations
 # =============================================================================
 if [ "$SKIP_TRANSFORM" = false ]; then
     echo ""
@@ -390,7 +390,7 @@ for transformation in "${TRANSFORMATIONS[@]}"; do
 done
 
 # =============================================================================
-# Stage 2 — Run inference
+# Stage 2 : Run inference
 # =============================================================================
 echo ""
 echo "╔══════════════════════════════════════════════╗"
@@ -480,7 +480,7 @@ for model in "${MODELS[@]}"; do
     fi
 
     echo ""
-    echo "── $display_name — original images ──"
+    echo "── $display_name : original images ──"
     run_inference_dir "$inference_script" "$weights" "$IMAGES_DIR" "$model_results/original"
     visualize_detection_samples "$model_version" "$IMAGES_DIR" "$model_results/original"
 
@@ -488,7 +488,7 @@ for model in "${MODELS[@]}"; do
         transformed_dir="$TRANSFORMED_BASE/$transformation"
         transformation_results="$model_results/$transformation"
 
-        echo "── $display_name — $transformation ──"
+        echo "── $display_name : $transformation ──"
         run_inference_dir \
             "$inference_script" \
             "$weights" \
@@ -502,7 +502,7 @@ for model in "${MODELS[@]}"; do
 done
 
 # =============================================================================
-# Stage 3 — Evaluate cone-colour metamorphic relations
+# Stage 3 : Evaluate cone-colour metamorphic relations
 # =============================================================================
 echo ""
 echo "╔══════════════════════════════════════════════╗"

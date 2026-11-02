@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Plot detection-overlap metrics across every configured rule setting.
+"""Plot detection-overlap metrics across up to five evenly spaced rule settings.
 
 One image is generated per metamorphic rule. Each image contains one subplot
 per YOLO model, and each subplot shows grouped bars for the configured rule
-settings and five retained, lost, or new detection metrics.
+settings (including both range endpoints) and five retained, lost, or new
+detection metrics. Colour-wheel plots include every reviewed class-changing
+mapping, retain separate source cohorts, and include a blue-source-only plot.
+Each labelled bar
+is stacked by small/medium/large object size in transformed-image coordinates,
+with its original image-normalized total rate preserved. Colours identify
+metrics and light/medium/dark shades identify size classes.
 
 By default, metrics are read from::
 
@@ -32,10 +38,17 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import numpy as np
 
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+from utils.model_registry import get_model_display_name
+from analysis.utils.color_wheel import metadata as hue_metadata
+from analysis.utils.detection_matching import SIZE_BINS
+from analysis.visualisation.parameter_settings import displayed_overlap_settings
+
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "brute_force_transformations.json"
 RESULTS_ROOT = PROJECT_ROOT / "analysis" / "results" / "rq1"
 DEFAULT_DATASET = "test"
@@ -55,6 +68,33 @@ METRIC_LABELS = {
     "new_hallucination_rate": "New hallucination",
     "new_tp_rate": "New TP",
 }
+
+
+def size_color(metric_color, size: str):
+    """Keep each metric's hue while making size classes visibly distinct."""
+    rgb = np.asarray(metric_color[:3])
+    if size == "small":
+        return rgb * 0.35 + 0.65
+    if size == "large":
+        return rgb * 0.5
+    return rgb
+
+
+def metric_size_contributions(record: dict, metric: str) -> List[float]:
+    """Return additive stack heights; never infer a size from an aggregate rate."""
+    value = record.get(metric)
+    if value is None:
+        return [np.nan] * len(SIZE_BINS)
+    try:
+        parts = record["size_breakdown"]["metrics"][metric]["rate_contributions"]
+        values = [float(parts[size]) for size in SIZE_BINS]
+    except KeyError as error:
+        raise ValueError("Size breakdown missing; rerun calculate_detection_overlap_metrics.py first") from error
+    if any(not math.isfinite(v) or v < 0 for v in values) or not math.isclose(
+        sum(values), float(value), rel_tol=1e-9, abs_tol=1e-12
+    ):
+        raise ValueError(f"Size contributions do not sum to {metric}: {values} versus {value}")
+    return values
 
 
 def load_json(path: Path) -> dict:
@@ -81,7 +121,7 @@ def varying_parameters(variants: Sequence[dict]) -> List[str]:
 def setting_labels(variants: Sequence[dict]) -> Tuple[List[str], str]:
     """Build x tick labels and an axis label from transformation settings."""
     if variants and "mapping_label" in variants[0]:
-        return [v["mapping_label"] for v in variants], "Hue rotation / source → target (separate cohorts)"
+        return [v["mapping_label"] for v in variants], ""
     varying = varying_parameters(variants)
 
     if len(varying) == 1:
@@ -174,6 +214,29 @@ def ordered_models(discovered: Sequence[str], requested: Optional[Sequence[str]]
     return result
 
 
+def color_wheel_cohorts(variants, models, statistics):
+    """Expand all included class changes without subsampling hue settings."""
+    cohorts = []
+    cohort_statistics = {}
+    for variant in variants:
+        record = hue_metadata(variant["variant_id"])
+        for mapping in record["included_mappings"]:
+            if mapping["source_category_id"] == mapping["target_category_id"]:
+                continue
+            key = f"{variant['variant_id']}/{mapping['key']}"
+            cohorts.append({
+                "variant_id": key,
+                "mapping_key": mapping["key"],
+                "mapping_label": f"{record['hue_rotation']}\n{mapping['mapping']}",
+            })
+            for model in models:
+                original = statistics.get((model, variant["variant_id"]), {})
+                values = original.get("class_shifts", {}).get(mapping["key"])
+                if values is not None:
+                    cohort_statistics[(model, key)] = values
+    return cohorts, cohort_statistics
+
+
 def plot_rule(
     rule: str,
     variants: Sequence[dict],
@@ -193,8 +256,8 @@ def plot_rule(
 
     column_count = min(2 if rule == "imgColorWheel" else columns, len(available_models))
     row_count = math.ceil(len(available_models) / column_count)
-    figure_width = max(12.0, (15.0 if rule == "imgColorWheel" else 7.0) * column_count)
-    figure_height = (6.5 if rule == "imgColorWheel" else 4.8) * row_count + 1.5
+    figure_width = max(10.0, 1.35 * len(variants)) * column_count
+    figure_height = 7.0 * row_count + 1.0
     fig, axes = plt.subplots(
         row_count,
         column_count,
@@ -207,32 +270,38 @@ def plot_rule(
     bar_width = 0.16
     colors = plt.cm.viridis(np.linspace(0.2, 0.85, len(METRICS)))
     tick_labels, x_label = setting_labels(variants)
-    legend_handles = []
 
     for subplot_index, model in enumerate(available_models):
         ax = axes.flat[subplot_index]
-        for metric_index, (metric, color) in enumerate(zip(METRICS, colors)):
+        bar_positions, bar_labels = [], []
+        for metric_index, metric in enumerate(METRICS):
             offset = (metric_index - (len(METRICS) - 1) / 2) * bar_width
-            values = []
-            for variant in variants:
-                record = statistics.get((model, variant["variant_id"]), {})
-                value = record.get(metric)
-                values.append(float(value) if value is not None else np.nan)
+            positions = x + offset
+            contributions = np.array([
+                metric_size_contributions(statistics.get((model, variant["variant_id"]), {}), metric)
+                for variant in variants
+            ])
+            bottom = np.zeros(len(variants))
+            for size_index, size in enumerate(SIZE_BINS):
+                heights = contributions[:, size_index]
+                ax.bar(positions, heights, bottom=bottom, width=bar_width,
+                       color=size_color(colors[metric_index], size),
+                       edgecolor="white", linewidth=0.4)
+                bottom += heights
+            bar_positions.extend(positions)
+            bar_labels.extend([METRIC_LABELS[metric]] * len(variants))
 
-            bars = ax.bar(
-                x + offset,
-                values,
-                width=bar_width,
-                color=color,
-                label=METRIC_LABELS[metric],
-            )
-            if subplot_index == 0:
-                legend_handles.append(bars)
-
-        ax.set_title(format_name(model), fontsize=12, fontweight="bold")
-        ax.set_xticks(x)
-        ax.set_xticklabels(tick_labels, rotation=35, ha="right")
-        ax.set_xlabel(x_label, fontsize=10, fontweight="bold")
+        ax.set_title(get_model_display_name(model), fontsize=12, fontweight="bold")
+        ax.set_xticks(bar_positions, bar_labels, rotation=90, fontsize=8)
+        ax.tick_params(axis="x", length=0, pad=4)
+        # A second row labels the transformation setting beneath each group.
+        settings_axis = ax.secondary_xaxis("bottom")
+        settings_axis.set_xticks(x, tick_labels, fontsize=9)
+        settings_axis.tick_params(axis="x", length=0, pad=90)
+        settings_axis.spines["bottom"].set_visible(False)
+        settings_axis.set_xlabel(x_label, fontsize=10, fontweight="bold", labelpad=8)
+        for boundary in x[:-1] + 0.5:
+            ax.axvline(boundary, color="#DDDDDD", linewidth=0.7, zorder=0)
         ax.set_ylim(0.0, 1.05)
         ax.grid(True, alpha=0.3, axis="y")
         ax.set_axisbelow(True)
@@ -242,19 +311,26 @@ def plot_rule(
     for unused_index in range(len(available_models), row_count * column_count):
         axes.flat[unused_index].set_visible(False)
 
+    source_only = any(
+        statistics.get((model, variant["variant_id"]), {}).get("cohort") == "source_only"
+        for model in available_models for variant in variants
+    )
     fig.suptitle(
-        f"{format_name(rule)} — Detection Overlap Metrics Across Rule Settings",
+        f"{format_name(rule)} : Detection Overlap Metrics Across Rule Settings"
+        + (" (source-only cohort)" if source_only else ""),
         fontsize=15,
         fontweight="bold",
     )
     fig.legend(
-        legend_handles,
-        [METRIC_LABELS[metric] for metric in METRICS],
+        [Patch(facecolor=size_color((0.5, 0.5, 0.5), size), edgecolor="white",
+               label=size.title()) for size in SIZE_BINS],
+        ["Small (light)", "Medium", "Large (dark)"],
         loc="lower center",
-        ncol=len(METRICS),
+        ncol=len(SIZE_BINS),
+        title="Object size in transformed image",
         framealpha=0.9,
     )
-    fig.tight_layout(rect=(0, 0.08, 1, 0.95))
+    fig.tight_layout(rect=(0, 0.06, 1, 0.95), h_pad=3.0)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=200, bbox_inches="tight", facecolor="white")
@@ -348,27 +424,28 @@ def main() -> int:
             skipped += 1
             continue
 
+        rule_statistics = indexed_statistics
         if rule == "imgColorWheel":
-            sys.path.insert(0, str(PROJECT_ROOT))
-            from analysis.utils.color_wheel import metadata
-            expanded = []
-            for variant in variants:
-                record = metadata(variant["variant_id"])
-                for mapping in record["included_mappings"] or [None]:
-                    key = variant["variant_id"] + ("/" + mapping["key"] if mapping else "/excluded")
-                    label = f"{record['hue_rotation']}\n{mapping['mapping'] if mapping else 'excluded'}"
-                    expanded.append({"variant_id": key, "mapping_label": label})
-                    for model in models:
-                        original = indexed_statistics.get((model, variant["variant_id"]), {})
-                        indexed_statistics[(model, key)] = original.get("class_shifts", {}).get(mapping["key"], {}) if mapping else {}
-            variants = expanded
-        output_path = output_dir / f"{rule}_detection_overlap_metrics.png"
-        if plot_rule(rule, variants, models, indexed_statistics, output_path, args.columns):
-            print(f"  Saved: {output_path}")
-            generated += 1
+            variants, rule_statistics = color_wheel_cohorts(variants, models, indexed_statistics)
         else:
-            print(f"  Skip {rule}: no matching statistics")
-            skipped += 1
+            variants = displayed_overlap_settings(rule, variants)
+        plots = [(rule, variants)]
+        if rule == "imgColorWheel":
+            blue_variants = [
+                variant
+                for mapping_key in ("blue_to_yellow", "blue_to_orange")
+                for variant in variants
+                if variant["mapping_key"] == mapping_key
+            ]
+            plots.append(("imgColorWheel_blue_to_yellow_and_orange", blue_variants))
+        for name, plot_variants in plots:
+            output_path = output_dir / f"{name}_detection_overlap_metrics.pdf"
+            if plot_rule(rule, plot_variants, models, rule_statistics, output_path, args.columns):
+                print(f"  Saved: {output_path}")
+                generated += 1
+            else:
+                print(f"  Skip {name}: no matching statistics")
+                skipped += 1
 
     print(f"Generated {generated} plot(s); skipped {skipped} rule(s).")
     return 0 if generated else 1

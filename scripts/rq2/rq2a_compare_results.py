@@ -12,9 +12,13 @@ Usage:
 
 import json
 import argparse
+import sys
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from utils.model_registry import get_model_display_name
 
 
 def load_results(filepath):
@@ -46,9 +50,9 @@ def compare_results(bf_results, gs_results):
         gs = gs_by_name[img_name]
 
         # Calculate differences
-        gamma_left_diff = abs(bf['gamma_left'] - gs['gamma_left']) if bf['gamma_left'] and gs['gamma_left'] else None
-        gamma_right_diff = abs(bf['gamma_right'] - gs['gamma_right']) if bf['gamma_right'] and gs['gamma_right'] else None
-        peak_gamma_diff = abs(bf['peak_gamma'] - gs['peak_gamma']) if bf['peak_gamma'] and gs['peak_gamma'] else None
+        gamma_left_diff = abs(bf['gamma_left'] - gs['gamma_left']) if bf['gamma_left'] is not None and gs['gamma_left'] is not None else None
+        gamma_right_diff = abs(bf['gamma_right'] - gs['gamma_right']) if bf['gamma_right'] is not None and gs['gamma_right'] is not None else None
+        peak_gamma_diff = abs(bf['peak_gamma'] - gs['peak_gamma']) if bf['peak_gamma'] is not None and gs['peak_gamma'] is not None else None
 
         iteration_reduction = 1 - (gs['iterations'] / bf['iterations']) if bf['iterations'] > 0 else 0
         speedup = bf['time_seconds'] / gs['time_seconds'] if gs['time_seconds'] > 0 else 0
@@ -160,89 +164,78 @@ def print_comparison_report(bf_results, gs_results, comparisons, summary):
 
 
 def plot_comparison(comparisons, summary, output_dir, model_name):
-    """Generate comparison plots."""
+    """Save runtime scatter and separate absolute crossing-error violins.
 
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+    Each available left/right crossing contributes one error, matched by image
+    and side. Missing crossings are excluded, never interpreted as zero error.
+    """
+    output_dir = Path(output_dir) / model_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+    model_label = get_model_display_name(model_name)
 
-    # 1. Iterations comparison
-    ax = axes[0, 0]
-    bf_iters = [c['bf_iterations'] for c in comparisons]
-    gs_iters = [c['gs_iterations'] for c in comparisons]
-    ax.scatter(bf_iters, gs_iters, alpha=0.6, s=50)
-    max_iter = max(max(bf_iters), max(gs_iters))
-    ax.plot([0, max_iter], [0, max_iter], 'r--', label='Equal')
-    ax.set_xlabel('Brute Force Iterations')
-    ax.set_ylabel('Golden-Section Iterations')
-    ax.set_title(f'{model_name} Iteration Comparison\nAvg Reduction: {summary["avg_iteration_reduction"]*100:.1f}%')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-
-    # 2. Speedup distribution
-    ax = axes[0, 1]
-    speedups = [c['speedup'] for c in comparisons]
-    ax.hist(speedups, bins=20, alpha=0.7, color='green', edgecolor='black')
-    ax.axvline(summary['avg_speedup'], color='red', linestyle='--', label=f'Mean: {summary["avg_speedup"]:.2f}x')
-    ax.set_xlabel('Speedup Factor')
-    ax.set_ylabel('Frequency')
-    ax.set_title('Speedup Distribution')
-    ax.legend()
-    ax.grid(True, alpha=0.3, axis='y')
-
-    # 3. Time comparison
-    ax = axes[0, 2]
+    fig, ax = plt.subplots(figsize=(7, 6))
     bf_times = [c['bf_time'] for c in comparisons]
     gs_times = [c['gs_time'] for c in comparisons]
     ax.scatter(bf_times, gs_times, alpha=0.6, s=50, color='orange')
-    max_time = max(max(bf_times), max(gs_times))
-    ax.plot([0, max_time], [0, max_time], 'r--', label='Equal')
+    max_time = max(bf_times + gs_times, default=1) or 1
+    ax.plot([0, max_time], [0, max_time], 'r--', label='Equal runtime')
     ax.set_xlabel('Brute Force Time (s)')
     ax.set_ylabel('Golden-Section Time (s)')
-    ax.set_title(f'Time Comparison\nAvg Speedup: {summary["avg_speedup"]:.2f}x')
+    ax.set_title(f'{model_label} Runtime Efficiency\nMean per-image speedup: {summary["avg_speedup"]:.2f}×')
     ax.legend()
     ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    output_path = output_dir / 'runtime_efficiency.pdf'
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Plot saved to: {output_path}')
 
-    # 4. Gamma left difference
-    ax = axes[1, 0]
-    left_diffs = [c['gamma_left_diff'] for c in comparisons if c['gamma_left_diff'] is not None]
-    ax.hist(left_diffs, bins=20, alpha=0.7, color='blue', edgecolor='black')
-    ax.axvline(summary['avg_gamma_left_diff'], color='red', linestyle='--',
-               label=f'Mean: {summary["avg_gamma_left_diff"]:.3f}')
-    ax.set_xlabel('|γ_left(BF) - γ_left(GS)|')
-    ax.set_ylabel('Frequency')
-    ax.set_title('Left Crossing Accuracy')
-    ax.legend()
+    fig, ax = plt.subplots(figsize=(7, 6))
+    ax.axhline(0, color='gray', linestyle='--', linewidth=1, label='Exact agreement')
+    rng = np.random.default_rng(0)
+    max_diff = 0.01
+    has_errors = False
+    crossing_groups = (
+        ('gamma_left_diff', 'Brightened threshold'),
+        ('gamma_right_diff', 'Darkened threshold'),
+    )
+    for position, (key, label) in enumerate(crossing_groups, start=1):
+        diffs = np.asarray([
+            c[key] for c in comparisons
+            if c[key] is not None and np.isfinite(c[key])
+        ], dtype=float)
+        if not diffs.size:
+            ax.text(position, 0.5, 'No matched thresholds',
+                    transform=ax.get_xaxis_transform(), ha='center', va='center')
+            continue
+        # A density estimate needs multiple, non-identical observations.
+        if diffs.size > 1 and np.ptp(diffs) > 0:
+            violin = ax.violinplot([diffs], positions=[position], widths=0.7,
+                                  showextrema=False, points=300)
+            for body in violin['bodies']:
+                body.set_facecolor('#2E86AB')
+                body.set_edgecolor('#2E86AB')
+                body.set_alpha(0.3)
+        ax.scatter(position + rng.uniform(-0.12, 0.12, diffs.size), diffs,
+                   s=14, alpha=0.35, color='#2E86AB', edgecolors='none',
+                   label='Crossing errors' if not has_errors else None, zorder=3)
+        ax.scatter([position], [np.median(diffs)], color='white',
+                   edgecolors='black', s=55,
+                   label='Median' if not has_errors else None, zorder=5)
+        max_diff = max(max_diff, float(diffs.max()))
+        has_errors = True
+    ax.set_ylim(-0.03 * max_diff, 1.08 * max_diff)
+    ax.set_xlim(0.4, 2.6)
+    ax.set_xticks([1, 2], [label for _, label in crossing_groups])
+    ax.set_ylabel('Absolute gamma difference |γ_GS − γ_BF|')
+    ax.set_title(f'{model_label} Threshold Agreement')
     ax.grid(True, alpha=0.3, axis='y')
-
-    # 5. Gamma right difference
-    ax = axes[1, 1]
-    right_diffs = [c['gamma_right_diff'] for c in comparisons if c['gamma_right_diff'] is not None]
-    ax.hist(right_diffs, bins=20, alpha=0.7, color='purple', edgecolor='black')
-    ax.axvline(summary['avg_gamma_right_diff'], color='red', linestyle='--',
-               label=f'Mean: {summary["avg_gamma_right_diff"]:.3f}')
-    ax.set_xlabel('|γ_right(BF) - γ_right(GS)|')
-    ax.set_ylabel('Frequency')
-    ax.set_title('Right Crossing Accuracy')
-    ax.legend()
-    ax.grid(True, alpha=0.3, axis='y')
-
-    # 6. Peak gamma comparison
-    ax = axes[1, 2]
-    bf_peaks = [c['peak_gamma_bf'] for c in comparisons if c['peak_gamma_bf'] is not None]
-    gs_peaks = [c['peak_gamma_gs'] for c in comparisons if c['peak_gamma_gs'] is not None]
-    ax.scatter(bf_peaks, gs_peaks, alpha=0.6, s=50, color='red')
-    min_peak = min(min(bf_peaks), min(gs_peaks))
-    max_peak = max(max(bf_peaks), max(gs_peaks))
-    ax.plot([min_peak, max_peak], [min_peak, max_peak], 'k--', label='Equal')
-    ax.set_xlabel('Brute Force Peak γ')
-    ax.set_ylabel('Golden-Section Peak γ')
-    ax.set_title(f'Peak Gamma Comparison\nAvg Diff: {summary["avg_peak_gamma_diff"]:.3f}')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    output_path = Path(output_dir) / model_name / 'comparison.png'
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"Plots saved to: {output_path}")
+    ax.legend(loc='center right', fontsize=9)
+    fig.tight_layout()
+    output_path = output_dir / 'threshold_accuracy.pdf'
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Plot saved to: {output_path}')
 
 
 def main():

@@ -5,6 +5,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from utils.model_registry import get_model_by_name
+from analysis.visualisation.model_legend import sorted_model_legend
 
 
 def plot_metric(settings, models, metric, comparison, output_path):
@@ -27,7 +28,7 @@ def plot_metric(settings, models, metric, comparison, output_path):
         axis.plot(
             range(len(cohorts)),
             [float("nan") if value is None else value for value in values],
-            marker=markers[index % len(markers)], linestyle="none", markersize=6,
+            marker=markers[index % len(markers)], linestyle="-", linewidth=2, markersize=6,
             label=config.get("display_name", model),
             color=config.get("color", {}).get("hex"),
         )
@@ -36,9 +37,9 @@ def plot_metric(settings, models, metric, comparison, output_path):
     axis.set_ylabel(metric, fontweight="bold")
     axis.set_ylim(-0.02, 1.02)
     axis.grid(alpha=0.3, linestyle=":", linewidth=0.8)
-    axis.legend(loc="best", fontsize=9)
+    axis.legend(*sorted_model_legend(*axis.get_legend_handles_labels()), loc="best", fontsize=9)
     excluded = [str(setting["hue_rotation"]) for setting in settings if not setting["included_mappings"]]
-    title = f"Hue rotation — {metric} ({comparison.replace('_', ' ')})"
+    title = f"Hue rotation : {metric} ({comparison.replace('_', ' ')})"
     if excluded:
         title += f"\nHue {', '.join(excluded)}: excluded (no included mappings)"
     axis.set_title(title, fontweight="bold", pad=15)

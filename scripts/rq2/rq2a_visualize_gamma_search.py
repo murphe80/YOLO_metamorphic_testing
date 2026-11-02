@@ -107,7 +107,7 @@ def plot_gamma_ap_curve(
     # Labels and title
     ax.set_xlabel('Gamma (γ)', fontsize=11, fontweight='bold')
     ax.set_ylabel('Average Precision (AP)', fontsize=11, fontweight='bold')
-    ax.set_title(f'{image_name} — {method.replace("_", " ").title()}', fontsize=13, fontweight='bold', pad=15)
+    ax.set_title(f'{image_name} : {method.replace("_", " ").title()}', fontsize=13, fontweight='bold', pad=15)
 
     # Grid
     ax.grid(True, alpha=0.3, linestyle=':', linewidth=0.8)
@@ -214,9 +214,9 @@ def plot_all_images_grid(
         for idx in range(n_images, len(axes)):
             axes[idx].axis('off')
 
-        page_label = f' — Page {page_index + 1}/{n_pages}' if n_pages > 1 else ''
+        page_label = f' : Page {page_index + 1}/{n_pages}' if n_pages > 1 else ''
         fig.suptitle(
-            f'{method.replace("_", " ").title()} — Target AP: {target_ap:.2f}{page_label}',
+            f'{method.replace("_", " ").title()} : Target AP: {target_ap:.2f}{page_label}',
             fontsize=14,
             fontweight='bold',
             y=0.995
@@ -338,11 +338,11 @@ Examples:
             sys.exit(1)
 
         print(f"\nPlotting: {args.image}")
-        output_path = output_dir / f"{Path(args.image).stem}_gamma_search.png"
+        output_path = output_dir / f"{Path(args.image).stem}_gamma_search.pdf"
         plot_gamma_ap_curve(image_data, target_ap, method, output_path)
     else:
         print(f"\nPlotting all images...")
-        output_path = output_dir / "gamma_search_results.png"
+        output_path = output_dir / "gamma_search_results.pdf"
         plot_all_images_grid(results, target_ap, method, output_path)
 
     print("\nDone!")

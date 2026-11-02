@@ -276,7 +276,7 @@ def plot_disparity_curve(
     plt.tight_layout()
 
     # Save figure
-    output_file = Path(output_path)
+    output_file = Path(output_path).with_suffix(".pdf")
     output_file.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_file, dpi=200, bbox_inches="tight")
     plt.close()

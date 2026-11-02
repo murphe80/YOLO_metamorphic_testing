@@ -4,8 +4,10 @@
 The utility compares original detections, transformed detections, and ground
 truth annotations, then writes all seven overlap regions and their derived
 retention metrics to one JSON file. It does not generate Venn diagrams.
-For cone-colour rules, original predictions and ground truth are mapped to the
-expected target classes before category-aware matching.
+Each region and metric also contains a small/medium/large size breakdown in
+transformed-image pixels, preserving the existing image-normalized totals.
+For cone-colour rules, source-only original predictions and ground truth are
+mapped to the expected target class using the same cohort policy as imgColorWheel.
 
 Defaults are resolved from the repository root, so the command can be run from
 any working directory.
@@ -35,14 +37,14 @@ from analysis.utils.detection_matching import (  # noqa: E402
 )
 from analysis.utils.analyse_cone_colours import (  # noqa: E402
     TRANSFORMATION_MAP,
-    update_ground_truth_cone_color,
 )
 from analysis.utils.format_detections import format_detections  # noqa: E402
 from analysis.utils.color_wheel import (  # noqa: E402
-    metadata as hue_metadata, remap_reference, select_predictions,
+    metadata as hue_metadata, cone_colour_mapping, overlap_cohort, OVERLAP_POLICY,
 )
 from analysis.utils.format_gt import convert_to_coco_format  # noqa: E402
 from analysis.utils.transform_geometric_detections import (  # noqa: E402
+    normalize_transform_params,
     transform_detections_file,
 )
 
@@ -286,7 +288,18 @@ def calculate_statistics_for_model_transformation(
         else:
             raise FileNotFoundError(f"Transformed detections not found: {transformed_path}")
 
+    native_transformed_path = transformed_path
+    reference_area_scale = 1.0
     if base_transformation in GEOMETRIC_TRANSFORMS:
+        transform_params = resolve_transform_params(
+            results_dir, model, transformation, base_transformation, brute_force_config,
+        )
+        coordinate_scale = normalize_transform_params(base_transformation, transform_params)
+        if coordinate_scale is None:
+            raise ValueError(f"Missing geometric parameters for {transformation}; cannot determine transformed object sizes")
+        # Matching uses original coordinates. Sizes use the actual transformed
+        # detections, with GT/lost-original areas projected forward into that space.
+        reference_area_scale = 1.0 / (coordinate_scale["scale_x"] * coordinate_scale["scale_y"])
         pre_transformed_path = (
             results_dir / model / transformation / "detections_coco_transformed.json"
         )
@@ -296,13 +309,6 @@ def calculate_statistics_for_model_transformation(
             transformed_path = pre_transformed_path
         else:
             print(f"  Computing coordinate transformation for {transformation}...")
-            transform_params = resolve_transform_params(
-                results_dir,
-                model,
-                transformation,
-                base_transformation,
-                brute_force_config,
-            )
             if transform_params:
                 print(f"  Using transform parameters for {transformation}: {transform_params}")
 
@@ -324,17 +330,7 @@ def calculate_statistics_for_model_transformation(
 
     if base_transformation == "imgColorWheel":
         result = hue_metadata(transformation)
-        result["evaluation_policy"] = (
-            "One result per source class; expected original and GT labels are remapped. "
-            "Transformed predictions of every class are included when their best "
-            "spatial reference belongs to this source, using GT then original "
-            "predictions as fallback (IoU >= 0.5). Predictions owned by other "
-            "sources are excluded. Unmatched predictions of every class remain "
-            "FP candidates in each cohort. Category-aware matching counts new "
-            "wrong-class detections as hallucinations; all selected transformed "
-            "predictions contribute to their denominator. Large orange, other "
-            "and unknown reference cohorts are excluded."
-        )
+        result["evaluation_policy"] = OVERLAP_POLICY
         result["class_shifts"] = {}
         original = json.loads(original_path.read_text())
         transformed = json.loads(transformed_path.read_text())
@@ -342,44 +338,32 @@ def calculate_statistics_for_model_transformation(
         with TemporaryDirectory(prefix="color_wheel_overlap_") as directory:
             paths = [Path(directory) / name for name in ("original.json", "transformed.json", "gt.json")]
             for mapping in result["included_mappings"]:
-                source_original = dict(original)
-                source_original["annotations"] = select_predictions(
-                    original, ground_truth, mapping, transformed=False
-                )
-                expected_original = remap_reference(source_original, mapping)
-                expected_gt = remap_reference(ground_truth, mapping)
-                selected = select_predictions(
-                    transformed, ground_truth, mapping, fallback=original,
-                    include_wrong_classes=True,
-                )
-                for path, data in zip(paths, (expected_original, selected, expected_gt)):
+                cohort = overlap_cohort(original, transformed, ground_truth, mapping)
+                for path, data in zip(paths, cohort):
                     path.write_text(json.dumps(data))
-                statistics = aggregate_three_way_overlap(*paths, iou_threshold, require_category_match)
+                statistics = aggregate_three_way_overlap(
+                    *paths, iou_threshold, require_category_match, include_sizes=True)
                 statistics.update(compute_retention_metrics(statistics))
                 result["class_shifts"][mapping["key"]] = {**mapping, **statistics}
         return result
 
-    if base_transformation in TRANSFORMATION_MAP and require_category_match:
-        # Compare all three sources in the expected post-transformation class
-        # space. Remapping GT alone would still count an expected class change
-        # as a lost original detection. Generate from current inputs rather than
-        # reusing potentially stale files from a previous COCO evaluation.
+    if base_transformation in TRANSFORMATION_MAP:
+        mapping = cone_colour_mapping(base_transformation)
+        cohort = overlap_cohort(
+            json.loads(original_path.read_text()),
+            json.loads(transformed_path.read_text()),
+            json.loads(gt_path.read_text()),
+            mapping,
+        )
         with TemporaryDirectory(prefix="cone_colour_overlap_") as temporary_dir:
-            expected_original = Path(temporary_dir) / "original.json"
-            expected_gt = Path(temporary_dir) / "gt.json"
-            update_ground_truth_cone_color(
-                original_path, base_transformation, expected_original
-            )
-            update_ground_truth_cone_color(
-                gt_path, base_transformation, expected_gt
-            )
+            paths = [Path(temporary_dir) / name
+                     for name in ("original.json", "transformed.json", "gt.json")]
+            for path, data in zip(paths, cohort):
+                path.write_text(json.dumps(data))
             statistics = aggregate_three_way_overlap(
-                expected_original,
-                transformed_path,
-                expected_gt,
-                iou_threshold,
-                require_category_match,
+                *paths, iou_threshold, require_category_match, include_sizes=True,
             )
+        statistics.update(mapping, cohort="source_only", evaluation_policy=OVERLAP_POLICY)
     else:
         statistics = aggregate_three_way_overlap(
             original_path,
@@ -387,6 +371,9 @@ def calculate_statistics_for_model_transformation(
             gt_path,
             iou_threshold,
             require_category_match,
+            include_sizes=True,
+            transformed_native_path=native_transformed_path,
+            reference_area_scale=reference_area_scale,
         )
     statistics.update(compute_retention_metrics(statistics))
     return statistics

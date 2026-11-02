@@ -37,6 +37,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils.model_registry import get_model_by_name, get_model_names
+from analysis.visualisation.model_legend import sorted_model_legend
 
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -170,7 +171,7 @@ def plot_comparison(
             if value is None:
                 bar.set_visible(False)
 
-    ax.set_title(f"{metric} — {humanise_comparison(comparison)}", fontweight="bold")
+    ax.set_title(f"{metric} : {humanise_comparison(comparison)}", fontweight="bold")
     ax.set_xticks(positions, [humanise_rule(rule) for rule in rules], rotation=18, ha="right")
     ax.set_ylabel("Score")
     ax.set_ylim(0, 1.05)
@@ -245,19 +246,20 @@ def generate_dataset(
             plot_comparison(axes[row, column], metrics, rules, models, metric, comparison)
 
     handles, labels = axes[0, 0].get_legend_handles_labels()
+    handles, labels = sorted_model_legend(handles, labels)
     figure.legend(handles, labels, loc="upper center", ncol=len(models), frameon=False)
     figure.suptitle(
-        f"Cone-colour test performance by YOLO model — {dataset}",
+        f"Cone-colour test performance by YOLO model : {dataset}",
         fontsize=16,
         fontweight="bold",
         y=0.98,
     )
     figure.tight_layout(rect=(0, 0, 1, 0.91))
     output_dir.mkdir(parents=True, exist_ok=True)
-    png_path = output_dir / f"cone_colour_comparison{suffix}.png"
-    figure.savefig(png_path, dpi=180, bbox_inches="tight", facecolor="white")
+    pdf_path = output_dir / f"cone_colour_comparison{suffix}.pdf"
+    figure.savefig(pdf_path, dpi=180, bbox_inches="tight", facecolor="white")
     plt.close(figure)
-    print(f"Saved: {png_path}")
+    print(f"Saved: {pdf_path}")
     print(f"Saved: {json_path}")
     return True
 

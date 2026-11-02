@@ -2,7 +2,7 @@
 
 Evaluates YOLO detection robustness under various metamorphic tests including brightness, blur, resolution, stretch, grayscale, hue and cone-colour transformations.
 
-The model registry currently enables `yolov5`, `yolov8`, `yolov12`, and `yolov26_v2`. Registered weights and datasets must be available locally to run inference.
+The model registry currently enables `yolov5`, `yolov8`, `yolov12` and `yolov26_v2`. Registered weights and datasets must be available locally to run inference.
 
 ## Inspect the research results
 
@@ -12,8 +12,9 @@ From the repository root:
 python3 dashboard/serve.py
 ```
 
-Open **http://127.0.0.1:8080**. Viewing the dashboard requires Python 3.9+ and its standard library
+Open **http://127.0.0.1:8080** to view **Paper results**. Viewing the dashboard requires Python 3.9+ and its standard library.
 
+The dashboard reads paper analysis from `analysis/results/`. See [running the dashboard](docs/running_dashboard.md).
 
 ## Documentation
 
@@ -46,20 +47,19 @@ After preparing images, labels and weights, the main entry points are:
 bash end_to_end_scripts/run_rq1.sh --dataset test --model v8
 
 # RQ2: both brightness searches, scoring and performance distributions
-bash end_to_end_scripts/run_rq2.sh --dataset test --models yolov8 
+bash end_to_end_scripts/run_rq2.sh --dataset test --models yolov8
 
 # RQ3: bootstrap equivalence using existing test detections and RQ1 metrics
-bash end_to_end_scripts/run_rq3.sh --models yolov8 
+bash end_to_end_scripts/run_rq3.sh --models yolov8
 ```
 
 
-## Research questions and evidence
+## Research questions
 
-- **RQ1 — Model robustness:** compare original and transformed detections, accuracy against ground truth, parameter responses, detection overlap, confidence shifts and cone colours.
-- **RQ2 — Brightness tuning:** compare brute-force and golden-section threshold searches (2a), examine brightness scores and separate holdout validation (2b), and compare original/transformed accuracy distributions (2c).
-- **RQ3 — Fewer test runs:** bootstrap equivalence between a fixed subsample and the full test dataset. The saved paper experiment uses 50%, not 10%.
+- **RQ1 : Model robustness:** compare original and transformed detections, accuracy against ground truth, parameter responses, detection overlap, confidence shifts and cone colours.
+- **RQ2 : Brightness tuning:**  Examine brightness scores and separate holdout validation (2b), and compare original/transformed accuracy distributions.
+- **RQ3 : Fewer test runs:** bootstrap equivalence between a fixed subsample and the full test dataset. We use 50% in our experiments. We also investigate a more efficient search algorithm to identify the brightness operating range.
 
-Detection consistency does not establish correctness. Aggregate overlap metrics do not by themselves establish failure-image overlap, train/test generalisation or test subsumption. The guides distinguish saved evidence from broader research aims.
 
 ## Repository layout
 
@@ -76,11 +76,9 @@ analysis/
   utils/                   Conversion, overlap and equivalence analysis
   visualisation/           Plot and report generation
   scripts/                 RQ1 analysis runners
-  original_results/        Archived paper analysis used by the dashboard
-  results/                 Local analysis used by the dashboard
+  results/                 Paper analysis used by the dashboard
 end_to_end_scripts/        RQ1, RQ2 and RQ3 workflow wrappers
 scripts/                   Standalone transformation runners and rq2/ programs
 dashboard/                 Standard-library server and static frontend
 docs/                      Workflow guides
 ```
-
