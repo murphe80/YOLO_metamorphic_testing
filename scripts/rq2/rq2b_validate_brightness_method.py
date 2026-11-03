@@ -708,9 +708,12 @@ def plot(path: Path, observations: Sequence[Dict], ranges: Dict[str, Dict], thre
             ax.scatter([o["brightness_scores"][method] for o in selected],
                        [o["ap"] for o in selected], s=8, alpha=.35, c=color, label=label)
         ax.axhline(threshold, color="black", ls=":")
-        ax.set(title=method, xlabel="Brightness score", ylabel="Per-image AP", ylim=(-.02, 1.02))
-        ax.legend()
-    fig.suptitle("Saved AP and three-way brightness predictions")
+        ax.set_title(method, fontsize=14)
+        ax.set_xlabel("Brightness score", fontsize=12)
+        ax.set_ylabel("Per-image AP", fontsize=12)
+        ax.set_ylim(-.02, 1.02)
+    handles, labels = axes.flat[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="outside right center")
     fig.savefig(path, dpi=160)
     plt.close(fig)
 

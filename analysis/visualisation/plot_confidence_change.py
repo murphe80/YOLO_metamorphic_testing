@@ -11,6 +11,7 @@ summarised in four groups:
 
 The confidence-change line plots show retained true positives only.
 Lost TP and new FP distributions are plotted separately.
+Plots omit titles and legends; the shared model legend is saved as ``legend.pdf``.
 
 True-positive matching is category-aware and confidence-prioritised. Persistent
 false positives are spatially matched between the original and transformed
@@ -28,7 +29,6 @@ Usage:
 
 import argparse
 import json
-import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,6 +39,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from analysis.utils.detection_matching import (
@@ -285,11 +286,6 @@ def get_model_label(model: str) -> str:
     return model
 
 
-def format_rule_name(rule: str) -> str:
-    spaced = re.sub(r"([A-Z])", r" \1", rule).replace("_", " ").strip()
-    return spaced.title()
-
-
 def format_parameter_name(parameter: str) -> str:
     return parameter.replace("_", " ").title()
 
@@ -399,6 +395,27 @@ def collect_series(
     )
 
 
+def plot_shared_legend(models: List[str], output_path: Path) -> None:
+    """Save the existing model legend without any other text or plot elements."""
+    handles = [
+        Line2D(
+            [], [], marker=MARKERS[index % len(MARKERS)], linewidth=2,
+            markersize=6, color=get_model_color(model), label=get_model_label(model),
+        )
+        for index, model in enumerate(sorted(models))
+    ]
+    fig = plt.figure(figsize=(6, 1))
+    legend = fig.legend(
+        *sorted_model_legend(handles, [handle.get_label() for handle in handles]),
+        loc="center", ncol=min(len(handles), 6), framealpha=0.9, fontsize=9,
+    )
+    fig.canvas.draw()
+    bounds = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, bbox_inches=bounds.padded(0.05), facecolor="white")
+    plt.close(fig)
+
+
 def plot_rule(
     rule: str,
     x_label: str,
@@ -428,33 +445,16 @@ def plot_rule(
         )
 
     axis.axhline(0, color="#555555", linewidth=1, linestyle="--", alpha=0.7)
-    axis.set_xlabel(x_label, fontsize=10, fontweight="bold")
-    axis.set_ylabel(METRIC_LABELS[RETAINED_TP_CHANGE], fontsize=10, fontweight="bold")
+    axis.set_xlabel(x_label, fontsize=13, fontweight="bold")
+    axis.set_ylabel(METRIC_LABELS[RETAINED_TP_CHANGE], fontsize=13, fontweight="bold")
+    axis.tick_params(axis="both", labelsize=12)
     axis.grid(True, alpha=0.3, linestyle=":", linewidth=0.8)
     if setting_labels:
         positions = list(range(len(setting_labels)))
         axis.set_xticks(positions, setting_labels, rotation=30, ha="right")
 
     configure_resolution_axis(axis, rule, [x for points in retained_series.values() for x, _ in points])
-    handles, labels = axis.get_legend_handles_labels()
-    if handles:
-        handles, labels = sorted_model_legend(handles, labels)
-        fig.legend(
-            handles,
-            labels,
-            loc="upper center",
-            bbox_to_anchor=(0.5, 0.94),
-            ncol=min(len(labels), 6),
-            framealpha=0.9,
-            fontsize=9,
-        )
-    fig.suptitle(
-        f"{format_rule_name(rule)} : Retained TP Confidence Change",
-        fontsize=14,
-        fontweight="bold",
-        y=0.995,
-    )
-    fig.tight_layout(rect=(0, 0, 1, 0.88))
+    fig.tight_layout()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor="white")
@@ -502,15 +502,9 @@ def plot_lost_tp_rule(
         violin_parts[key].set_color(color)
 
     axis.axhline(0, color="#555555", linewidth=1, linestyle="--", alpha=0.7)
-    axis.set_xlabel(x_label, fontsize=11, fontweight="bold")
-    axis.set_ylabel(METRIC_LABELS[LOST_TP_CHANGE], fontsize=11, fontweight="bold")
-    axis.set_title(
-        f"{format_rule_name(rule)} : {get_model_label(model)} Lost TP Confidence Decrease"
-        + ("\nHue 40, 60, 100, 140: excluded (no included mappings)" if rule == "imgColorWheel" else ""),
-        fontsize=13,
-        fontweight="bold",
-        pad=15,
-    )
+    axis.set_xlabel(x_label, fontsize=13, fontweight="bold")
+    axis.set_ylabel(METRIC_LABELS[LOST_TP_CHANGE], fontsize=13, fontweight="bold")
+    axis.tick_params(axis="both", labelsize=12)
     axis.grid(True, alpha=0.3, linestyle=":", linewidth=0.8)
     if setting_labels:
         positions = list(range(len(setting_labels)))
@@ -566,12 +560,10 @@ def plot_new_fp_rule(
             axis.set_xticks(positions)
         configure_resolution_axis(axis, rule, positions)
         axis.set_ylim(0, 1)
-        axis.set_ylabel("New FP confidence")
-        axis.set_xlabel(x_label)
+        axis.set_ylabel("New FP confidence", fontsize=13, fontweight="bold")
+        axis.set_xlabel(x_label, fontsize=13, fontweight="bold")
+        axis.tick_params(axis="both", labelsize=12)
         axis.grid(axis="y", alpha=.25)
-        axis.set_title(f"{get_model_label(model)} (n={sum(len(v) for _, v in settings):,})")
-    fig.suptitle(f"{format_rule_name(rule)} : New FP Confidence\n"
-                 "Boxes: middle 50%; line: median; whiskers: 1.5 IQR; circles: outliers")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor="white")
     plt.close(fig)
@@ -765,6 +757,11 @@ def main() -> None:
             else:
                 print(f"  Skip {model}/{rule}: no lost TP detections found")
                 skipped += 1
+
+    if generated:
+        legend_output = output_dir / "legend.pdf"
+        plot_shared_legend(models, legend_output)
+        print(f"  Saved: {legend_output}")
 
     print(f"\nDone: {generated} plot(s) generated, {skipped} skipped.")
     if generated == 0:

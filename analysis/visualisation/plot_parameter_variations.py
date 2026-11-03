@@ -8,7 +8,8 @@ AR for every rule, setting, and model.
 Parameter values come from config/brute_force_transformations.json; metric values
 are read from analysis/results/rq1/<dataset>/<model>/<variant_id>/<comparison>/stats.json.
 Precision and recall plots are saved under ``average_precision`` and
-``average_recall`` subdirectories respectively.
+``average_recall`` subdirectories respectively, with a shared ``legend.pdf``
+in their parent output directory.
 
 Usage:
     python3 analysis/visualisation/plot_parameter_variations.py
@@ -27,6 +28,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from utils.model_registry import get_model_by_name, get_model_names
@@ -109,13 +111,6 @@ def get_model_label(model: str) -> str:
     if model_config:
         return model_config.get("display_name", model)
     return model
-
-
-def format_rule_name(rule: str) -> str:
-    import re
-
-    spaced = re.sub(r"([A-Z])", r" \1", rule).replace("_", " ").strip()
-    return spaced.title()
 
 
 def format_param_label(param_name: str) -> str:
@@ -206,6 +201,31 @@ def write_metrics_json(metrics: dict, output_path: Path) -> None:
         f.write("\n")
 
 
+def plot_shared_legend(models: List[str], output_path: Path) -> None:
+    """Save only the model legend, matching the styles used in every plot."""
+    handles = [
+        Line2D(
+            [], [],
+            marker=MARKERS[index % len(MARKERS)],
+            linewidth=2,
+            markersize=6,
+            color=get_model_color(model),
+            label=get_model_label(model),
+        )
+        for index, model in enumerate(sorted(models))
+    ]
+    fig = plt.figure(figsize=(2, 2))
+    legend = fig.legend(
+        *sorted_model_legend(handles, [handle.get_label() for handle in handles]),
+        loc="center", framealpha=0.9, fontsize=9,
+    )
+    fig.canvas.draw()
+    bounds = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, bbox_inches=bounds, pad_inches=0.05, facecolor="white")
+    plt.close(fig)
+
+
 def plot_rule(
     rule: str,
     param_name: str,
@@ -236,18 +256,10 @@ def plot_rule(
         )
 
     configure_resolution_axis(ax, rule, [x for points in series.values() for x, _ in points])
-    ax.set_xlabel(format_param_label(param_name), fontsize=11, fontweight="bold")
-    ax.set_ylabel(metric, fontsize=11, fontweight="bold")
-    ax.set_title(
-        f"{format_rule_name(rule)} : {metric} vs {format_param_label(param_name)}\n"
-        f"({comparison.replace('_', ' ')})",
-        fontsize=13,
-        fontweight="bold",
-        pad=15,
-    )
+    ax.set_xlabel(format_param_label(param_name), fontsize=13, fontweight="bold")
+    ax.set_ylabel(metric, fontsize=13, fontweight="bold")
+    ax.tick_params(axis="both", labelsize=12)
     ax.grid(True, alpha=0.3, linestyle=":", linewidth=0.8)
-    ax.legend(*sorted_model_legend(*ax.get_legend_handles_labels()),
-              loc="best", framealpha=0.9, fontsize=9)
     plt.tight_layout()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -453,6 +465,11 @@ def main():
         else:
             print(f"  Skip {rule}: no {AR_METRIC} data found")
             ar_skipped += 1
+
+    if generated + ar_generated:
+        legend_output = output_dir / "legend.pdf"
+        plot_shared_legend(models, legend_output)
+        print(f"  Saved: {legend_output}")
 
     if args.rules and json_output.exists():
         previous = json.loads(json_output.read_text())
