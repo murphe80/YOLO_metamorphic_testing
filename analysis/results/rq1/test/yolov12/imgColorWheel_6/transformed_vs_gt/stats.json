@@ -1,0 +1,63 @@
+{
+  "variant_id": "imgColorWheel_6",
+  "hue_rotation": 120,
+  "status": "included",
+  "included_mappings": [
+    {
+      "source_category_id": 2,
+      "source": "blue",
+      "target_category_id": 1,
+      "target": "yellow",
+      "mapping": "blue \u2192 yellow",
+      "key": "blue_to_yellow"
+    }
+  ],
+  "excluded_mappings": [
+    {
+      "source_category_id": 3,
+      "source": "orange",
+      "target_category_id": null,
+      "target": "pink",
+      "mapping": "orange \u2192 pink",
+      "key": "orange_to_pink"
+    },
+    {
+      "source_category_id": 1,
+      "source": "yellow",
+      "target_category_id": null,
+      "target": "purple",
+      "mapping": "yellow \u2192 purple",
+      "key": "yellow_to_purple"
+    }
+  ],
+  "excluded_classes": [
+    "large_orange_cone",
+    "other_cone",
+    "unknown_cone"
+  ],
+  "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+  "class_shifts": {
+    "blue_to_yellow": {
+      "source_category_id": 2,
+      "source": "blue",
+      "target_category_id": 1,
+      "target": "yellow",
+      "mapping": "blue \u2192 yellow",
+      "key": "blue_to_yellow",
+      "reference_count": 2974,
+      "prediction_count": 1304,
+      "AP": 0.28078091091750684,
+      "AP50": 0.42383840686506136,
+      "AP75": 0.31222957957308095,
+      "APs": 0.1320479303287742,
+      "APm": 0.6137837327080293,
+      "APl": 0.7941472724900311,
+      "AR1": 0.0824815063887021,
+      "AR10": 0.28873570948217886,
+      "AR100": 0.29250168123739073,
+      "ARs": 0.14785417628057224,
+      "ARm": 0.6436018957345971,
+      "ARl": 0.8166666666666668
+    }
+  }
+}

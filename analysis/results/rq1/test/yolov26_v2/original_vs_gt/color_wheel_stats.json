@@ -1,0 +1,106 @@
+{
+  "variant_id": "imgColorWheel_0",
+  "hue_rotation": 0,
+  "status": "included",
+  "included_mappings": [
+    {
+      "source_category_id": 2,
+      "source": "blue",
+      "target_category_id": 2,
+      "target": "blue",
+      "mapping": "blue \u2192 blue",
+      "key": "blue_to_blue"
+    },
+    {
+      "source_category_id": 3,
+      "source": "orange",
+      "target_category_id": 3,
+      "target": "orange",
+      "mapping": "orange \u2192 orange",
+      "key": "orange_to_orange"
+    },
+    {
+      "source_category_id": 1,
+      "source": "yellow",
+      "target_category_id": 1,
+      "target": "yellow",
+      "mapping": "yellow \u2192 yellow",
+      "key": "yellow_to_yellow"
+    }
+  ],
+  "excluded_mappings": [],
+  "excluded_classes": [
+    "large_orange_cone",
+    "other_cone",
+    "unknown_cone"
+  ],
+  "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+  "class_shifts": {
+    "blue_to_blue": {
+      "source_category_id": 2,
+      "source": "blue",
+      "target_category_id": 2,
+      "target": "blue",
+      "mapping": "blue \u2192 blue",
+      "key": "blue_to_blue",
+      "reference_count": 2974,
+      "prediction_count": 2536,
+      "AP": 0.550311584627741,
+      "AP50": 0.7875820239428116,
+      "AP75": 0.6288017049082987,
+      "APs": 0.42966056988215373,
+      "APm": 0.806217750137393,
+      "APl": 0.9349786483738228,
+      "AR1": 0.09411566913248151,
+      "AR10": 0.49166106254203096,
+      "AR100": 0.5756220578345662,
+      "ARs": 0.46894323950161515,
+      "ARm": 0.8372827804107426,
+      "ARl": 0.9522988505747128
+    },
+    "orange_to_orange": {
+      "source_category_id": 3,
+      "source": "orange",
+      "target_category_id": 3,
+      "target": "orange",
+      "mapping": "orange \u2192 orange",
+      "key": "orange_to_orange",
+      "reference_count": 661,
+      "prediction_count": 585,
+      "AP": 0.5246397890365335,
+      "AP50": 0.7657462697205191,
+      "AP75": 0.5719653879920208,
+      "APs": 0.41218789513453824,
+      "APm": 0.8241749677987985,
+      "APl": 0.9037476826646839,
+      "AR1": 0.12208774583963693,
+      "AR10": 0.5502269288956126,
+      "AR100": 0.5552193645990923,
+      "ARs": 0.45290581162324656,
+      "ARm": 0.8527999999999999,
+      "ARl": 0.9297297297297298
+    },
+    "yellow_to_yellow": {
+      "source_category_id": 1,
+      "source": "yellow",
+      "target_category_id": 1,
+      "target": "yellow",
+      "mapping": "yellow \u2192 yellow",
+      "key": "yellow_to_yellow",
+      "reference_count": 2904,
+      "prediction_count": 2449,
+      "AP": 0.540180221289141,
+      "AP50": 0.7776252993542413,
+      "AP75": 0.6164590304040336,
+      "APs": 0.4251424784672559,
+      "APm": 0.7789159032517236,
+      "APl": 0.9094301007901834,
+      "AR1": 0.08495179063360883,
+      "AR10": 0.4685606060606061,
+      "AR100": 0.568939393939394,
+      "ARs": 0.46277617675312194,
+      "ARm": 0.8163418290854573,
+      "ARl": 0.9303225806451614
+    }
+  }
+}

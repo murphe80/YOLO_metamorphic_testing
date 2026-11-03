@@ -1,0 +1,1389 @@
+[
+  {
+    "variant_id": "imgColorWheel_0",
+    "hue_rotation": 0,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 1560,
+              "mean": -0.0004611403846153839
+            },
+            "lost_tp_change": {
+              "count": 0,
+              "mean": null
+            },
+            "persistent_fp_change": {
+              "count": 41,
+              "mean": -0.0019374390243902407
+            },
+            "new_fp_confidence": {
+              "count": 1,
+              "mean": 0.386332
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 1582,
+              "mean": -0.0006458034134007591
+            },
+            "lost_tp_change": {
+              "count": 3,
+              "mean": 0.00966066666666667
+            },
+            "persistent_fp_change": {
+              "count": 47,
+              "mean": -0.004682553191489359
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 1553,
+              "mean": -0.00045610431423052087
+            },
+            "lost_tp_change": {
+              "count": 7,
+              "mean": 0.01867885714285714
+            },
+            "persistent_fp_change": {
+              "count": 43,
+              "mean": -0.004250209302325587
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 2355,
+              "mean": -0.000553027600849258
+            },
+            "lost_tp_change": {
+              "count": 4,
+              "mean": 0.010854249999999996
+            },
+            "persistent_fp_change": {
+              "count": 165,
+              "mean": -0.0004102484848484815
+            },
+            "new_fp_confidence": {
+              "count": 6,
+              "mean": 0.38870216666666674
+            }
+          }
+        }
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 334,
+              "mean": -0.0004333562874251474
+            },
+            "lost_tp_change": {
+              "count": 1,
+              "mean": 0.014249000000000012
+            },
+            "persistent_fp_change": {
+              "count": 27,
+              "mean": -0.0010234814814814792
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 347,
+              "mean": -0.0008120778097982687
+            },
+            "lost_tp_change": {
+              "count": 2,
+              "mean": 0.019602499999999995
+            },
+            "persistent_fp_change": {
+              "count": 27,
+              "mean": -0.0031847037037037113
+            },
+            "new_fp_confidence": {
+              "count": 1,
+              "mean": 0.269429
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 338,
+              "mean": -0.0009289822485207079
+            },
+            "lost_tp_change": {
+              "count": 1,
+              "mean": 0.01906000000000002
+            },
+            "persistent_fp_change": {
+              "count": 17,
+              "mean": -0.0030678235294117452
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 516,
+              "mean": -0.0009915813953488386
+            },
+            "lost_tp_change": {
+              "count": 0,
+              "mean": null
+            },
+            "persistent_fp_change": {
+              "count": 67,
+              "mean": -0.0018701791044776115
+            },
+            "new_fp_confidence": {
+              "count": 2,
+              "mean": 0.2565545
+            }
+          }
+        }
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 1533,
+              "mean": -0.0004445159817351601
+            },
+            "lost_tp_change": {
+              "count": 0,
+              "mean": null
+            },
+            "persistent_fp_change": {
+              "count": 47,
+              "mean": -0.0019696170212766
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 1558,
+              "mean": -0.0004807105263157895
+            },
+            "lost_tp_change": {
+              "count": 3,
+              "mean": 0.08484599999999999
+            },
+            "persistent_fp_change": {
+              "count": 49,
+              "mean": -0.002558428571428574
+            },
+            "new_fp_confidence": {
+              "count": 1,
+              "mean": 0.483241
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 1531,
+              "mean": -0.0006932926192031331
+            },
+            "lost_tp_change": {
+              "count": 4,
+              "mean": 0.002912999999999985
+            },
+            "persistent_fp_change": {
+              "count": 45,
+              "mean": -0.0066166444444444505
+            },
+            "new_fp_confidence": {
+              "count": 1,
+              "mean": 0.280499
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 2285,
+              "mean": -0.00024477374179431
+            },
+            "lost_tp_change": {
+              "count": 1,
+              "mean": 0.35591300000000003
+            },
+            "persistent_fp_change": {
+              "count": 149,
+              "mean": -0.004952442953020138
+            },
+            "new_fp_confidence": {
+              "count": 9,
+              "mean": 0.3039644444444445
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "variant_id": "imgColorWheel_1",
+    "hue_rotation": 20,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "yellow",
+        "mapping": "orange \u2192 yellow",
+        "key": "orange_to_yellow",
+        "exclusion_reason": "Orange-to-yellow mapping excluded from analysis by user request."
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 1500,
+              "mean": -0.01065981133333332
+            },
+            "lost_tp_change": {
+              "count": 60,
+              "mean": 0.22944808333333339
+            },
+            "persistent_fp_change": {
+              "count": 26,
+              "mean": -0.03629926923076923
+            },
+            "new_fp_confidence": {
+              "count": 23,
+              "mean": 0.3897363913043478
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 1522,
+              "mean": -0.009939187253613662
+            },
+            "lost_tp_change": {
+              "count": 63,
+              "mean": 0.22328453968253972
+            },
+            "persistent_fp_change": {
+              "count": 31,
+              "mean": -0.03637141935483871
+            },
+            "new_fp_confidence": {
+              "count": 22,
+              "mean": 0.42341577272727277
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 1513,
+              "mean": -0.009822562458691333
+            },
+            "lost_tp_change": {
+              "count": 47,
+              "mean": 0.18016742553191498
+            },
+            "persistent_fp_change": {
+              "count": 28,
+              "mean": -0.040520464285714285
+            },
+            "new_fp_confidence": {
+              "count": 18,
+              "mean": 0.3386003888888889
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 2272,
+              "mean": -0.012127209066901443
+            },
+            "lost_tp_change": {
+              "count": 87,
+              "mean": 0.3530656206896551
+            },
+            "persistent_fp_change": {
+              "count": 103,
+              "mean": -0.008250980582524268
+            },
+            "new_fp_confidence": {
+              "count": 72,
+              "mean": 0.3744669027777778
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "variant_id": "imgColorWheel_2",
+    "hue_rotation": 40,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "highly saturated blue",
+        "mapping": "blue \u2192 highly saturated blue",
+        "key": "blue_to_highly_saturated_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "orange \u2192 green",
+        "key": "orange_to_green"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "yellow \u2192 green",
+        "key": "yellow_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {}
+  },
+  {
+    "variant_id": "imgColorWheel_3",
+    "hue_rotation": 60,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "blue \u2192 pink",
+        "key": "blue_to_pink"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "orange \u2192 cyan",
+        "key": "orange_to_cyan"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "cyan",
+        "mapping": "yellow \u2192 cyan",
+        "key": "yellow_to_cyan"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {}
+  },
+  {
+    "variant_id": "imgColorWheel_4",
+    "hue_rotation": 80,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "green/teal",
+        "mapping": "orange \u2192 green/teal",
+        "key": "orange_to_green/teal",
+        "exclusion_reason": "Unreliable orange-to-blue mapping: transformed orange cones often appear green/teal rather than blue."
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {
+      "blue_to_orange": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 966,
+              "mean": -0.07650555797101435
+            },
+            "lost_tp_change": {
+              "count": 594,
+              "mean": 0.48640564646464696
+            },
+            "persistent_fp_change": {
+              "count": 1,
+              "mean": 0.20076300000000002
+            },
+            "new_fp_confidence": {
+              "count": 11,
+              "mean": 0.5150463636363636
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 937,
+              "mean": -0.06764635005336195
+            },
+            "lost_tp_change": {
+              "count": 648,
+              "mean": 0.48551527469135786
+            },
+            "persistent_fp_change": {
+              "count": 1,
+              "mean": -0.37566900000000003
+            },
+            "new_fp_confidence": {
+              "count": 9,
+              "mean": 0.44275800000000004
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 957,
+              "mean": -0.08031279310344834
+            },
+            "lost_tp_change": {
+              "count": 603,
+              "mean": 0.4787503615257054
+            },
+            "persistent_fp_change": {
+              "count": 3,
+              "mean": -0.33772433333333335
+            },
+            "new_fp_confidence": {
+              "count": 13,
+              "mean": 0.49859376923076926
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 1381,
+              "mean": -0.11080288124547454
+            },
+            "lost_tp_change": {
+              "count": 978,
+              "mean": 0.47821316564417277
+            },
+            "persistent_fp_change": {
+              "count": 12,
+              "mean": -0.11994300000000002
+            },
+            "new_fp_confidence": {
+              "count": 41,
+              "mean": 0.43324429268292686
+            }
+          }
+        }
+      },
+      "yellow_to_blue": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "yellow \u2192 blue",
+        "key": "yellow_to_blue",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 1429,
+              "mean": -0.019131100769769073
+            },
+            "lost_tp_change": {
+              "count": 104,
+              "mean": 0.3182220673076924
+            },
+            "persistent_fp_change": {
+              "count": 23,
+              "mean": 0.0007462173913043496
+            },
+            "new_fp_confidence": {
+              "count": 90,
+              "mean": 0.47384434444444445
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 1448,
+              "mean": -0.026609110497237565
+            },
+            "lost_tp_change": {
+              "count": 113,
+              "mean": 0.2967246460176991
+            },
+            "persistent_fp_change": {
+              "count": 24,
+              "mean": -0.010608166666666662
+            },
+            "new_fp_confidence": {
+              "count": 78,
+              "mean": 0.4737304487179486
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 1411,
+              "mean": -0.034229957476966694
+            },
+            "lost_tp_change": {
+              "count": 124,
+              "mean": 0.2781897258064517
+            },
+            "persistent_fp_change": {
+              "count": 21,
+              "mean": 0.03441719047619046
+            },
+            "new_fp_confidence": {
+              "count": 53,
+              "mean": 0.487383075471698
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 2127,
+              "mean": -0.022333965209214813
+            },
+            "lost_tp_change": {
+              "count": 159,
+              "mean": 0.304728100628931
+            },
+            "persistent_fp_change": {
+              "count": 56,
+              "mean": 0.04634698214285714
+            },
+            "new_fp_confidence": {
+              "count": 199,
+              "mean": 0.4495700552763821
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "variant_id": "imgColorWheel_5",
+    "hue_rotation": 100,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "orange",
+        "mapping": "blue \u2192 orange",
+        "key": "blue_to_orange",
+        "exclusion_reason": "Blue-to-orange analysis uses imgColorWheel_4 instead, by user request."
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "darker blue",
+        "mapping": "orange \u2192 darker blue",
+        "key": "orange_to_darker_blue"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {}
+  },
+  {
+    "variant_id": "imgColorWheel_6",
+    "hue_rotation": 120,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "purple",
+        "mapping": "yellow \u2192 purple",
+        "key": "yellow_to_purple"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {
+      "blue_to_yellow": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "blue \u2192 yellow",
+        "key": "blue_to_yellow",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 1161,
+              "mean": -0.08777870542635641
+            },
+            "lost_tp_change": {
+              "count": 399,
+              "mean": 0.4259694235588975
+            },
+            "persistent_fp_change": {
+              "count": 5,
+              "mean": 0.02852580000000001
+            },
+            "new_fp_confidence": {
+              "count": 43,
+              "mean": 0.436708511627907
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 1150,
+              "mean": -0.09360971391304344
+            },
+            "lost_tp_change": {
+              "count": 435,
+              "mean": 0.4526596827586208
+            },
+            "persistent_fp_change": {
+              "count": 9,
+              "mean": -0.09069777777777781
+            },
+            "new_fp_confidence": {
+              "count": 41,
+              "mean": 0.4569604146341463
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 1236,
+              "mean": -0.10829448462783159
+            },
+            "lost_tp_change": {
+              "count": 324,
+              "mean": 0.41787571913580246
+            },
+            "persistent_fp_change": {
+              "count": 10,
+              "mean": -0.1655912
+            },
+            "new_fp_confidence": {
+              "count": 38,
+              "mean": 0.39730165789473676
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 1723,
+              "mean": -0.11711706558328484
+            },
+            "lost_tp_change": {
+              "count": 636,
+              "mean": 0.4503567295597486
+            },
+            "persistent_fp_change": {
+              "count": 26,
+              "mean": -0.10196330769230771
+            },
+            "new_fp_confidence": {
+              "count": 97,
+              "mean": 0.4109820824742267
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "variant_id": "imgColorWheel_7",
+    "hue_rotation": 140,
+    "status": "excluded",
+    "included_mappings": [],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "orange \u2192 pink",
+        "key": "orange_to_pink"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": null,
+        "target": "pink",
+        "mapping": "yellow \u2192 pink",
+        "key": "yellow_to_pink"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {}
+  },
+  {
+    "variant_id": "imgColorWheel_8",
+    "hue_rotation": 160,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange"
+      }
+    ],
+    "excluded_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": null,
+        "target": "green",
+        "mapping": "blue \u2192 green",
+        "key": "blue_to_green"
+      }
+    ],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 310,
+              "mean": -0.029270690322580662
+            },
+            "lost_tp_change": {
+              "count": 25,
+              "mean": 0.24662251999999998
+            },
+            "persistent_fp_change": {
+              "count": 14,
+              "mean": -0.07015150000000002
+            },
+            "new_fp_confidence": {
+              "count": 17,
+              "mean": 0.4716092352941177
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 318,
+              "mean": -0.023993232704402546
+            },
+            "lost_tp_change": {
+              "count": 31,
+              "mean": 0.23372706451612904
+            },
+            "persistent_fp_change": {
+              "count": 14,
+              "mean": -0.0014052142857142974
+            },
+            "new_fp_confidence": {
+              "count": 16,
+              "mean": 0.4934133125
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 313,
+              "mean": -0.033289984025559105
+            },
+            "lost_tp_change": {
+              "count": 26,
+              "mean": 0.2440366923076923
+            },
+            "persistent_fp_change": {
+              "count": 11,
+              "mean": -0.04543190909090906
+            },
+            "new_fp_confidence": {
+              "count": 7,
+              "mean": 0.49798914285714285
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 471,
+              "mean": -0.03245518259023357
+            },
+            "lost_tp_change": {
+              "count": 45,
+              "mean": 0.2565062666666667
+            },
+            "persistent_fp_change": {
+              "count": 34,
+              "mean": -0.11574332352941175
+            },
+            "new_fp_confidence": {
+              "count": 41,
+              "mean": 0.37448241463414644
+            }
+          }
+        }
+      },
+      "yellow_to_orange": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "yellow \u2192 orange",
+        "key": "yellow_to_orange",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 1180,
+              "mean": -0.03287894661016953
+            },
+            "lost_tp_change": {
+              "count": 353,
+              "mean": 0.4424727308781871
+            },
+            "persistent_fp_change": {
+              "count": 14,
+              "mean": -0.2099785714285714
+            },
+            "new_fp_confidence": {
+              "count": 16,
+              "mean": 0.4453453125
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 1231,
+              "mean": -0.03247971486596259
+            },
+            "lost_tp_change": {
+              "count": 330,
+              "mean": 0.4290173545454547
+            },
+            "persistent_fp_change": {
+              "count": 8,
+              "mean": -0.09868312499999998
+            },
+            "new_fp_confidence": {
+              "count": 16,
+              "mean": 0.46953281249999995
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 1204,
+              "mean": -0.039603105481727574
+            },
+            "lost_tp_change": {
+              "count": 331,
+              "mean": 0.42119326283987873
+            },
+            "persistent_fp_change": {
+              "count": 12,
+              "mean": -0.16536800000000004
+            },
+            "new_fp_confidence": {
+              "count": 8,
+              "mean": 0.48577487499999994
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 1654,
+              "mean": -0.06382585247883917
+            },
+            "lost_tp_change": {
+              "count": 632,
+              "mean": 0.4386101930379745
+            },
+            "persistent_fp_change": {
+              "count": 27,
+              "mean": -0.09131125925925927
+            },
+            "new_fp_confidence": {
+              "count": 51,
+              "mean": 0.39091166666666677
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "variant_id": "imgColorWheel_9",
+    "hue_rotation": 180,
+    "status": "included",
+    "included_mappings": [
+      {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue"
+      },
+      {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange"
+      },
+      {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow"
+      }
+    ],
+    "excluded_mappings": [],
+    "excluded_classes": [
+      "large_orange_cone",
+      "other_cone",
+      "unknown_cone"
+    ],
+    "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+    "class_shifts": {
+      "blue_to_blue": {
+        "source_category_id": 2,
+        "source": "blue",
+        "target_category_id": 2,
+        "target": "blue",
+        "mapping": "blue \u2192 blue",
+        "key": "blue_to_blue",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 1560,
+              "mean": -0.0004611403846153839
+            },
+            "lost_tp_change": {
+              "count": 0,
+              "mean": null
+            },
+            "persistent_fp_change": {
+              "count": 41,
+              "mean": -0.0019374390243902407
+            },
+            "new_fp_confidence": {
+              "count": 1,
+              "mean": 0.386332
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 1582,
+              "mean": -0.0006458034134007591
+            },
+            "lost_tp_change": {
+              "count": 3,
+              "mean": 0.00966066666666667
+            },
+            "persistent_fp_change": {
+              "count": 47,
+              "mean": -0.004682553191489359
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 1553,
+              "mean": -0.00045610431423052087
+            },
+            "lost_tp_change": {
+              "count": 7,
+              "mean": 0.01867885714285714
+            },
+            "persistent_fp_change": {
+              "count": 43,
+              "mean": -0.004250209302325587
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 2355,
+              "mean": -0.000553027600849258
+            },
+            "lost_tp_change": {
+              "count": 4,
+              "mean": 0.010854249999999996
+            },
+            "persistent_fp_change": {
+              "count": 165,
+              "mean": -0.0004102484848484815
+            },
+            "new_fp_confidence": {
+              "count": 6,
+              "mean": 0.38870216666666674
+            }
+          }
+        }
+      },
+      "orange_to_orange": {
+        "source_category_id": 3,
+        "source": "orange",
+        "target_category_id": 3,
+        "target": "orange",
+        "mapping": "orange \u2192 orange",
+        "key": "orange_to_orange",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 334,
+              "mean": -0.0004333562874251474
+            },
+            "lost_tp_change": {
+              "count": 1,
+              "mean": 0.014249000000000012
+            },
+            "persistent_fp_change": {
+              "count": 27,
+              "mean": -0.0010234814814814792
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 347,
+              "mean": -0.0008120778097982687
+            },
+            "lost_tp_change": {
+              "count": 2,
+              "mean": 0.019602499999999995
+            },
+            "persistent_fp_change": {
+              "count": 27,
+              "mean": -0.0031847037037037113
+            },
+            "new_fp_confidence": {
+              "count": 1,
+              "mean": 0.269429
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 338,
+              "mean": -0.0009289822485207079
+            },
+            "lost_tp_change": {
+              "count": 1,
+              "mean": 0.01906000000000002
+            },
+            "persistent_fp_change": {
+              "count": 17,
+              "mean": -0.0030678235294117452
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 516,
+              "mean": -0.0009915813953488386
+            },
+            "lost_tp_change": {
+              "count": 0,
+              "mean": null
+            },
+            "persistent_fp_change": {
+              "count": 67,
+              "mean": -0.0018701791044776115
+            },
+            "new_fp_confidence": {
+              "count": 2,
+              "mean": 0.2565545
+            }
+          }
+        }
+      },
+      "yellow_to_yellow": {
+        "source_category_id": 1,
+        "source": "yellow",
+        "target_category_id": 1,
+        "target": "yellow",
+        "mapping": "yellow \u2192 yellow",
+        "key": "yellow_to_yellow",
+        "models": {
+          "yolov5": {
+            "retained_tp_change": {
+              "count": 1533,
+              "mean": -0.0004445159817351601
+            },
+            "lost_tp_change": {
+              "count": 0,
+              "mean": null
+            },
+            "persistent_fp_change": {
+              "count": 47,
+              "mean": -0.0019696170212766
+            },
+            "new_fp_confidence": {
+              "count": 0,
+              "mean": null
+            }
+          },
+          "yolov8": {
+            "retained_tp_change": {
+              "count": 1558,
+              "mean": -0.0004807105263157895
+            },
+            "lost_tp_change": {
+              "count": 3,
+              "mean": 0.08484599999999999
+            },
+            "persistent_fp_change": {
+              "count": 49,
+              "mean": -0.002558428571428574
+            },
+            "new_fp_confidence": {
+              "count": 1,
+              "mean": 0.483241
+            }
+          },
+          "yolov12": {
+            "retained_tp_change": {
+              "count": 1531,
+              "mean": -0.0006932926192031331
+            },
+            "lost_tp_change": {
+              "count": 4,
+              "mean": 0.002912999999999985
+            },
+            "persistent_fp_change": {
+              "count": 45,
+              "mean": -0.0066166444444444505
+            },
+            "new_fp_confidence": {
+              "count": 1,
+              "mean": 0.280499
+            }
+          },
+          "yolov26_v2": {
+            "retained_tp_change": {
+              "count": 2285,
+              "mean": -0.00024477374179431
+            },
+            "lost_tp_change": {
+              "count": 1,
+              "mean": 0.35591300000000003
+            },
+            "persistent_fp_change": {
+              "count": 149,
+              "mean": -0.004952442953020138
+            },
+            "new_fp_confidence": {
+              "count": 9,
+              "mean": 0.3039644444444445
+            }
+          }
+        }
+      }
+    }
+  }
+]

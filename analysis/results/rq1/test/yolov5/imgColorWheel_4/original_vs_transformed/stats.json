@@ -1,0 +1,86 @@
+{
+  "variant_id": "imgColorWheel_4",
+  "hue_rotation": 80,
+  "status": "included",
+  "included_mappings": [
+    {
+      "source_category_id": 2,
+      "source": "blue",
+      "target_category_id": 3,
+      "target": "orange",
+      "mapping": "blue \u2192 orange",
+      "key": "blue_to_orange"
+    },
+    {
+      "source_category_id": 1,
+      "source": "yellow",
+      "target_category_id": 2,
+      "target": "blue",
+      "mapping": "yellow \u2192 blue",
+      "key": "yellow_to_blue"
+    }
+  ],
+  "excluded_mappings": [
+    {
+      "source_category_id": 3,
+      "source": "orange",
+      "target_category_id": null,
+      "target": "green/teal",
+      "mapping": "orange \u2192 green/teal",
+      "key": "orange_to_green/teal",
+      "exclusion_reason": "Unreliable orange-to-blue mapping: transformed orange cones often appear green/teal rather than blue."
+    }
+  ],
+  "excluded_classes": [
+    "large_orange_cone",
+    "other_cone",
+    "unknown_cone"
+  ],
+  "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+  "class_shifts": {
+    "blue_to_orange": {
+      "source_category_id": 2,
+      "source": "blue",
+      "target_category_id": 3,
+      "target": "orange",
+      "mapping": "blue \u2192 orange",
+      "key": "blue_to_orange",
+      "reference_count": 1606,
+      "prediction_count": 1000,
+      "AP": 0.4777534695897424,
+      "AP50": 0.6018273835985533,
+      "AP75": 0.5548727235435632,
+      "APs": 0.2979886809840431,
+      "APm": 0.612607492395524,
+      "APl": 0.7690266303648342,
+      "AR1": 0.1580323785803238,
+      "AR10": 0.49595267745952676,
+      "AR100": 0.4965130759651307,
+      "ARs": 0.3261728395061728,
+      "ARm": 0.637156704361874,
+      "ARl": 0.7841807909604519
+    },
+    "yellow_to_blue": {
+      "source_category_id": 1,
+      "source": "yellow",
+      "target_category_id": 2,
+      "target": "blue",
+      "mapping": "yellow \u2192 blue",
+      "key": "yellow_to_blue",
+      "reference_count": 1585,
+      "prediction_count": 1593,
+      "AP": 0.7043248632136581,
+      "AP50": 0.9148677928636155,
+      "AP75": 0.8300750239757367,
+      "APs": 0.5595228721466288,
+      "APm": 0.7954440543333888,
+      "APl": 0.9005785229129346,
+      "AR1": 0.15381703470031544,
+      "AR10": 0.71596214511041,
+      "AR100": 0.7375394321766561,
+      "ARs": 0.6270860077021823,
+      "ARm": 0.8260336906584993,
+      "ARl": 0.9222222222222223
+    }
+  }
+}

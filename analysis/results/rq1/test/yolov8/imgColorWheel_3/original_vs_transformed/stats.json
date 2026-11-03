@@ -1,0 +1,39 @@
+{
+  "variant_id": "imgColorWheel_3",
+  "hue_rotation": 60,
+  "status": "excluded",
+  "included_mappings": [],
+  "excluded_mappings": [
+    {
+      "source_category_id": 2,
+      "source": "blue",
+      "target_category_id": null,
+      "target": "pink",
+      "mapping": "blue \u2192 pink",
+      "key": "blue_to_pink"
+    },
+    {
+      "source_category_id": 3,
+      "source": "orange",
+      "target_category_id": null,
+      "target": "cyan",
+      "mapping": "orange \u2192 cyan",
+      "key": "orange_to_cyan"
+    },
+    {
+      "source_category_id": 1,
+      "source": "yellow",
+      "target_category_id": null,
+      "target": "cyan",
+      "mapping": "yellow \u2192 cyan",
+      "key": "yellow_to_cyan"
+    }
+  ],
+  "excluded_classes": [
+    "large_orange_cone",
+    "other_cone",
+    "unknown_cone"
+  ],
+  "evaluation_policy": "One result per source class; no pooled score. Expected reference labels are remapped before category-aware evaluation. Target-class predictions whose best spatial reference (IoU >= 0.5) belongs to another source class are ignored for this cohort. Unmatched target-class predictions remain false positive candidates in each applicable cohort; their source colour cannot be inferred. Large orange references are excluded because their geometry differs; other/unknown references are also excluded.",
+  "class_shifts": {}
+}
