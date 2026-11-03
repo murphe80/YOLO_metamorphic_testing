@@ -21,7 +21,6 @@ The dashboard reads paper analysis from `analysis/results/`. See [running the da
 | Task | Guide |
 | --- | --- |
 | Add a model or weights variant | [Adding models](docs/adding_models.md) |
-| Inspect saved paper evidence and understand metrics | [Research paper results](docs/research_paper_results.md) |
 | Start and use the local dashboard | [Running the dashboard](docs/running_dashboard.md) |
 | Prepare data and run RQ1, RQ2 or RQ3 | [End-to-end workflows](docs/running_end_to_end.md) |
 | Run transformations, inference, evaluation or analysis separately | [Individual scripts](docs/running_individual_scripts.md) |
