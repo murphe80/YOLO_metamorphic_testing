@@ -1,0 +1,574 @@
+{
+  "model": "yolov12",
+  "ap_definition": "per-image COCO AP@[0.50:0.95] (COCOeval stats[0])",
+  "minimum_sample_ap_exclusive": 0.4,
+  "validation_ap_threshold": 0.5,
+  "selection_note": "One source image per dataset is used for all three brightness versions. Six examples are supplied, with a balanced four-image subset retained. The latest competition requirement places the HSV error on the in-range version instead of the too-bright version: increasing brightness further cannot reverse an HSV too-bright prediction.",
+  "selection_policy": "Curated illustrative examples, not a random or representative sample. All AP > 0.4. Bright/dark examples have AP < 0.5 and gamma < 1 / > 1; in-range examples have AP >= 0.5 and may be transformed. Both methods make definite predictions. Competition in-range is correctly accepted by RMS and falsely rejected as too bright by HSV. Validation bright is an HSV true positive.",
+  "shared_source_per_dataset": {
+    "competition_dataset": "data/base_images/comp_labelled/images/000143_8d7dca83-frame_001764_1721555072488452212.png",
+    "val": "data/base_images/val/images/prom_00308.jpg"
+  },
+  "correctness_definition": "methods.correct compares the directional classification to the AP-and-transformation reference. failure_detection_correct preserves the saved binary success/failure correctness. A too-dark prediction for an actual too-bright failure detects failure correctly but has the wrong direction, labeled explicitly in the figures.",
+  "reference_definition": "AP >= 0.5 means in_range. AP < 0.5 with side bright/dark means too_bright/too_dark. These are operational AP-based categories, not independent visual exposure labels.",
+  "prediction_rule": "Use saved three_class predictions (boundary mean +/- 0.204 sample SD). For saved out_of_range, scores below the dark band's lower limit are too_dark and scores above the bright band's upper limit are too_bright. Inclusive boundary bands are uncertain; their intervening open interval is in_range.",
+  "image_reproduction": "Original decoded pixels or repository imgDarkBright gamma LUT, followed by the source-extension encoding used in validation, then lossless PNG export. No crop, resize, or visual enhancement. Both exported-pixel scores verified against saved values to 1e-12; AP reused without inference.",
+  "recommended_four_sample_ids": [
+    "comp_data_too_bright",
+    "val_data_too_bright",
+    "comp_data_in-range",
+    "val_data_too_dark"
+  ],
+  "sources": {
+    "competition_dataset": {
+      "path": "analysis/results/rq2/rq2b/validation/competition_dataset/yolov12/three_class/validation_results.json",
+      "sha256": "b6264ba51c8dfc17a15d8519981dafa60fd4fc53ca8e12491775c9c4c4f4ee96",
+      "schema_version": 6,
+      "operating_ranges": {
+        "rms_contrast": {
+          "sigma_multiplier": 0.204,
+          "dark_boundary": {
+            "n": 210,
+            "mean": 0.17516768859390272,
+            "sample_standard_deviation": 0.07842533567932004,
+            "lower": 0.15916892011532144,
+            "upper": 0.191166457072484
+          },
+          "bright_boundary": {
+            "n": 229,
+            "mean": 0.4356546819070094,
+            "sample_standard_deviation": 0.03488422653777022,
+            "lower": 0.42853829969330426,
+            "upper": 0.44277106412071454
+          },
+          "available": true,
+          "unavailable_reason": null,
+          "lower": 0.191166457072484,
+          "upper": 0.42853829969330426,
+          "valid_interval": true,
+          "bands_overlap": false,
+          "invalid_reason": null
+        },
+        "hsv_value": {
+          "sigma_multiplier": 0.204,
+          "dark_boundary": {
+            "n": 210,
+            "mean": 0.11145941808311977,
+            "sample_standard_deviation": 0.06644471332995679,
+            "lower": 0.09790469656380858,
+            "upper": 0.12501413960243096
+          },
+          "bright_boundary": {
+            "n": 229,
+            "mean": 0.6010958351613885,
+            "sample_standard_deviation": 0.06756555167880897,
+            "lower": 0.5873124626189115,
+            "upper": 0.6148792077038656
+          },
+          "available": true,
+          "unavailable_reason": null,
+          "lower": 0.12501413960243096,
+          "upper": 0.5873124626189115,
+          "valid_interval": true,
+          "bands_overlap": false,
+          "invalid_reason": null
+        }
+      }
+    },
+    "val": {
+      "path": "analysis/results/rq2/rq2b/validation/val/yolov12/three_class/validation_results.json",
+      "sha256": "8dbadb3c2e7720265df8b33782b7cbf64c0f6c9cf5433eefcf6f09a5b5e3bde6",
+      "schema_version": 6,
+      "operating_ranges": {
+        "rms_contrast": {
+          "sigma_multiplier": 0.204,
+          "dark_boundary": {
+            "n": 210,
+            "mean": 0.17516768859390272,
+            "sample_standard_deviation": 0.07842533567932004,
+            "lower": 0.15916892011532144,
+            "upper": 0.191166457072484
+          },
+          "bright_boundary": {
+            "n": 229,
+            "mean": 0.4356546819070094,
+            "sample_standard_deviation": 0.03488422653777022,
+            "lower": 0.42853829969330426,
+            "upper": 0.44277106412071454
+          },
+          "available": true,
+          "unavailable_reason": null,
+          "lower": 0.191166457072484,
+          "upper": 0.42853829969330426,
+          "valid_interval": true,
+          "bands_overlap": false,
+          "invalid_reason": null
+        },
+        "hsv_value": {
+          "sigma_multiplier": 0.204,
+          "dark_boundary": {
+            "n": 210,
+            "mean": 0.11145941808311977,
+            "sample_standard_deviation": 0.06644471332995679,
+            "lower": 0.09790469656380858,
+            "upper": 0.12501413960243096
+          },
+          "bright_boundary": {
+            "n": 229,
+            "mean": 0.6010958351613885,
+            "sample_standard_deviation": 0.06756555167880897,
+            "lower": 0.5873124626189115,
+            "upper": 0.6148792077038656
+          },
+          "available": true,
+          "unavailable_reason": null,
+          "lower": 0.12501413960243096,
+          "upper": 0.5873124626189115,
+          "valid_interval": true,
+          "bands_overlap": false,
+          "invalid_reason": null
+        }
+      }
+    }
+  },
+  "samples": [
+    {
+      "id": "comp_data_too_bright",
+      "dataset": "competition_dataset",
+      "model": "yolov12",
+      "reference_classification": "too_bright",
+      "actual_failure": true,
+      "ap": 0.43877887788778874,
+      "original_ap": 0.6466413248467704,
+      "gamma": 0.21000000000000002,
+      "kind": "transformed",
+      "side": "bright",
+      "source_image": "data/base_images/comp_labelled/images/000143_8d7dca83-frame_001764_1721555072488452212.png",
+      "source_image_sha256": "509f5e5296a307afaca6bc0e96678f7b5a993c474426f3e9ccfd5f6d909ab09c",
+      "source_json": "analysis/results/rq2/rq2b/validation/competition_dataset/yolov12/three_class/validation_results.json",
+      "observation_index": 2022,
+      "brightness_scores": {
+        "luminance_rec601": 0.8370585418368737,
+        "luminance_rec709": 0.8370738668096404,
+        "hsv_value": 0.8544778135212419,
+        "hsi_lightness": 0.838003642429194,
+        "hsi_intensity": 0.8379504343114561,
+        "cielab_lightness": 85.18830108642578,
+        "rms_contrast": 0.11968866611481986,
+        "mean_shift_separation_spread_ratio": 12.287317687647537
+      },
+      "methods": {
+        "rms_contrast": {
+          "score": 0.11968866611481986,
+          "classification": "out_of_range",
+          "correct": true,
+          "failure_detection_correct": true,
+          "saved_prediction": {
+            "value": 0.11968866611481986,
+            "prediction": "out_of_range",
+            "reason": null,
+            "correct": true,
+            "ap_residual": null,
+            "in_operating_range": false,
+            "predicted_failure": true
+          },
+          "reproduced_score": 0.11968866611481986,
+          "absolute_score_error": 0.0
+        },
+        "hsv_value": {
+          "score": 0.8544778135212419,
+          "classification": "too_bright",
+          "correct": true,
+          "failure_detection_correct": true,
+          "saved_prediction": {
+            "value": 0.8544778135212419,
+            "prediction": "out_of_range",
+            "reason": null,
+            "correct": true,
+            "ap_residual": null,
+            "in_operating_range": false,
+            "predicted_failure": true
+          },
+          "reproduced_score": 0.8544778135212419,
+          "absolute_score_error": 0.0
+        }
+      },
+      "recommended_four": true,
+      "files": {
+        "image": "comp_data_too_bright.png",
+        "figure_pdf": "comp_data_too_bright.pdf",
+        "figure_png": "comp_data_too_bright_annotated.png"
+      },
+      "image_sha256": "10a75c3b98c640dd571a99bf679f31bdf95dac406bb771ba7e9bf0c124ac28fb",
+      "dimensions": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "comp_data_in-range",
+      "dataset": "competition_dataset",
+      "model": "yolov12",
+      "reference_classification": "in_range",
+      "actual_failure": false,
+      "ap": 0.6651608910891089,
+      "original_ap": 0.6466413248467704,
+      "gamma": 0.7100000000000001,
+      "kind": "transformed",
+      "side": "bright",
+      "source_image": "data/base_images/comp_labelled/images/000143_8d7dca83-frame_001764_1721555072488452212.png",
+      "source_image_sha256": "509f5e5296a307afaca6bc0e96678f7b5a993c474426f3e9ccfd5f6d909ab09c",
+      "source_json": "analysis/results/rq2/rq2b/validation/competition_dataset/yolov12/three_class/validation_results.json",
+      "observation_index": 2027,
+      "brightness_scores": {
+        "luminance_rec601": 0.5936727506765728,
+        "luminance_rec709": 0.5939610259965619,
+        "hsv_value": 0.631471796704793,
+        "hsi_lightness": 0.5969322278390522,
+        "hsi_intensity": 0.596358301277687,
+        "cielab_lightness": 61.70161437988281,
+        "rms_contrast": 0.24235993126765737,
+        "mean_shift_separation_spread_ratio": 9.24393036412196
+      },
+      "methods": {
+        "rms_contrast": {
+          "score": 0.24235993126765737,
+          "classification": "in_range",
+          "correct": true,
+          "failure_detection_correct": true,
+          "saved_prediction": {
+            "value": 0.24235993126765737,
+            "prediction": "in_range",
+            "reason": null,
+            "correct": true,
+            "ap_residual": null,
+            "in_operating_range": true,
+            "predicted_failure": false
+          },
+          "reproduced_score": 0.24235993126765737,
+          "absolute_score_error": 0.0
+        },
+        "hsv_value": {
+          "score": 0.631471796704793,
+          "classification": "too_bright",
+          "correct": false,
+          "failure_detection_correct": false,
+          "saved_prediction": {
+            "value": 0.631471796704793,
+            "prediction": "out_of_range",
+            "reason": null,
+            "correct": false,
+            "ap_residual": null,
+            "in_operating_range": false,
+            "predicted_failure": true
+          },
+          "reproduced_score": 0.631471796704793,
+          "absolute_score_error": 0.0
+        }
+      },
+      "recommended_four": true,
+      "files": {
+        "image": "comp_data_in-range.png",
+        "figure_pdf": "comp_data_in-range.pdf",
+        "figure_png": "comp_data_in-range_annotated.png"
+      },
+      "image_sha256": "80fba42d4138755554f30fe88ff3b1ef8c17fcf19ef573f37a3af677b82376cf",
+      "dimensions": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "comp_data_too_dark",
+      "dataset": "competition_dataset",
+      "model": "yolov12",
+      "reference_classification": "too_dark",
+      "actual_failure": true,
+      "ap": 0.4699463696369637,
+      "original_ap": 0.6466413248467704,
+      "gamma": 2.41,
+      "kind": "transformed",
+      "side": "dark",
+      "source_image": "data/base_images/comp_labelled/images/000143_8d7dca83-frame_001764_1721555072488452212.png",
+      "source_image_sha256": "509f5e5296a307afaca6bc0e96678f7b5a993c474426f3e9ccfd5f6d909ab09c",
+      "source_json": "analysis/results/rq2/rq2b/validation/competition_dataset/yolov12/three_class/validation_results.json",
+      "observation_index": 2044,
+      "brightness_scores": {
+        "luminance_rec601": 0.2848426719430828,
+        "luminance_rec709": 0.2857685287156182,
+        "hsv_value": 0.3282830967456427,
+        "hsi_lightness": 0.2900475707209967,
+        "hsi_intensity": 0.2890259863494009,
+        "cielab_lightness": 29.799055099487305,
+        "rms_contrast": 0.27599551066022066,
+        "mean_shift_separation_spread_ratio": 26.037951993105132
+      },
+      "methods": {
+        "rms_contrast": {
+          "score": 0.27599551066022066,
+          "classification": "in_range",
+          "correct": false,
+          "failure_detection_correct": false,
+          "saved_prediction": {
+            "value": 0.27599551066022066,
+            "prediction": "in_range",
+            "reason": null,
+            "correct": false,
+            "ap_residual": null,
+            "in_operating_range": true,
+            "predicted_failure": false
+          },
+          "reproduced_score": 0.27599551066022066,
+          "absolute_score_error": 0.0
+        },
+        "hsv_value": {
+          "score": 0.3282830967456427,
+          "classification": "in_range",
+          "correct": false,
+          "failure_detection_correct": false,
+          "saved_prediction": {
+            "value": 0.3282830967456427,
+            "prediction": "in_range",
+            "reason": null,
+            "correct": false,
+            "ap_residual": null,
+            "in_operating_range": true,
+            "predicted_failure": false
+          },
+          "reproduced_score": 0.3282830967456427,
+          "absolute_score_error": 0.0
+        }
+      },
+      "recommended_four": false,
+      "files": {
+        "image": "comp_data_too_dark.png",
+        "figure_pdf": "comp_data_too_dark.pdf",
+        "figure_png": "comp_data_too_dark_annotated.png"
+      },
+      "image_sha256": "b9ace238e24e3266d5f613ddc725bd172691733be03ba29c423bec6ed9ae777f",
+      "dimensions": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "val_data_too_bright",
+      "dataset": "val",
+      "model": "yolov12",
+      "reference_classification": "too_bright",
+      "actual_failure": true,
+      "ap": 0.45478547854785484,
+      "original_ap": 0.6144837340876944,
+      "gamma": 0.21000000000000002,
+      "kind": "transformed",
+      "side": "bright",
+      "source_image": "data/base_images/val/images/prom_00308.jpg",
+      "source_image_sha256": "d8940a89f2da5baef5f35deca03e61b558f65656e77639850158b00b8ffdf668",
+      "source_json": "analysis/results/rq2/rq2b/validation/val/yolov12/three_class/validation_results.json",
+      "observation_index": 28393,
+      "brightness_scores": {
+        "luminance_rec601": 0.6914118165482228,
+        "luminance_rec709": 0.691467285770698,
+        "hsv_value": 0.7056465026922492,
+        "hsi_lightness": 0.6854280783891388,
+        "hsi_intensity": 0.6874466424420987,
+        "cielab_lightness": 70.88816833496094,
+        "rms_contrast": 0.2750505787551111,
+        "mean_shift_separation_spread_ratio": 31.44476604774736
+      },
+      "methods": {
+        "rms_contrast": {
+          "score": 0.2750505787551111,
+          "classification": "in_range",
+          "correct": false,
+          "failure_detection_correct": false,
+          "saved_prediction": {
+            "value": 0.2750505787551111,
+            "prediction": "in_range",
+            "reason": null,
+            "correct": false,
+            "ap_residual": null,
+            "in_operating_range": true,
+            "predicted_failure": false
+          },
+          "reproduced_score": 0.2750505787551111,
+          "absolute_score_error": 0.0
+        },
+        "hsv_value": {
+          "score": 0.7056465026922492,
+          "classification": "too_bright",
+          "correct": true,
+          "failure_detection_correct": true,
+          "saved_prediction": {
+            "value": 0.7056465026922492,
+            "prediction": "out_of_range",
+            "reason": null,
+            "correct": true,
+            "ap_residual": null,
+            "in_operating_range": false,
+            "predicted_failure": true
+          },
+          "reproduced_score": 0.7056465026922492,
+          "absolute_score_error": 0.0
+        }
+      },
+      "recommended_four": true,
+      "files": {
+        "image": "val_data_too_bright.png",
+        "figure_pdf": "val_data_too_bright.pdf",
+        "figure_png": "val_data_too_bright_annotated.png"
+      },
+      "image_sha256": "901a423113118cd66cd95780fddbd27fc9e522096d28183f333a013e66363b7a",
+      "dimensions": {
+        "width": 6040,
+        "height": 4120
+      }
+    },
+    {
+      "id": "val_data_in-range",
+      "dataset": "val",
+      "model": "yolov12",
+      "reference_classification": "in_range",
+      "actual_failure": false,
+      "ap": 0.6144837340876944,
+      "original_ap": 0.6144837340876944,
+      "gamma": 1.0,
+      "kind": "original",
+      "side": "original",
+      "source_image": "data/base_images/val/images/prom_00308.jpg",
+      "source_image_sha256": "d8940a89f2da5baef5f35deca03e61b558f65656e77639850158b00b8ffdf668",
+      "source_json": "analysis/results/rq2/rq2b/validation/val/yolov12/three_class/validation_results.json",
+      "observation_index": 235,
+      "brightness_scores": {
+        "luminance_rec601": 0.33365829078401116,
+        "luminance_rec709": 0.3336569194965223,
+        "hsv_value": 0.3588460685663064,
+        "hsi_lightness": 0.32342361499830435,
+        "hsi_intensity": 0.32615938574362424,
+        "cielab_lightness": 35.44255828857422,
+        "rms_contrast": 0.22135707551662756,
+        "mean_shift_separation_spread_ratio": 12.890427057319874
+      },
+      "methods": {
+        "rms_contrast": {
+          "score": 0.22135707551662756,
+          "classification": "in_range",
+          "correct": true,
+          "failure_detection_correct": true,
+          "saved_prediction": {
+            "value": 0.22135707551662756,
+            "prediction": "in_range",
+            "reason": null,
+            "correct": true,
+            "ap_residual": null,
+            "in_operating_range": true,
+            "predicted_failure": false
+          },
+          "reproduced_score": 0.22135707551662756,
+          "absolute_score_error": 0.0
+        },
+        "hsv_value": {
+          "score": 0.3588460685663064,
+          "classification": "in_range",
+          "correct": true,
+          "failure_detection_correct": true,
+          "saved_prediction": {
+            "value": 0.3588460685663064,
+            "prediction": "in_range",
+            "reason": null,
+            "correct": true,
+            "ap_residual": null,
+            "in_operating_range": true,
+            "predicted_failure": false
+          },
+          "reproduced_score": 0.3588460685663064,
+          "absolute_score_error": 0.0
+        }
+      },
+      "recommended_four": false,
+      "files": {
+        "image": "val_data_in-range.png",
+        "figure_pdf": "val_data_in-range.pdf",
+        "figure_png": "val_data_in-range_annotated.png"
+      },
+      "image_sha256": "101971d05e668e7d74c1ca79c28fabca0cf2ded306ebb900cf24b75eb4a763c1",
+      "dimensions": {
+        "width": 6040,
+        "height": 4120
+      }
+    },
+    {
+      "id": "val_data_too_dark",
+      "dataset": "val",
+      "model": "yolov12",
+      "reference_classification": "too_dark",
+      "actual_failure": true,
+      "ap": 0.42640264026402636,
+      "original_ap": 0.6144837340876944,
+      "gamma": 3.11,
+      "kind": "transformed",
+      "side": "dark",
+      "source_image": "data/base_images/val/images/prom_00308.jpg",
+      "source_image_sha256": "d8940a89f2da5baef5f35deca03e61b558f65656e77639850158b00b8ffdf668",
+      "source_json": "analysis/results/rq2/rq2b/validation/val/yolov12/three_class/validation_results.json",
+      "observation_index": 28422,
+      "brightness_scores": {
+        "luminance_rec601": 0.08110333298805603,
+        "luminance_rec709": 0.08093920780125012,
+        "hsv_value": 0.09513097120157134,
+        "hsi_lightness": 0.07661694082410178,
+        "hsi_intensity": 0.07737242767614344,
+        "cielab_lightness": 7.969611167907715,
+        "rms_contrast": 0.12115752565865459,
+        "mean_shift_separation_spread_ratio": 11.060982394362027
+      },
+      "methods": {
+        "rms_contrast": {
+          "score": 0.12115752565865459,
+          "classification": "too_dark",
+          "correct": true,
+          "failure_detection_correct": true,
+          "saved_prediction": {
+            "value": 0.12115752565865459,
+            "prediction": "out_of_range",
+            "reason": null,
+            "correct": true,
+            "ap_residual": null,
+            "in_operating_range": false,
+            "predicted_failure": true
+          },
+          "reproduced_score": 0.12115752565865459,
+          "absolute_score_error": 0.0
+        },
+        "hsv_value": {
+          "score": 0.09513097120157134,
+          "classification": "too_dark",
+          "correct": true,
+          "failure_detection_correct": true,
+          "saved_prediction": {
+            "value": 0.09513097120157134,
+            "prediction": "out_of_range",
+            "reason": null,
+            "correct": true,
+            "ap_residual": null,
+            "in_operating_range": false,
+            "predicted_failure": true
+          },
+          "reproduced_score": 0.09513097120157134,
+          "absolute_score_error": 0.0
+        }
+      },
+      "recommended_four": true,
+      "files": {
+        "image": "val_data_too_dark.png",
+        "figure_pdf": "val_data_too_dark.pdf",
+        "figure_png": "val_data_too_dark_annotated.png"
+      },
+      "image_sha256": "afc498515b9354772f39c68dd5bff6a5c968873850aa4baacc17629baae114b0",
+      "dimensions": {
+        "width": 6040,
+        "height": 4120
+      }
+    }
+  ]
+}
